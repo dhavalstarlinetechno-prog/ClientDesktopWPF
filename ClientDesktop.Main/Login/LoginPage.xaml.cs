@@ -12,32 +12,39 @@ namespace ClientDesktop.Main.Login
         public LoginPage()
         {
             InitializeComponent();
+
+            // Set focus to password if login is pre-filled (optional UX improvement)
+            if (!string.IsNullOrEmpty(cmbLogin.Text))
+            {
+                txtPassword.Focus();
+            }
         }
 
-        // Fixes error: 'LoginPage' does not contain a definition for 'LoginButton_Click'
         private void LoginButton_Click(object sender, RoutedEventArgs e)
         {
             string password = _isPasswordVisible ? txtPasswordVisible.Text : txtPassword.Password;
             string username = cmbLogin.Text;
             string server = cmbServerName.Text;
 
-            // Add your login logic here
+            // Basic Validation
             if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
             {
                 MessageBox.Show("Please enter valid credentials.", "Login Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
-            MessageBox.Show($"Attempting to login to {server}...");
+            // Simulate Login Success for now
+            MessageBox.Show($"Connecting to {server} as {username}...", "Login Processing", MessageBoxButton.OK, MessageBoxImage.Information);
+
+            // TODO: Add your actual authentication logic here
+            // OnSuccess: this.DialogResult = true; this.Close();
         }
 
-        // Fixes error: 'LoginPage' does not contain a definition for 'CancelButton_Click'
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
             this.Close();
         }
 
-        // Fixes error: 'LoginPage' does not contain a definition for 'EyePictureBox_MouseDown'
         private void EyePictureBox_MouseDown(object sender, MouseButtonEventArgs e)
         {
             _isPasswordVisible = !_isPasswordVisible;
@@ -49,8 +56,12 @@ namespace ClientDesktop.Main.Login
                 txtPasswordVisible.Visibility = Visibility.Visible;
                 txtPassword.Visibility = Visibility.Collapsed;
 
-                // Change icon to 'open' (make sure eye_open.png is in your project)
-                eyePictureBox.Source = new BitmapImage(new Uri("/Assets/Images/eye_open.png"));
+                // Attempt to load open eye image, handle error if image missing
+                try
+                {
+                    eyePictureBox.Source = new BitmapImage(new Uri("/Assets/Images/eye_open.png"));
+                }
+                catch { /* Suppress image error so app doesn't crash */ }
             }
             else
             {
@@ -59,8 +70,12 @@ namespace ClientDesktop.Main.Login
                 txtPassword.Visibility = Visibility.Visible;
                 txtPasswordVisible.Visibility = Visibility.Collapsed;
 
-                // Change icon back to 'close'
-                eyePictureBox.Source = new BitmapImage(new Uri("/Assets/Images/eye_close.png"));
+                // Attempt to load closed eye image
+                try
+                {
+                    eyePictureBox.Source = new BitmapImage(new Uri("/Assets/Images/eye_close.png"));
+                }
+                catch { /* Suppress image error */ }
             }
         }
     }
