@@ -1,0 +1,11 @@
+C:\Dhaval\Git Live Projects\ClientDesktop\ClientDesktop.Infrastructure\bin\Debug\net8.0\ClientDesktop.Infrastructure.deps.json
+C:\Dhaval\Git Live Projects\ClientDesktop\ClientDesktop.Infrastructure\bin\Debug\net8.0\ClientDesktop.Infrastructure.dll
+C:\Dhaval\Git Live Projects\ClientDesktop\ClientDesktop.Infrastructure\bin\Debug\net8.0\ClientDesktop.Infrastructure.pdb
+C:\Dhaval\Git Live Projects\ClientDesktop\ClientDesktop.Infrastructure\obj\Debug\net8.0\ClientDesktop.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+C:\Dhaval\Git Live Projects\ClientDesktop\ClientDesktop.Infrastructure\obj\Debug\net8.0\ClientDesktop.Infrastructure.AssemblyInfoInputs.cache
+C:\Dhaval\Git Live Projects\ClientDesktop\ClientDesktop.Infrastructure\obj\Debug\net8.0\ClientDesktop.Infrastructure.AssemblyInfo.cs
+C:\Dhaval\Git Live Projects\ClientDesktop\ClientDesktop.Infrastructure\obj\Debug\net8.0\ClientDesktop.Infrastructure.csproj.CoreCompileInputs.cache
+C:\Dhaval\Git Live Projects\ClientDesktop\ClientDesktop.Infrastructure\obj\Debug\net8.0\ClientDesktop.Infrastructure.dll
+C:\Dhaval\Git Live Projects\ClientDesktop\ClientDesktop.Infrastructure\obj\Debug\net8.0\refint\ClientDesktop.Infrastructure.dll
+C:\Dhaval\Git Live Projects\ClientDesktop\ClientDesktop.Infrastructure\obj\Debug\net8.0\ClientDesktop.Infrastructure.pdb
+C:\Dhaval\Git Live Projects\ClientDesktop\ClientDesktop.Infrastructure\obj\Debug\net8.0\ref\ClientDesktop.Infrastructure.dll

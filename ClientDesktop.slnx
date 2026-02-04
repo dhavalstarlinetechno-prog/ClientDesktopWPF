@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="ClientDesktop.Core/ClientDesktop.Core.csproj" />
+  <Project Path="ClientDesktop.Infrastructure/ClientDesktop.Infrastructure.csproj" />
+  <Project Path="ClientDesktop.Main/ClientDesktop.Main.csproj" />
+  <Project Path="ClientDesktop.UserControl/ClientDesktop.UserControl.csproj" />
+  <Project Path="ClientDesktop.View/ClientDesktop.View.csproj" />
+  <Project Path="ClientDesktop.ViewModel/ClientDesktop.ViewModel.csproj" />
+</Solution>

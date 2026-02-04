@@ -1,0 +1,11 @@
+C:\Dhaval\Git Live Projects\ClientDesktop\ClientDesktop.View\bin\Debug\net8.0-windows\ClientDesktop.View.deps.json
+C:\Dhaval\Git Live Projects\ClientDesktop\ClientDesktop.View\bin\Debug\net8.0-windows\ClientDesktop.View.dll
+C:\Dhaval\Git Live Projects\ClientDesktop\ClientDesktop.View\bin\Debug\net8.0-windows\ClientDesktop.View.pdb
+C:\Dhaval\Git Live Projects\ClientDesktop\ClientDesktop.View\obj\Debug\net8.0-windows\ClientDesktop.View.GeneratedMSBuildEditorConfig.editorconfig
+C:\Dhaval\Git Live Projects\ClientDesktop\ClientDesktop.View\obj\Debug\net8.0-windows\ClientDesktop.View.AssemblyInfoInputs.cache
+C:\Dhaval\Git Live Projects\ClientDesktop\ClientDesktop.View\obj\Debug\net8.0-windows\ClientDesktop.View.AssemblyInfo.cs
+C:\Dhaval\Git Live Projects\ClientDesktop\ClientDesktop.View\obj\Debug\net8.0-windows\ClientDesktop.View.csproj.CoreCompileInputs.cache
+C:\Dhaval\Git Live Projects\ClientDesktop\ClientDesktop.View\obj\Debug\net8.0-windows\ClientDesktop.View.dll
+C:\Dhaval\Git Live Projects\ClientDesktop\ClientDesktop.View\obj\Debug\net8.0-windows\refint\ClientDesktop.View.dll
+C:\Dhaval\Git Live Projects\ClientDesktop\ClientDesktop.View\obj\Debug\net8.0-windows\ClientDesktop.View.pdb
+C:\Dhaval\Git Live Projects\ClientDesktop\ClientDesktop.View\obj\Debug\net8.0-windows\ref\ClientDesktop.View.dll
