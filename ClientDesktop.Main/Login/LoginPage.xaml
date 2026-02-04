@@ -5,149 +5,199 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         Title="Login"
-        Height="Auto"
-        Width="550"
-        SizeToContent="Height"
+        Height="300"
+        Width="500"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         Background="#F5F5F5">
 
-	<Window.Resources>
-		<!-- Button Style Template for that Flat Clean Look -->
-		<Style x:Key="FlatButtonStyle" TargetType="Button">
-			<Setter Property="Foreground" Value="White"/>
-			<Setter Property="FontWeight" Value="SemiBold"/>
-			<Setter Property="FontSize" Value="13"/>
-			<Setter Property="Cursor" Value="Hand"/>
-			<Setter Property="Template">
-				<Setter.Value>
-					<ControlTemplate TargetType="Button">
-						<Border Background="{TemplateBinding Background}"
+    <Window.Resources>
+        <!-- Flat Button Style -->
+        <Style x:Key="FlatButtonStyle" TargetType="Button">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
                                 CornerRadius="3"
-                                BorderThickness="0">
-							<ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-						</Border>
-						<ControlTemplate.Triggers>
-							<Trigger Property="IsMouseOver" Value="True">
-								<Setter Property="Opacity" Value="0.9"/>
-							</Trigger>
-							<Trigger Property="IsPressed" Value="True">
-								<Setter Property="Opacity" Value="0.8"/>
-							</Trigger>
-						</ControlTemplate.Triggers>
-					</ControlTemplate>
-				</Setter.Value>
-			</Setter>
-		</Style>
-	</Window.Resources>
+                                BorderThickness="1"
+                                BorderBrush="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
-	<Grid Margin="20">
-		<Grid.ColumnDefinitions>
-			<!-- Label Column -->
-			<ColumnDefinition Width="80"/>
-			<!-- Input Column -->
-			<ColumnDefinition Width="*"/>
-		</Grid.ColumnDefinitions>
-		<Grid.RowDefinitions>
-			<RowDefinition Height="Auto"/>
-			<!-- Header -->
-			<RowDefinition Height="15"/>
-			<!-- Spacer -->
-			<RowDefinition Height="Auto"/>
-			<!-- Server -->
-			<RowDefinition Height="Auto"/>
-			<!-- Login -->
-			<RowDefinition Height="Auto"/>
-			<!-- Password Row -->
-			<RowDefinition Height="20"/>
-			<!-- Spacer -->
-			<RowDefinition Height="Auto"/>
-			<!-- Buttons -->
-			<RowDefinition Height="10"/>
-			<!-- Bottom Padding -->
-		</Grid.RowDefinitions>
+        <!-- Eye Button Style (Transparent) -->
+        <Style x:Key="EyeButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="Transparent">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
-		<!-- Header Section -->
-		<Grid Grid.Row="0" Grid.ColumnSpan="2" Margin="10,10,10,10">
-			<Grid.ColumnDefinitions>
-				<ColumnDefinition Width="Auto"/>
-				<ColumnDefinition Width="*"/>
-			</Grid.ColumnDefinitions>
+        <!-- Disclaimer Link Style -->
+        <Style x:Key="HyperlinkTextStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#777777"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="TextDecorations" Value="None"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Foreground" Value="#000000"/>
+                    <Setter Property="TextDecorations" Value="Underline"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
 
-			<!-- Icon Placeholder (Green box simulates the user icon in your image) -->
-			<!-- If you have the image, uncomment the Image tag and remove the Border -->
-			<Border Grid.Column="0" Width="48" Height="48" CornerRadius="5" Background="#4CAF50" VerticalAlignment="Top" Margin="0,0,15,0">
-				<!-- Simple visual fallback if image is missing -->
-				<TextBlock Text="***&#10;👤" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"/>
-			</Border>
-			<!-- <Image Source="/Assets/Images/login_info.png" Width="48" Height="48" VerticalAlignment="Top" Margin="0,0,15,0"/> -->
+    <!-- Main Grid Aligned Center -->
+    <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <!-- Header -->
+            <!-- Spacer -->
+            <RowDefinition Height="Auto"/>
+            <!-- Server -->
+            <RowDefinition Height="Auto"/>
+            <!-- Login -->
+            <RowDefinition Height="Auto"/>
+            <!-- Password -->
+            <!-- Spacer before buttons -->
+            <RowDefinition Height="Auto"/>
+            <!-- Buttons -->
+            <RowDefinition Height="15"/>
+            <!-- Spacer before disclaimer -->
+            <RowDefinition Height="Auto"/>
+            <!-- Disclaimer -->
+        </Grid.RowDefinitions>
 
-			<TextBlock Grid.Column="1"
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="100"/>
+            <!-- Increased Label Width -->
+            <ColumnDefinition Width="320"/>
+            <!-- Increased Input Width to prevent cutting -->
+        </Grid.ColumnDefinitions>
+
+        <!-- HEADER SECTION (Spans both columns) -->
+        <Grid Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Icon -->
+            <Border Grid.Column="0" Width="48" Height="48" CornerRadius="4" Background="#4CAF50" Margin="0,0,15,0">
+                <Grid>
+                    <TextBlock Text="***" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,5,0,0" FontSize="10"/>
+                    <Ellipse Width="20" Height="20" Fill="White" VerticalAlignment="Center" Margin="0,5,0,0"/>
+                    <Path Data="M 0,10 Q 10,0 20,10 L 20,20 L 0,20 Z" Fill="White" Width="24" Height="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,2" Stretch="Fill"/>
+                </Grid>
+            </Border>
+
+            <!-- Header Text -->
+            <TextBlock Grid.Column="1"
                        Text="Please enter your Valid Credentials with valid Server Selection for Login."
                        TextWrapping="Wrap"
                        VerticalAlignment="Center"
                        FontSize="13"
                        Foreground="#333333"/>
-		</Grid>
+        </Grid>
 
-		<!-- Row 2: Server -->
-		<TextBlock Text="Server:" Grid.Row="2" Grid.Column="0"
+        <!-- FORM SECTION -->
+
+        <!-- Row: Server -->
+        <TextBlock Text="Server :" Grid.Row="1" Grid.Column="0"
                    VerticalAlignment="Center" HorizontalAlignment="Right"
-                   Margin="0,0,10,10" FontSize="13"/>
-		<ComboBox x:Name="cmbServerName" Grid.Row="2" Grid.Column="1"
-                  Height="28" HorizontalAlignment="Stretch" Margin="0,0,40,10"
-                  SelectedIndex="0">
-			<!-- Sample Data to look like the screenshot -->
-			<ComboBoxItem Content="JIO GLOBEX LTD." IsSelected="True"/>
-			<ComboBoxItem Content="NSE SERVER 1"/>
-		</ComboBox>
+                   Margin="0,0,15,15" FontSize="13"/>
 
-		<!-- Row 3: Login -->
-		<TextBlock Text="Login:" Grid.Row="3" Grid.Column="0"
+        <ComboBox x:Name="cmbServerName" Grid.Row="1" Grid.Column="1"
+                  Height="28" HorizontalAlignment="Stretch"
+                  Margin="0,0,20,15" VerticalContentAlignment="Center"
+                  SelectedIndex="0" FontSize="12">
+            <ComboBoxItem Content="JIO GLOBEX LTD." IsSelected="True"/>
+            <ComboBoxItem Content="NSE SERVER 1"/>
+        </ComboBox>
+
+        <!-- Row: Login -->
+        <TextBlock Text="Login :" Grid.Row="2" Grid.Column="0"
                    VerticalAlignment="Center" HorizontalAlignment="Right"
-                   Margin="0,0,10,10" FontSize="13"/>
-		<ComboBox x:Name="cmbLogin" Grid.Row="3" Grid.Column="1"
-                  Width="180" Height="28" HorizontalAlignment="Left"
-                  IsEditable="True" Margin="0,0,0,10"
-                  Text="100271"/>
+                   Margin="0,0,15,15" FontSize="13"/>
 
-		<!-- Row 4: Password + Eye + Remember Me -->
-		<TextBlock Text="Password:" Grid.Row="4" Grid.Column="0"
+        <ComboBox x:Name="cmbLogin" Grid.Row="2" Grid.Column="1"
+                  Height="28" HorizontalAlignment="Stretch"
+                  IsEditable="True" Margin="0,0,20,15" VerticalContentAlignment="Center"
+                  Text="100271" FontSize="12"/>
+
+        <!-- Row: Password -->
+        <TextBlock Text="Password :" Grid.Row="3" Grid.Column="0"
                    VerticalAlignment="Center" HorizontalAlignment="Right"
-                   Margin="0,0,10,10" FontSize="13"/>
+                   Margin="0,0,15,15" FontSize="13"/>
 
-		<StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-			<!-- Password Wrapper -->
-			<Grid Width="180" Height="28">
-				<PasswordBox x:Name="txtPassword" VerticalContentAlignment="Center" Padding="2,0,0,0"/>
-				<TextBox x:Name="txtPasswordVisible" Visibility="Collapsed" VerticalContentAlignment="Center" Padding="2,0,0,0"/>
-			</Grid>
+        <!-- Password Row StackPanel -->
+        <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,15">
+            <!-- Password Box Container -->
+            <Grid Width="160" Height="28">
+                <PasswordBox x:Name="txtPassword" VerticalContentAlignment="Center" Padding="4,0,0,0" BorderBrush="#ABADB3" BorderThickness="1" FontSize="12"/>
+                <TextBox x:Name="txtPasswordVisible" Visibility="Collapsed" VerticalContentAlignment="Center" Padding="4,0,0,0" BorderBrush="#ABADB3" BorderThickness="1" FontSize="12"/>
+            </Grid>
 
-			<!-- Eye Icon -->
-			<Image x:Name="eyePictureBox"
-                   Source="/Assets/Images/eye_close.png"
-                   Width="20" Height="20"
-                   Margin="10,0,10,0"
-                   Cursor="Hand"
-                   MouseDown="EyePictureBox_MouseDown">
-				<Image.ToolTip>Show/Hide Password</Image.ToolTip>
-			</Image>
+            <!-- Eye Button -->
+            <Button x:Name="btnEye" Style="{StaticResource EyeButtonStyle}"
+                    Margin="8,0,8,0" Click="BtnEye_Click" Width="24" Height="24">
+                <Grid>
+                    <Path x:Name="pathEyeClosed" 
+                          Data="M11.83,9L15,12.16C15,12.11 15,12.05 15,12A3,3 0 0,0 12,9C11.94,9 11.89,9 11.83,9M7.53,9.8L9.08,11.35C9.03,11.56 9,11.77 9,12A3,3 0 0,0 12,15C12.22,15 12.44,14.97 12.65,14.92L14.2,16.47C13.53,16.8 12.79,17 12,17A5,5 0 0,1 7,12C7,11.21 7.2,10.47 7.53,9.8M2,4.27L4.28,6.55L4.73,7C3.08,8.3 1.78,10.02 1,12C2.73,16.39 7,19.5 12,19.5C13.55,19.5 15.03,19.2 16.38,18.66L16.81,19.08L19.73,22L21,20.73L3.27,3M12,7A5,5 0 0,1 17,12C17,12.64 16.87,13.26 16.64,13.82L19.57,16.75C21.07,15.5 22.27,13.86 23,12C21.27,7.61 17,4.5 12,4.5C10.6,4.5 9.26,4.75 8,5.2L10.17,7.35C10.74,7.13 11.35,7 12,7Z" 
+                          Fill="#666666" Stretch="Uniform" Width="18" Height="18" Visibility="Visible"/>
+                    <Path x:Name="pathEyeOpen" 
+                          Data="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,4.5C17,4.5 21.27,7.61 23,12C21.27,16.39 17,19.5 12,19.5C7,19.5 2.73,16.39 1,12C2.73,7.61 7,4.5 12,4.5M3.18,12C4.83,15.36 8.24,17.5 12,17.5C15.76,17.5 19.17,15.36 20.82,12C19.17,8.64 15.76,6.5 12,6.5C8.24,6.5 4.83,8.64 3.18,12Z" 
+                          Fill="#2196F3" Stretch="Uniform" Width="18" Height="18" Visibility="Collapsed"/>
+                </Grid>
+            </Button>
 
-			<!-- Remember Me -->
-			<CheckBox x:Name="checkBox1" Content="Remember Me"
-                      VerticalAlignment="Center" FontSize="13"/>
-		</StackPanel>
+            <!-- Remember Me -->
+            <CheckBox x:Name="checkBox1" Content="Remember Me"
+                      VerticalAlignment="Center" FontSize="13" Margin="0,0,0,0"/>
+        </StackPanel>
 
-		<!-- Row 6: Buttons -->
-		<StackPanel Grid.Row="6" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,0,0">
-			<Button x:Name="loginButton" Content="Login" Width="100" Height="32"
-                    Background="#2196F3" Style="{StaticResource FlatButtonStyle}"
+        <!-- BUTTONS SECTION (Centered across both columns) -->
+        <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Center">
+            <Button x:Name="loginButton" Content="Login" Width="100" Height="34"
+                    Background="#5D9CEC" Style="{StaticResource FlatButtonStyle}"
                     Click="LoginButton_Click"/>
 
-			<Button x:Name="cancelButton" Content="Cancel" Width="100" Height="32"
-                    Background="#DC3545" Style="{StaticResource FlatButtonStyle}" Margin="15,0,0,0"
+            <Button x:Name="cancelButton" Content="Cancel" Width="100" Height="34"
+                    Background="#EF5350" Style="{StaticResource FlatButtonStyle}" Margin="20,0,0,0"
                     Click="CancelButton_Click"/>
-		</StackPanel>
+        </StackPanel>
 
-	</Grid>
+        <!-- DISCLAIMER SECTION -->
+        <TextBlock Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2"
+                   Text="Disclaimer"
+                   HorizontalAlignment="Center"
+                   Style="{StaticResource HyperlinkTextStyle}"
+                   MouseLeftButtonDown="Disclaimer_Click"/>
+
+    </Grid>
 </Window>

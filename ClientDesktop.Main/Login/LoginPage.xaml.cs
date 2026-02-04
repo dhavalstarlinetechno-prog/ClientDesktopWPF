@@ -13,8 +13,8 @@ namespace ClientDesktop.Main.Login
         {
             InitializeComponent();
 
-            // Set focus to password if login is pre-filled (optional UX improvement)
-            if (!string.IsNullOrEmpty(cmbLogin.Text))
+            // Set focus to password if login is pre-filled
+            if (cmbLogin != null && !string.IsNullOrEmpty(cmbLogin.Text))
             {
                 txtPassword.Focus();
             }
@@ -33,11 +33,7 @@ namespace ClientDesktop.Main.Login
                 return;
             }
 
-            // Simulate Login Success for now
             MessageBox.Show($"Connecting to {server} as {username}...", "Login Processing", MessageBoxButton.OK, MessageBoxImage.Information);
-
-            // TODO: Add your actual authentication logic here
-            // OnSuccess: this.DialogResult = true; this.Close();
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
@@ -45,38 +41,40 @@ namespace ClientDesktop.Main.Login
             this.Close();
         }
 
-        private void EyePictureBox_MouseDown(object sender, MouseButtonEventArgs e)
+        private void BtnEye_Click(object sender, RoutedEventArgs e)
         {
             _isPasswordVisible = !_isPasswordVisible;
 
             if (_isPasswordVisible)
             {
-                // Switch to Text mode
+                // Show Text, Hide Dots
                 txtPasswordVisible.Text = txtPassword.Password;
                 txtPasswordVisible.Visibility = Visibility.Visible;
                 txtPassword.Visibility = Visibility.Collapsed;
 
-                // Attempt to load open eye image, handle error if image missing
-                try
-                {
-                    eyePictureBox.Source = new BitmapImage(new Uri("/Assets/Images/eye_open.png"));
-                }
-                catch { /* Suppress image error so app doesn't crash */ }
+                // Toggle Path Visibility (Open Eye Visible)
+                pathEyeClosed.Visibility = Visibility.Collapsed;
+                pathEyeOpen.Visibility = Visibility.Visible;
             }
             else
             {
-                // Switch back to Password mode
+                // Show Dots, Hide Text
                 txtPassword.Password = txtPasswordVisible.Text;
                 txtPassword.Visibility = Visibility.Visible;
                 txtPasswordVisible.Visibility = Visibility.Collapsed;
 
-                // Attempt to load closed eye image
-                try
-                {
-                    eyePictureBox.Source = new BitmapImage(new Uri("/Assets/Images/eye_close.png"));
-                }
-                catch { /* Suppress image error */ }
+                // Toggle Path Visibility (Closed Eye Visible)
+                pathEyeClosed.Visibility = Visibility.Visible;
+                pathEyeOpen.Visibility = Visibility.Collapsed;
             }
+        }
+
+        // New Disclaimer Click Event
+        private void Disclaimer_Click(object sender, MouseButtonEventArgs e)
+        {
+            MessageBox.Show("This application is for authorized use only.\nUnauthorized access is prohibited.", "Disclaimer", MessageBoxButton.OK, MessageBoxImage.Information);
+            // You can also open a web link here:
+            // System.Diagnostics.Process.Start("https://www.your-company.com/disclaimer");
         }
     }
 }
