@@ -12,3 +12,6 @@ obj/
 # User-specific files
 *.user
 *.suo
+/ClientDesktop.Main/obj/Debug/net8.0-windows/ClientDesktop.Main.designer.deps.json
+/ClientDesktop.Main/bin/Debug/net8.0-windows/ClientDesktop.Main.deps.json
+/ClientDesktop.Main/obj/Debug/net8.0-windows/MainWindow.baml
