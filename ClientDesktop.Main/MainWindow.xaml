@@ -1,12 +1,158 @@
-﻿<Window x:Class="ClientDesktop.Main.MainWindow"
+﻿<Window x:Class="WpfApp1.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:ClientDesktop.Main"
+        xmlns:local="clr-namespace:WpfApp1"
+        
+        xmlns:dock="https://github.com/Dirkster99/AvalonDock"
+        xmlns:dockThemes="clr-namespace:AvalonDock.Themes;assembly=AvalonDock.Themes.VS2013"
+        
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+        Title="MetaTrader 5" Height="800" Width="1200"
+        UseLayoutRounding="True" SnapsToDevicePixels="True"
+        Icon="{x:Null}">
 
+    <Window.Resources>
+        <local:ProfitToColorConverter x:Key="ProfitConverter"/>
+        <local:PriceChangeColorConverter x:Key="PriceColorConverter"/>
+    </Window.Resources>
+
+    <!-- Commands Binding for Shortcuts -->
+    <Window.CommandBindings>
+        <CommandBinding Command="{x:Static local:MainWindow.ToggleMarketWatchCommand}" Executed="ToggleMarketWatch_Executed"/>
+        <CommandBinding Command="{x:Static local:MainWindow.ToggleNavigatorCommand}" Executed="ToggleNavigator_Executed"/>
+        <CommandBinding Command="{x:Static local:MainWindow.ToggleToolboxCommand}" Executed="ToggleToolbox_Executed"/>
+    </Window.CommandBindings>
+
+    <!-- Keyboard Shortcuts -->
+    <Window.InputBindings>
+        <KeyBinding Key="M" Modifiers="Control" Command="{x:Static local:MainWindow.ToggleMarketWatchCommand}"/>
+        <KeyBinding Key="N" Modifiers="Control" Command="{x:Static local:MainWindow.ToggleNavigatorCommand}"/>
+        <KeyBinding Key="T" Modifiers="Control" Command="{x:Static local:MainWindow.ToggleToolboxCommand}"/>
+    </Window.InputBindings>
+
+    <Grid Background="#F0F0F0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <!-- Menu -->
+            <RowDefinition Height="*"/>
+            <!-- Docking Area -->
+            <RowDefinition Height="Auto"/>
+            <!-- Status Bar -->
+        </Grid.RowDefinitions>
+
+        <!-- 1. Menu Bar -->
+        <Menu Grid.Row="0" Background="#F0F0F0" Padding="0,2">
+            <MenuItem Header="New Order" FontWeight="Bold"/>
+
+            <!-- Window Menu (As per your structure) -->
+            <MenuItem Header="Window">
+                <!-- Market Watch -->
+                <MenuItem Header="Market Watch" InputGestureText="Ctrl+M" 
+                          Command="{x:Static local:MainWindow.ToggleMarketWatchCommand}">
+                    <MenuItem.Icon>
+                        <!-- Fixed Icon Alignment: Wrapped in 16x16 Grid -->
+                        <Grid Width="16" Height="16">
+                            <Path Data="M 2,4 L 6,4 L 6,8 L 2,8 Z M 8,4 L 12,4 L 12,8 L 8,8 Z" 
+                                  Stroke="Green" StrokeThickness="1" 
+                                  Stretch="Uniform" 
+                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                    </MenuItem.Icon>
+                </MenuItem>
+
+                <!-- Navigator -->
+                <MenuItem Header="Navigator" InputGestureText="Ctrl+N"
+                          Command="{x:Static local:MainWindow.ToggleNavigatorCommand}">
+                    <MenuItem.Icon>
+                        <Grid Width="16" Height="16">
+                            <Path Data="M 7,2 L 12,12 L 7,9 L 2,12 Z" 
+                                  Fill="#F0B000" Stroke="Black" StrokeThickness="1" 
+                                  Stretch="Uniform" 
+                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                    </MenuItem.Icon>
+                </MenuItem>
+
+                <!-- Toolbox -->
+                <MenuItem Header="Toolbox" InputGestureText="Ctrl+T"
+                          Command="{x:Static local:MainWindow.ToggleToolboxCommand}">
+                    <MenuItem.Icon>
+                        <Grid Width="16" Height="16">
+                            <Path Data="M 2,4 H 14 V 12 H 2 Z M 2,4 L 14,4" 
+                                  Stroke="Black" StrokeThickness="1" Fill="White" 
+                                  Stretch="Uniform" 
+                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                    </MenuItem.Icon>
+                </MenuItem>
+            </MenuItem>
+        </Menu>
+
+        <!-- AVALONDOCK MANAGER -->
+        <dock:DockingManager Grid.Row="1" x:Name="dockManager" AllowMixedOrientation="True">
+            <dock:DockingManager.Theme>
+                <dockThemes:Vs2013LightTheme/>
+            </dock:DockingManager.Theme>
+
+            <dock:LayoutRoot>
+                <dock:LayoutPanel Orientation="Vertical">
+                    <dock:LayoutPanel Orientation="Horizontal">
+
+                        <!-- LEFT SIDEBAR GROUP -->
+                        <dock:LayoutAnchorablePaneGroup Orientation="Vertical" DockWidth="250">
+
+                            <!-- Market Watch -->
+                            <dock:LayoutAnchorablePane DockHeight="*">
+                                <dock:LayoutAnchorable x:Name="MarketWatchPane" Title="Market Watch" ContentId="MarketWatch" CanClose="False" CanAutoHide="False">
+                                    <Grid Background="White"/>
+                                </dock:LayoutAnchorable>
+                            </dock:LayoutAnchorablePane>
+
+                            <!-- Navigator -->
+                            <dock:LayoutAnchorablePane DockHeight="*">
+                                <dock:LayoutAnchorable x:Name="NavigatorPane" Title="Navigator" ContentId="Navigator" CanClose="False" CanAutoHide="False">
+                                    <Grid Background="White"/>
+                                </dock:LayoutAnchorable>
+                            </dock:LayoutAnchorablePane>
+
+                        </dock:LayoutAnchorablePaneGroup>
+
+                        <!-- Center: Charts -->
+                        <dock:LayoutDocumentPane>
+                            <dock:LayoutDocument Title="Chart" ContentId="Chart" CanClose="True">
+                                <Grid Background="Black"/>
+                            </dock:LayoutDocument>
+                        </dock:LayoutDocumentPane>
+                    </dock:LayoutPanel>
+
+                    <!-- BOTTOM SECTION: Toolbox -->
+                    <dock:LayoutAnchorablePane DockHeight="200">
+                        <dock:LayoutAnchorable x:Name="ToolboxPane" Title="Toolbox" ContentId="Toolbox" CanClose="False" CanAutoHide="False">
+                            <Grid Background="White"/>
+                        </dock:LayoutAnchorable>
+                    </dock:LayoutAnchorablePane>
+                </dock:LayoutPanel>
+            </dock:LayoutRoot>
+        </dock:DockingManager>
+
+        <!-- Status Bar -->
+        <StatusBar Grid.Row="2" Background="#F0F0F0" BorderBrush="#D0D0D0" BorderThickness="0,1,0,0" Height="22">
+            <StatusBarItem Content="For Help, press F1" Foreground="#666" FontSize="11"/>
+            <StatusBarItem HorizontalAlignment="Right">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Default" Margin="0,0,20,0" Foreground="Black" FontSize="11"/>
+                    <Rectangle Width="1" Height="14" Fill="#CCC" Margin="0,0,10,0"/>
+                    <Grid Width="16" Height="12" Margin="0,0,5,0" VerticalAlignment="Center">
+                        <Rectangle Width="3" Height="4" Fill="#00C000" VerticalAlignment="Bottom" HorizontalAlignment="Left"/>
+                        <Rectangle Width="3" Height="7" Fill="#00C000" VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="4,0,0,0"/>
+                        <Rectangle Width="3" Height="10" Fill="#00C000" VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="8,0,0,0"/>
+                        <Rectangle Width="3" Height="12" Fill="#00C000" VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="12,0,0,0"/>
+                    </Grid>
+                    <TextBlock Text="143.63 ms" Foreground="Black" FontSize="11"/>
+                </StackPanel>
+            </StatusBarItem>
+        </StatusBar>
     </Grid>
 </Window>
