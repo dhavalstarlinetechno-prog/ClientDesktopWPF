@@ -1,17 +1,16 @@
-﻿<Window x:Class="ClientDesktop.Main.Login.LoginPage"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d"
-        Title="Login"
-        Height="300"
-        Width="500"
-        WindowStartupLocation="CenterScreen"
-        ResizeMode="NoResize"
+﻿<UserControl x:Class="ClientDesktop.Main.Login.LoginPage"
+         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+         xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+         xmlns:local="clr-namespace:ClientDesktop.Main.Login"
+         xmlns:behaviours="http://schemas.microsoft.com/xaml/behaviors" 
+         mc:Ignorable="d" 
+         Height="300" 
+         Width="500" 
         Background="#F5F5F5">
 
-    <Window.Resources>
+    <UserControl.Resources>
         <!-- Flat Button Style -->
         <Style x:Key="FlatButtonStyle" TargetType="Button">
             <Setter Property="Foreground" Value="White"/>
@@ -70,7 +69,7 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
-    </Window.Resources>
+    </UserControl.Resources>
 
     <!-- Main Grid Aligned Center -->
     <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -199,4 +198,4 @@
                    MouseLeftButtonDown="Disclaimer_Click"/>
 
     </Grid>
-</Window>
+</UserControl>

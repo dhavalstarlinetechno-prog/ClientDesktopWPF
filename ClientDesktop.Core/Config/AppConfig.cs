@@ -1,4 +1,6 @@
-﻿namespace ClientDesktop.Core.Config
+﻿using System.IO;
+
+namespace ClientDesktop.Core.Config
 {
     public static class AppConfig
     {
