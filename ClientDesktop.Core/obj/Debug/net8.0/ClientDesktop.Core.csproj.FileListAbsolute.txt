@@ -9,3 +9,12 @@ C:\Dhaval\Git Live Projects\ClientDesktop\ClientDesktop.Core\obj\Debug\net8.0\Cl
 C:\Dhaval\Git Live Projects\ClientDesktop\ClientDesktop.Core\obj\Debug\net8.0\refint\ClientDesktop.Core.dll
 C:\Dhaval\Git Live Projects\ClientDesktop\ClientDesktop.Core\obj\Debug\net8.0\ClientDesktop.Core.pdb
 C:\Dhaval\Git Live Projects\ClientDesktop\ClientDesktop.Core\obj\Debug\net8.0\ref\ClientDesktop.Core.dll
+C:\Sahil\WPF\ClientDesktop.Core\obj\Debug\net8.0\ClientDesktop.Core.csproj.AssemblyReference.cache
+C:\Sahil\WPF\ClientDesktop.Core\obj\Debug\net8.0\ClientDesktop.Core.GeneratedMSBuildEditorConfig.editorconfig
+C:\Sahil\WPF\ClientDesktop.Core\obj\Debug\net8.0\ClientDesktop.Core.AssemblyInfoInputs.cache
+C:\Sahil\WPF\ClientDesktop.Core\obj\Debug\net8.0\ClientDesktop.Core.AssemblyInfo.cs
+C:\Sahil\WPF\ClientDesktop.Core\obj\Debug\net8.0\ClientDesktop.Core.csproj.CoreCompileInputs.cache
+C:\Sahil\WPF\ClientDesktop.Core\obj\Debug\net8.0\ClientDesktop.Core.sourcelink.json
+C:\Sahil\WPF\ClientDesktop.Core\obj\Debug\net8.0\ClientDesktop.Core.dll
+C:\Sahil\WPF\ClientDesktop.Core\obj\Debug\net8.0\refint\ClientDesktop.Core.dll
+C:\Sahil\WPF\ClientDesktop.Core\obj\Debug\net8.0\ClientDesktop.Core.pdb

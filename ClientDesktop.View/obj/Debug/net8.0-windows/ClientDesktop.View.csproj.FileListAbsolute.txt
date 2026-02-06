@@ -9,3 +9,19 @@ C:\Dhaval\Git Live Projects\ClientDesktop\ClientDesktop.View\obj\Debug\net8.0-wi
 C:\Dhaval\Git Live Projects\ClientDesktop\ClientDesktop.View\obj\Debug\net8.0-windows\refint\ClientDesktop.View.dll
 C:\Dhaval\Git Live Projects\ClientDesktop\ClientDesktop.View\obj\Debug\net8.0-windows\ClientDesktop.View.pdb
 C:\Dhaval\Git Live Projects\ClientDesktop\ClientDesktop.View\obj\Debug\net8.0-windows\ref\ClientDesktop.View.dll
+C:\Sahil\WPF\ClientDesktop.View\bin\Debug\net8.0-windows\ClientDesktop.View.deps.json
+C:\Sahil\WPF\ClientDesktop.View\bin\Debug\net8.0-windows\ClientDesktop.View.dll
+C:\Sahil\WPF\ClientDesktop.View\bin\Debug\net8.0-windows\ClientDesktop.View.pdb
+C:\Sahil\WPF\ClientDesktop.View\obj\Debug\net8.0-windows\Disclaimer\DisclaimerView.baml
+C:\Sahil\WPF\ClientDesktop.View\obj\Debug\net8.0-windows\Disclaimer\DisclaimerView.g.cs
+C:\Sahil\WPF\ClientDesktop.View\obj\Debug\net8.0-windows\ClientDesktop.View_MarkupCompile.cache
+C:\Sahil\WPF\ClientDesktop.View\obj\Debug\net8.0-windows\ClientDesktop.View.g.resources
+C:\Sahil\WPF\ClientDesktop.View\obj\Debug\net8.0-windows\ClientDesktop.View.GeneratedMSBuildEditorConfig.editorconfig
+C:\Sahil\WPF\ClientDesktop.View\obj\Debug\net8.0-windows\ClientDesktop.View.AssemblyInfoInputs.cache
+C:\Sahil\WPF\ClientDesktop.View\obj\Debug\net8.0-windows\ClientDesktop.View.AssemblyInfo.cs
+C:\Sahil\WPF\ClientDesktop.View\obj\Debug\net8.0-windows\ClientDesktop.View.csproj.CoreCompileInputs.cache
+C:\Sahil\WPF\ClientDesktop.View\obj\Debug\net8.0-windows\ClientDesktop.View.sourcelink.json
+C:\Sahil\WPF\ClientDesktop.View\obj\Debug\net8.0-windows\ClientDesktop.View.dll
+C:\Sahil\WPF\ClientDesktop.View\obj\Debug\net8.0-windows\refint\ClientDesktop.View.dll
+C:\Sahil\WPF\ClientDesktop.View\obj\Debug\net8.0-windows\ClientDesktop.View.pdb
+C:\Sahil\WPF\ClientDesktop.View\obj\Debug\net8.0-windows\ref\ClientDesktop.View.dll

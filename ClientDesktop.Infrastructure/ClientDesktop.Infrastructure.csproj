@@ -8,7 +8,10 @@
 
   <ItemGroup>
     <Folder Include="Helpers\" />
-    <Folder Include="Services\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ClientDesktop.Core\ClientDesktop.Core.csproj" />
   </ItemGroup>
 
 </Project>

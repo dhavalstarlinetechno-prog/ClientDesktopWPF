@@ -19,4 +19,9 @@
     <PackageReference Include="Dirkster.AvalonDock.Themes.VS2013" Version="4.72.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\ClientDesktop.ViewModel\ClientDesktop.ViewModel.csproj" />
+    <ProjectReference Include="..\ClientDesktop.View\ClientDesktop.View.csproj" />
+  </ItemGroup>
+
 </Project>

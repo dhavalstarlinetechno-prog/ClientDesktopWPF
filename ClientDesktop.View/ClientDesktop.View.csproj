@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0-windows</TargetFramework>
@@ -12,6 +12,12 @@
     <Folder Include="Chart\" />
     <Folder Include="Details\" />
     <Folder Include="MarketWatch\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ClientDesktop.Core\ClientDesktop.Core.csproj" />
+    <ProjectReference Include="..\ClientDesktop.UserControl\ClientDesktop.UserControl.csproj" />
+    <ProjectReference Include="..\ClientDesktop.ViewModel\ClientDesktop.ViewModel.csproj" />
   </ItemGroup>
 
 </Project>

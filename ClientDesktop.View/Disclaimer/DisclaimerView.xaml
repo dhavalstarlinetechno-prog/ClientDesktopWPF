@@ -1,0 +1,88 @@
+﻿<Window x:Class="ClientDesktop.View.Disclaimer.DisclaimerView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Disclaimer"
+        Width="460" Height="410"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        WindowStyle="None"
+        Background="Transparent"
+        ShowInTaskbar="False">
+
+    <!-- Outer shadow -->
+    <Border CornerRadius="6"
+            Background="White"
+            Padding="0"
+            SnapsToDevicePixels="True">
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Custom Header -->
+            <Border Grid.Row="0"
+                    Background="#F5F5F5"
+                    Padding="12"
+                    CornerRadius="6,6,0,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Text="Disclaimer"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center"
+                               Foreground="#222"/>
+
+                    <!-- Close Button -->
+                    <Button Grid.Column="1"
+                            Content="✕"
+                            Width="28"
+                            Height="28"
+                            FontSize="14"
+                            FontWeight="Bold"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Foreground="#555"
+                            Cursor="Hand"
+                            ToolTip="Close"
+                            Click="Close_Click"/>
+                </Grid>
+            </Border>
+
+            <!-- Content -->
+            <ScrollViewer Grid.Row="1"
+                          Margin="16"
+                          VerticalScrollBarVisibility="Auto">
+                <TextBlock TextWrapping="Wrap"
+                           FontSize="13"
+                           Foreground="#333" TextAlignment="Justify">
+                    <Run Text="This application is developed solely for educational purposes. It is intended to provide users with a basic understanding of financial instruments, trading concepts, and market strategies. No real money is involved, and this app does not support or facilitate any real-world trading or financial transactions."/>
+                    <LineBreak/><LineBreak/>
+                    <Run Text="All data, prices, and simulations presented within the app are purely fictitious or for demonstration purposes and may not reflect real market conditions. Users are advised not to rely on the content for actual investment decisions hints."/>
+                    <LineBreak/><LineBreak/>
+                    <Run Text="This software is completely free and provided as a learning tool. We do not promote or encourage any specific financial product, instrument, or service. Use of the app is entirely at the user's discretion, and we are not responsible for any financial decisions made outside this platform."/>
+                </TextBlock>
+            </ScrollViewer>
+
+            <!-- Footer -->
+            <Border Grid.Row="2"
+                    BorderThickness="1,0,0,0"
+                    BorderBrush="#DDD"
+                    Padding="12">
+                <Button Content="I acknowledge"
+                        Width="140"
+                        Height="36"
+                        HorizontalAlignment="Center"
+                        Background="#4A78E4"
+                        Foreground="White"
+                        FontWeight="SemiBold"/>
+            </Border>
+        </Grid>
+    </Border>
+</Window>
