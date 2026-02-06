@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WpfApp1"
-        
+        xmlns:conv="clr-namespace:ClientDesktop.View.Converters;assembly=ClientDesktop.View"
         xmlns:dock="https://github.com/Dirkster99/AvalonDock"
         xmlns:dockThemes="clr-namespace:AvalonDock.Themes;assembly=AvalonDock.Themes.VS2013"
         
@@ -14,8 +14,8 @@
         Icon="{x:Null}">
 
     <Window.Resources>
-        <local:ProfitToColorConverter x:Key="ProfitConverter"/>
-        <local:PriceChangeColorConverter x:Key="PriceColorConverter"/>
+        <conv:ProfitToColorConverter x:Key="ProfitConverter"/>
+        <conv:PriceChangeColorConverter x:Key="PriceColorConverter"/>
     </Window.Resources>
 
     <!-- Commands Binding for Shortcuts -->
