@@ -10,7 +10,6 @@
   <ItemGroup>
     <Folder Include="Navigation\" />
     <Folder Include="Chart\" />
-    <Folder Include="Details\" />
     <Folder Include="MarketWatch\" />
   </ItemGroup>
 

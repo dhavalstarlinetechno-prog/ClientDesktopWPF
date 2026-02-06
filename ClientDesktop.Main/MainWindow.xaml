@@ -7,16 +7,12 @@
         xmlns:conv="clr-namespace:ClientDesktop.View.Converters;assembly=ClientDesktop.View"
         xmlns:dock="https://github.com/Dirkster99/AvalonDock"
         xmlns:dockThemes="clr-namespace:AvalonDock.Themes;assembly=AvalonDock.Themes.VS2013"
+        xmlns:details="clr-namespace:ClientDesktop.View.Details;assembly=ClientDesktop.View"
         
         mc:Ignorable="d"
         Title="MetaTrader 5" Height="800" Width="1200"
         UseLayoutRounding="True" SnapsToDevicePixels="True"
         Icon="{x:Null}">
-
-    <Window.Resources>
-        <conv:ProfitToColorConverter x:Key="ProfitConverter"/>
-        <conv:PriceChangeColorConverter x:Key="PriceColorConverter"/>
-    </Window.Resources>
 
     <!-- Commands Binding for Shortcuts -->
     <Window.CommandBindings>
@@ -127,10 +123,10 @@
                         </dock:LayoutDocumentPane>
                     </dock:LayoutPanel>
 
-                    <!-- BOTTOM SECTION: Toolbox -->
+                    <!-- BOTTOM SECTION: Details -->
                     <dock:LayoutAnchorablePane DockHeight="200">
                         <dock:LayoutAnchorable x:Name="ToolboxPane" Title="Toolbox" ContentId="Toolbox" CanClose="False" CanAutoHide="False">
-                            <Grid Background="White"/>
+                            <details:DetailsMainView />
                         </dock:LayoutAnchorable>
                     </dock:LayoutAnchorablePane>
                 </dock:LayoutPanel>

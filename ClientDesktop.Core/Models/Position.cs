@@ -12,55 +12,55 @@
 
     public class Position
     {
-        public string id { get; set; }
-        public int symbolId { get; set; }
-        public string symbolName { get; set; }
-        public string symbolDetail { get; set; }
-        public int securityId { get; set; }
-        public int symbolDigit { get; set; }
-        public string side { get; set; }
+        public string Id { get; set; }
+        public int SymbolId { get; set; }
+        public string SymbolName { get; set; }
+        public string SymbolDetail { get; set; }
+        public int SecurityId { get; set; }
+        public int SymbolDigit { get; set; }
+        public string Side { get; set; }
 
-        // 👇 Nullable DateTimes to avoid "Error converting value {null}" issues
-        public DateTime? symbolExpiry { get; set; }
-        public DateTime? symbolExpiryClose { get; set; }
+        public DateTime? SymbolExpiry { get; set; }
+        public DateTime? SymbolExpiryClose { get; set; }
 
-        public double symbolContractSize { get; set; }
-        public double averagePrice { get; set; }
-        public decimal? averageOutPrice { get; set; }
-        public double currentPrice { get; set; }
-        public string status { get; set; }
-        public decimal? margin { get; set; }
-        public int? orderCount { get; set; }
-        public double inVolume { get; set; }
-        public decimal outVolume { get; set; }
-        public double totalVolume { get; set; }
-        public string reason { get; set; }
-        public string clientIp { get; set; }
-        public string device { get; set; }
+        public double SymbolContractSize { get; set; }
+        public double AveragePrice { get; set; }
+        public decimal? AverageOutPrice { get; set; }
+        public double CurrentPrice { get; set; }
+        public string Status { get; set; }
+        public decimal? Margin { get; set; }
+        public int? OrderCount { get; set; }
+        public double InVolume { get; set; }
+        public decimal OutVolume { get; set; }
+        public double TotalVolume { get; set; }
+        public string Reason { get; set; }
+        public string ClientIp { get; set; }
+        public string Device { get; set; }
 
-        public DateTime? lastInAt { get; set; }
-        public DateTime? updatedAt { get; set; }
-        public DateTime? lastOutAt { get; set; }
+        public DateTime? LastInAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        public DateTime? LastOutAt { get; set; }
 
-        public string refId { get; set; }
-        public string masterSymbolName { get; set; }
-        public decimal? pnl { get; set; }
-        public string comment { get; set; }
-        public string marginType { get; set; }
-        public decimal? marginRate { get; set; }
-        public bool weeklyRollOver { get; set; }
+        public string RefId { get; set; }
+        public string MasterSymbolName { get; set; }
+        public decimal? Pnl { get; set; }
+        public string Comment { get; set; }
+        public string MarginType { get; set; }
+        public decimal? MarginRate { get; set; }
+        public bool WeeklyRollOver { get; set; }
 
-        public DateTime? createdAt { get; set; }
-        public DateTime? firstPositionCreatedDate { get; set; }
-        public string spreadType { get; set; }
-        public double? spreadValue { get; set; }
-        public double? spreadBalance { get; set; }
+        public DateTime? CreatedAt { get; set; }
+        public DateTime? FirstPositionCreatedDate { get; set; }
+        public string SpreadType { get; set; }
+        public double? SpreadValue { get; set; }
+        public double? SpreadBalance { get; set; }
 
-        public List<ParentSharing> parentSharing { get; set; }
-        public List<string> parents { get; set; }
+        public List<ParentSharing> ParentSharing { get; set; }
+        public List<string> Parents { get; set; }
 
-        public string operatorId { get; set; }
-        public string username { get; set; }
-        public string userId { get; set; }
+        public string OperatorId { get; set; }
+        public string UserName { get; set; }
+        public string UserId { get; set; }
     }
+
 }
