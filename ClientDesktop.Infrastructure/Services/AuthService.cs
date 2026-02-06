@@ -1,18 +1,9 @@
-﻿using ClientDesktop.Models;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using TraderApp.Interfaces;
-using TraderApp.Utils.Network;
-using TraderApps.Config;
-using TraderApps.Helpers;
-using TraderApps.Utils.Storage;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
+﻿using ClientDesktop.Core.Config;
+using ClientDesktop.Core.Interfaces;
+using ClientDesktop.Core.Models;
+using ClientDesktop.Infrastructure.Helpers;
 
-namespace TraderApps.Services
+namespace ClientDesktop.Infrastructure.Services
 {
     public class AuthService
     {

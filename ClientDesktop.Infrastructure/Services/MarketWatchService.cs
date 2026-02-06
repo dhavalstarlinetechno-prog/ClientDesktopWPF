@@ -1,17 +1,10 @@
-﻿using ClientDesktop.Models;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using TraderApp.Interfaces;
-using TraderApp.Utils.Network;
-using TraderApps.Config;
-using TraderApps.Helpers;
-using TraderApps.Utils.Storage;
+﻿using ClientDesktop.Core.Config;
+using ClientDesktop.Core.Interfaces;
+using ClientDesktop.Core.Models;
+using ClientDesktop.Infrastructure.Helpers;
+using ClientDesktop.Infrastructure.Logger;
 
-namespace TraderApp.Services
+namespace ClientDesktop.Infrastructure.Services
 {
     public class MarketWatchService
     {

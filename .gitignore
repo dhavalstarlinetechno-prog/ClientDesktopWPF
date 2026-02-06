@@ -44,3 +44,11 @@ obj/
 /ClientDesktop.UserControl/bin/Debug/net8.0-windows/ClientDesktop.UserControl.dll
 /ClientDesktop.UserControl/bin/Debug/net8.0-windows/ClientDesktop.UserControl.pdb
 /ClientDesktop.UserControl/obj/Debug/net8.0-windows/ref/ClientDesktop.UserControl.dll
+/ClientDesktop.Infrastructure/bin/Debug/net8.0/ClientDesktop.Infrastructure.deps.json
+/ClientDesktop.Infrastructure/bin/Debug/net8.0/ClientDesktop.Infrastructure.dll
+/ClientDesktop.Infrastructure/bin/Debug/net8.0/ClientDesktop.Infrastructure.pdb
+/ClientDesktop.Infrastructure/obj/Debug/net8.0/ref/ClientDesktop.Infrastructure.dll
+/ClientDesktop.Infrastructure/obj/Debug/net8.0/refint/ClientDesktop.Infrastructure.dll
+/ClientDesktop.Main/obj/ClientDesktop.Main.csproj.nuget.g.targets
+/ClientDesktop.View/obj/ClientDesktop.View.csproj.nuget.g.targets
+/ClientDesktop.ViewModel/obj/ClientDesktop.ViewModel.csproj.nuget.g.targets

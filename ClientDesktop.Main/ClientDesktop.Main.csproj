@@ -20,6 +20,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ClientDesktop.Core\ClientDesktop.Core.csproj" />
+    <ProjectReference Include="..\ClientDesktop.Infrastructure\ClientDesktop.Infrastructure.csproj" />
+    <ProjectReference Include="..\ClientDesktop.UserControl\ClientDesktop.UserControl.csproj" />
     <ProjectReference Include="..\ClientDesktop.ViewModel\ClientDesktop.ViewModel.csproj" />
     <ProjectReference Include="..\ClientDesktop.View\ClientDesktop.View.csproj" />
   </ItemGroup>
