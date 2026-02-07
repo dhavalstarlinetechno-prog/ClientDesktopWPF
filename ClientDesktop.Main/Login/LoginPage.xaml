@@ -6,8 +6,8 @@
          xmlns:local="clr-namespace:ClientDesktop.Main.Login"
          xmlns:behaviours="http://schemas.microsoft.com/xaml/behaviors" 
          mc:Ignorable="d" 
-         Height="300" 
-         Width="500" 
+         Height="270" 
+         Width="450" 
         Background="#F5F5F5">
 
     <UserControl.Resources>

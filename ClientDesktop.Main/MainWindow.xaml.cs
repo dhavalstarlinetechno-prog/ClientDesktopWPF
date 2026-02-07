@@ -1,5 +1,6 @@
 ﻿using AvalonDock.Layout;
 using AvalonDock.Layout.Serialization;
+using ClientDesktop.ViewModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Input;
@@ -14,10 +15,10 @@ namespace ClientDesktop.Main
         public static RoutedCommand ToggleNavigatorCommand = new RoutedCommand();
         public static RoutedCommand ToggleToolboxCommand = new RoutedCommand();
 
-        public MainWindow()
+        public MainWindow(MainWindowViewModel viewModel)
         {
             InitializeComponent();
-
+            this.DataContext = viewModel;
             this.Loaded += MainWindow_Loaded;
             this.Closing += MainWindow_Closing;
         }
