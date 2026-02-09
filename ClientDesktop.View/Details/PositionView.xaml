@@ -32,8 +32,9 @@
                   BorderThickness="0">
 
             <DataGrid.Columns>
-                
-                <DataGridTemplateColumn Header="Symbol" Width="1.5*" SortMemberPath="SymbolName">
+
+                <!--For adding icon in front of symbol, we can use DataGridTemplateColumn, but it will cause performance issue when there are many rows. So we use DataGridTextColumn for better performance.-->
+                <!--<DataGridTemplateColumn Header="Symbol" Width="1.5*" SortMemberPath="SymbolName">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -67,7 +68,12 @@
                             </StackPanel>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
+                </DataGridTemplateColumn>-->
+
+                <DataGridTextColumn Header="Symbol" 
+                    Binding="{Binding SymbolName}" 
+                    Width="1.5*" 
+                    FontWeight="SemiBold"/>
 
                 <DataGridTextColumn Header="Time" 
                                     Binding="{Binding LastInAt, StringFormat='{}{0:yyyy.MM.dd HH:mm:ss}'}" 

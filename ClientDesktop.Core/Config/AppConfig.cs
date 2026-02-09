@@ -63,7 +63,7 @@
 
         public static string AppDataPath => Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "TraderApp",
+            "ClientDesktop",
             "Data"
         );
 

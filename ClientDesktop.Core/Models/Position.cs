@@ -2,12 +2,12 @@
 {
     public class RootPositionResponse
     {
-        public List<Position> data { get; set; }
-        public string exception { get; set; }
-        public string successMessage { get; set; }
-        public int returnID { get; set; }
-        public int action { get; set; }
-        public bool isSuccess { get; set; }
+        public List<Position> Data { get; set; }
+        public string Exception { get; set; }
+        public string SuccessMessage { get; set; }
+        public int ReturnID { get; set; }
+        public int Action { get; set; }
+        public bool IsSuccess { get; set; }
     }
 
     public class Position

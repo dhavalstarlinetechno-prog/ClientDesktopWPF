@@ -7,6 +7,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="pack://application:,,,/ClientDesktop.UserControl;component/Themes/CustomGridStyle.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/ClientDesktop.UserControl;component/Themes/CustomTabStyle.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

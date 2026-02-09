@@ -7,11 +7,11 @@ using System.Text;
 
 namespace ClientDesktop.Infrastructure.Services
 {
-    public class DetailService
+    public class HistoryService
     {
         private readonly IApiService _apiService;
 
-        public DetailService()
+        public HistoryService()
         {
             _apiService = new ApiService();
         }
