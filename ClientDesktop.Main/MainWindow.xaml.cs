@@ -1,9 +1,11 @@
 ﻿using AvalonDock.Layout;
 using AvalonDock.Layout.Serialization;
+using ClientDesktop.View.Disclaimer;
 using ClientDesktop.ViewModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace ClientDesktop.Main
 {
@@ -19,6 +21,27 @@ namespace ClientDesktop.Main
         {
             InitializeComponent();
             this.DataContext = viewModel;
+
+            // --- CONNECT DISCLAIMER LOGIC ---
+            viewModel.OpenDisclaimerAction = () =>
+            {
+                var disclaimer = new DisclaimerView();
+                // Return true only if User clicked Acknowledge
+                return disclaimer.ShowDialog() == true;
+            };
+
+            UpdateLoginState(false, null);
+
+            // Listen for login changes
+            viewModel.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(MainWindowViewModel.IsLoggedIn) ||
+                    e.PropertyName == nameof(MainWindowViewModel.UserId))
+                {
+                    UpdateLoginState(viewModel.IsLoggedIn, viewModel.UserId);
+                }
+            };
+
             this.Loaded += MainWindow_Loaded;
             this.Closing += MainWindow_Closing;
         }
@@ -77,6 +100,12 @@ namespace ClientDesktop.Main
                     Console.WriteLine("Failed to load layout: " + ex.Message);
                 }
             }
+
+            // Trigger Startup Logic
+            if (DataContext is MainWindowViewModel vm)
+            {
+                _ = vm.InitializeHomeAsync();
+            }
         }
 
         private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -89,6 +118,42 @@ namespace ClientDesktop.Main
             catch (Exception ex)
             {
                 Console.WriteLine("Failed to save layout: " + ex.Message);
+            }
+        }
+
+        private void MenuConnect_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is MainWindowViewModel vm) vm.ShowLoginWindow();
+        }
+
+        private void MenuDisconnect_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is MainWindowViewModel vm)
+            {
+                if (MessageBox.Show("Are you sure you want to disconnect?", "Disconnect", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                {
+                    vm.DisconnectCommand.Execute(null);
+                }
+            }
+        }
+
+        public void UpdateLoginState(bool isLoggedIn, string username)
+        {
+            if (isLoggedIn)
+            {
+                TxtUserName.Text = username;
+                TxtUserName.Visibility = Visibility.Visible;
+                UserIconPath.Fill = new SolidColorBrush(Colors.Green);
+                MenuConnect.Visibility = Visibility.Collapsed;
+                MenuDisconnect.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                TxtUserName.Text = "";
+                TxtUserName.Visibility = Visibility.Collapsed;
+                UserIconPath.Fill = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#666666"));
+                MenuConnect.Visibility = Visibility.Visible;
+                MenuDisconnect.Visibility = Visibility.Collapsed;
             }
         }
     }

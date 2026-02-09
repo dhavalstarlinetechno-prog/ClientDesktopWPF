@@ -36,53 +36,92 @@
             <!-- Status Bar -->
         </Grid.RowDefinitions>
 
-        <!-- 1. Menu Bar -->
-        <Menu Grid.Row="0" Background="#F0F0F0" Padding="0,2">
-            <MenuItem Header="New Order" FontWeight="Bold"/>
+        <!-- ========================================================= -->
+        <!-- 1. TOP MENU BAR (Split into Left and Right)               -->
+        <!-- ========================================================= -->
+        <Grid Grid.Row="0" Background="#F0F0F0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <!-- Left Side: Main Menu -->
+                <ColumnDefinition Width="Auto"/>
+                <!-- Right Side: User Menu -->
+            </Grid.ColumnDefinitions>
 
-            <!-- Window Menu (As per your structure) -->
-            <MenuItem Header="Window">
-                <!-- Market Watch -->
-                <MenuItem Header="Market Watch" InputGestureText="Ctrl+M" 
-                          Command="{x:Static local:MainWindow.ToggleMarketWatchCommand}">
-                    <MenuItem.Icon>
-                        <!-- Fixed Icon Alignment: Wrapped in 16x16 Grid -->
-                        <Grid Width="16" Height="16">
-                            <Path Data="M 2,4 L 6,4 L 6,8 L 2,8 Z M 8,4 L 12,4 L 12,8 L 8,8 Z" 
-                                  Stroke="Green" StrokeThickness="1" 
-                                  Stretch="Uniform" 
-                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Grid>
-                    </MenuItem.Icon>
-                </MenuItem>
+            <!-- A. LEFT SIDE MENUS -->
+            <Menu Grid.Column="0" Background="Transparent" Padding="0,2">
+                <MenuItem Header="New Order" FontWeight="Bold"/>
 
-                <!-- Navigator -->
-                <MenuItem Header="Navigator" InputGestureText="Ctrl+N"
-                          Command="{x:Static local:MainWindow.ToggleNavigatorCommand}">
-                    <MenuItem.Icon>
-                        <Grid Width="16" Height="16">
-                            <Path Data="M 7,2 L 12,12 L 7,9 L 2,12 Z" 
-                                  Fill="#F0B000" Stroke="Black" StrokeThickness="1" 
-                                  Stretch="Uniform" 
-                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Grid>
-                    </MenuItem.Icon>
+                <MenuItem Header="Window">
+                    <!-- Market Watch -->
+                    <MenuItem Header="Market Watch" InputGestureText="Ctrl+M" 
+                              Command="{x:Static local:MainWindow.ToggleMarketWatchCommand}">
+                        <MenuItem.Icon>
+                            <Grid Width="16" Height="16">
+                                <Path Data="M 2,4 L 6,4 L 6,8 L 2,8 Z M 8,4 L 12,4 L 12,8 L 8,8 Z" 
+                                      Stroke="Green" StrokeThickness="1" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Grid>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <!-- Navigator -->
+                    <MenuItem Header="Navigator" InputGestureText="Ctrl+N"
+                              Command="{x:Static local:MainWindow.ToggleNavigatorCommand}">
+                        <MenuItem.Icon>
+                            <Grid Width="16" Height="16">
+                                <Path Data="M 7,2 L 12,12 L 7,9 L 2,12 Z" 
+                                      Fill="#F0B000" Stroke="Black" StrokeThickness="1" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Grid>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <!-- Toolbox -->
+                    <MenuItem Header="Toolbox" InputGestureText="Ctrl+T"
+                              Command="{x:Static local:MainWindow.ToggleToolboxCommand}">
+                        <MenuItem.Icon>
+                            <Grid Width="16" Height="16">
+                                <Path Data="M 2,4 H 14 V 12 H 2 Z M 2,4 L 14,4" 
+                                      Stroke="Black" StrokeThickness="1" Fill="White" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Grid>
+                        </MenuItem.Icon>
+                    </MenuItem>
                 </MenuItem>
+            </Menu>
 
-                <!-- Toolbox -->
-                <MenuItem Header="Toolbox" InputGestureText="Ctrl+T"
-                          Command="{x:Static local:MainWindow.ToggleToolboxCommand}">
-                    <MenuItem.Icon>
-                        <Grid Width="16" Height="16">
-                            <Path Data="M 2,4 H 14 V 12 H 2 Z M 2,4 L 14,4" 
-                                  Stroke="Black" StrokeThickness="1" Fill="White" 
-                                  Stretch="Uniform" 
-                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Grid>
-                    </MenuItem.Icon>
+            <!-- B. RIGHT SIDE USER MENU (Connect/Disconnect) -->
+            <Menu Grid.Column="1" Background="Transparent" Padding="0,2,10,2">
+                <MenuItem x:Name="UserMenu" Padding="5,2">
+                    <MenuItem.Header>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <!-- User Icon -->
+                            <Grid Width="20" Height="20">
+                                <Path x:Name="UserIconPath" 
+                                      Data="M12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z" 
+                                      Fill="#666666" 
+                                      Stretch="Uniform" Width="16" Height="16" VerticalAlignment="Center"/>
+                            </Grid>
+
+                            <!-- Username (Visible only after login) -->
+                            <TextBlock x:Name="TxtUserName" Text="User" 
+                                       Margin="5,0,0,0" VerticalAlignment="Center" 
+                                       FontWeight="SemiBold" Visibility="Collapsed"
+                                       Foreground="#333333"/>
+                        </StackPanel>
+                    </MenuItem.Header>
+
+                    <!-- Option 1: Connect (Visible when Logged Out) -->
+                    <MenuItem x:Name="MenuConnect" Header="Connect to Account" Click="MenuConnect_Click">
+                        <MenuItem.Icon>
+                            <Path Data="M10,17L15,12L10,7V10H3V14H10V17M18,19H21V5H18V19Z" Fill="Green" Stretch="Uniform" Width="12" Height="12"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+
+                    <!-- Option 2: Disconnect (Visible when Logged In) -->
+                    <MenuItem x:Name="MenuDisconnect" Header="Disconnect" Click="MenuDisconnect_Click" Visibility="Collapsed">
+                        <MenuItem.Icon>
+                            <Path Data="M9,13V19H12V13M9,5V11H12V5M9,1V3H12V1" Fill="Red" Stretch="Uniform" Width="12" Height="12"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
                 </MenuItem>
-            </MenuItem>
-        </Menu>
+            </Menu>
+        </Grid>
 
         <!-- AVALONDOCK MANAGER -->
         <dock:DockingManager Grid.Row="1" x:Name="dockManager" AllowMixedOrientation="True">

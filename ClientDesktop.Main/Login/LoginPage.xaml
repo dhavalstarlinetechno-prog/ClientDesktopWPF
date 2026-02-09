@@ -131,6 +131,7 @@
                    VerticalAlignment="Center" HorizontalAlignment="Right"
                    Margin="0,0,15,15" FontSize="13"/>
 
+        <!-- Added SelectedItem Binding -->
         <ComboBox x:Name="cmbServerName" 
                   Grid.Row="1" Grid.Column="1"
                   Height="28"
@@ -141,6 +142,7 @@
                   FontSize="12"
                   VerticalContentAlignment="Center"
                   ItemsSource="{Binding FilteredServers}"
+                  SelectedItem="{Binding SelectedServer, Mode=TwoWay}"
                   DisplayMemberPath="companyName"
                   
                   TextBoxBase.TextChanged="CmbServerName_TextChanged"
@@ -154,10 +156,13 @@
                    VerticalAlignment="Center" HorizontalAlignment="Right"
                    Margin="0,0,15,15" FontSize="13"/>
 
+        <!-- Added ItemsSource and Text Binding -->
         <ComboBox x:Name="cmbLogin" Grid.Row="2" Grid.Column="1"
                   Height="28" HorizontalAlignment="Stretch"
                   IsEditable="True" Margin="0,0,20,15" VerticalContentAlignment="Center"
-                  Text="100271" FontSize="12"/>
+                  FontSize="12"
+                  ItemsSource="{Binding LoginHistory}"
+                  Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"/>
 
         <!-- Row: Password -->
         <TextBlock Text="Password :" Grid.Row="3" Grid.Column="0"
@@ -168,7 +173,9 @@
         <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,15">
             <!-- Password Box Container -->
             <Grid Width="160" Height="28">
-                <PasswordBox x:Name="txtPassword" VerticalContentAlignment="Center" Padding="4,0,0,0" BorderBrush="#ABADB3" BorderThickness="1" FontSize="12"/>
+                <!-- Added PasswordChanged Event -->
+                <PasswordBox x:Name="txtPassword" VerticalContentAlignment="Center" Padding="4,0,0,0" BorderBrush="#ABADB3" BorderThickness="1" FontSize="12"
+                             PasswordChanged="TxtPassword_PasswordChanged"/>
                 <TextBox x:Name="txtPasswordVisible" Visibility="Collapsed" VerticalContentAlignment="Center" Padding="4,0,0,0" BorderBrush="#ABADB3" BorderThickness="1" FontSize="12"/>
             </Grid>
 
@@ -187,6 +194,7 @@
 
             <!-- Remember Me -->
             <CheckBox x:Name="checkBox1" Content="Remember Me"
+                      IsChecked="{Binding IsRememberMe}"
                       VerticalAlignment="Center" FontSize="13" Margin="0,0,0,0"/>
         </StackPanel>
 
@@ -198,7 +206,7 @@
 
             <Button x:Name="cancelButton" Content="Cancel" Width="100" Height="34"
                     Background="#EF5350" Style="{StaticResource FlatButtonStyle}" Margin="20,0,0,0"
-                    Click="CancelButton_Click"/>
+                    Command="{Binding CancelCommand}"/>
         </StackPanel>
 
         <!-- DISCLAIMER SECTION -->

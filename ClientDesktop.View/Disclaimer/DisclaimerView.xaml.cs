@@ -26,6 +26,13 @@ namespace ClientDesktop.View.Disclaimer
 
         private void Close_Click(object sender, RoutedEventArgs e)
         {
+            this.DialogResult = false;
+            this.Close();
+        }
+
+        private void Acknowledge_Click(object sender, RoutedEventArgs e)
+        {
+            this.DialogResult = true;
             this.Close();
         }
     }

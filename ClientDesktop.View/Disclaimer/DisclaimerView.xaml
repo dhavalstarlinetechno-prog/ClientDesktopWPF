@@ -81,7 +81,8 @@
                         HorizontalAlignment="Center"
                         Background="#4A78E4"
                         Foreground="White"
-                        FontWeight="SemiBold"/>
+                        FontWeight="SemiBold"
+                        Click="Acknowledge_Click"/>
             </Border>
         </Grid>
     </Border>

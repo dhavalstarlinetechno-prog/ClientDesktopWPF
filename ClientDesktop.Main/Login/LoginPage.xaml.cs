@@ -22,37 +22,53 @@ namespace ClientDesktop.Main.Login
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
-            Console.WriteLine("[UI] UserControl_Loaded called");
-
             if (DataContext == null)
             {
                 this.DataContext = new LoginPageViewModel();
             }
-            else
+
+            // 🔥 FIX 1: ViewModel se PasswordBox ko Sync karo (Auto-Fill ke liye)
+            if (DataContext is LoginPageViewModel vm)
             {
-                Console.WriteLine($"[UI] DataContext is already set: {DataContext.GetType().Name}");
+                // Agar VM mein pehle se password hai (Auto-fill), to UI mein dikhao
+                if (!string.IsNullOrEmpty(vm.Password) && txtPassword.Password != vm.Password)
+                {
+                    txtPassword.Password = vm.Password;
+                }
+
+                // Agar future mein VM change hota hai, to UI update karo
+                vm.PropertyChanged += (s, args) =>
+                {
+                    if (args.PropertyName == nameof(LoginPageViewModel.Password))
+                    {
+                        if (txtPassword.Password != vm.Password)
+                        {
+                            txtPassword.Password = vm.Password;
+                        }
+                    }
+                };
             }
 
             cmbServerName.Focus();
         }
 
-        //private void LoginButton_Click(object sender, RoutedEventArgs e)
-        //{
-        //    string password = _isPasswordVisible ? txtPasswordVisible.Text : txtPassword.Password;
-        //    string username = cmbLogin.Text;
-        //    string server = cmbServerName.Text;
+        // 🔥 FIX 2: PasswordBox se ViewModel ko update karo (Manual Typing ke liye)
+        // Ye method XAML mein "PasswordChanged" se link hai, par code mein missing tha.
+        private void TxtPassword_PasswordChanged(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is LoginPageViewModel vm)
+            {
+                // Loop rokne ke liye check
+                if (vm.Password != txtPassword.Password)
+                {
+                    vm.Password = txtPassword.Password;
+                }
+            }
+        }
 
-        //    // Basic Validation
-        //    if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
-        //    {
-        //        MessageBox.Show("Please enter valid credentials.", "Login Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-        //        return;
-        //    }
+        // --- Baki code Same rahega ---
 
-        //    MessageBox.Show($"Connecting to {server} as {username}...", "Login Processing", MessageBoxButton.OK, MessageBoxImage.Information);
-        //}
-
-        private void CancelButton_Click(object sender, RoutedEventArgs e)
+        private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
         }
 
@@ -62,24 +78,18 @@ namespace ClientDesktop.Main.Login
 
             if (_isPasswordVisible)
             {
-                // Show Text, Hide Dots
-                txtPasswordVisible.Text = txtPassword.Password;
+                txtPasswordVisible.Text = txtPassword.Password;
                 txtPasswordVisible.Visibility = Visibility.Visible;
                 txtPassword.Visibility = Visibility.Collapsed;
-
-                // Toggle Path Visibility (Open Eye Visible)
-                pathEyeClosed.Visibility = Visibility.Collapsed;
+                pathEyeClosed.Visibility = Visibility.Collapsed;
                 pathEyeOpen.Visibility = Visibility.Visible;
             }
             else
             {
-                // Show Dots, Hide Text
-                txtPassword.Password = txtPasswordVisible.Text;
+                txtPassword.Password = txtPasswordVisible.Text;
                 txtPassword.Visibility = Visibility.Visible;
                 txtPasswordVisible.Visibility = Visibility.Collapsed;
-
-                // Toggle Path Visibility (Closed Eye Visible)
-                pathEyeClosed.Visibility = Visibility.Visible;
+                pathEyeClosed.Visibility = Visibility.Visible;
                 pathEyeOpen.Visibility = Visibility.Collapsed;
             }
         }
@@ -87,21 +97,17 @@ namespace ClientDesktop.Main.Login
         private void Disclaimer_Click(object sender, MouseButtonEventArgs e)
         {
             MessageBox.Show("This application is for authorized use only.\nUnauthorized access is prohibited.", "Disclaimer", MessageBoxButton.OK, MessageBoxImage.Information);
-            // You can also open a web link here:
-            // System.Diagnostics.Process.Start("https://www.your-company.com/disclaimer");
-        }
+        }
 
         #region Server List Management
         private List<ServerList> Filter(string input)
         {
             var vm = this.DataContext as LoginPageViewModel;
-            // Safety checks
             if (vm == null || vm.AllServers == null) return new List<ServerList>();
 
-            // WinForms Logic Implementation
             if (string.IsNullOrWhiteSpace(input)) return new List<ServerList>();
 
-            input = input.Trim(); // Trim input for search logic
+            input = input.Trim();
 
             if (input.Length < Threshold) return new List<ServerList>();
 
@@ -237,7 +243,6 @@ namespace ClientDesktop.Main.Login
                 if (textBox != null)
                 {
                     textBox.Select(cmbServerName.Text.Length, 0);
-
                     textBox.Background = Brushes.White;
                 }
                 cmbServerName.Background = Brushes.White;
