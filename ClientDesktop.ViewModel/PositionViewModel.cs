@@ -1,46 +1,165 @@
-﻿// ViewModels/Details/PositionViewModel.cs
-using ClientDesktop.Core.Interfaces;
-using ClientDesktop.Core.Models;
+﻿using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Services;
+using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks; // Async tasks ke liye
+using System.Windows;       // UI Dispatcher ke liye
+using System.Windows.Data;
 
 namespace ClientDesktop.ViewModel
 {
     public class PositionViewModel : INotifyPropertyChanged
     {
-        private readonly IRepository<List<Position>> _positionRepo;
-
-        // ObservableCollection updates UI automatically when data is added
-        public ObservableCollection<Position> Positions { get; set; }
+        private readonly PositionService _positionService;
+        public ObservableCollection<PositionGridRow> GridRows { get; set; }
 
         public PositionViewModel()
         {
-            Positions = new ObservableCollection<Position>();
-            LoadData();
+            _positionService = new PositionService();
+            GridRows = new ObservableCollection<PositionGridRow>();
+
+            SessionManager.OnLoginSuccess += HandleLogin;
+            //SessionManager.OnLogout += HandleLogout;
+
+
         }
 
-        public void LoadData()
+        private void HandleLogin()
         {
-            Positions.Clear();
+            LoadDataAsync();
+        }
 
-            var dummyData = new List<Position>
+        public async void LoadDataAsync()
+        {
+            try
             {
-                new Position { SymbolName = "NIFTY FEB", LastInAt = DateTime.Now.AddMinutes(-10), Side = "Sell", Status = "Market", TotalVolume = 50, AveragePrice = 24990.00, CurrentPrice = 25593.60, Pnl = -181080.00m },
-                new Position { SymbolName = "BANKNIFTY", LastInAt = DateTime.Now.AddMinutes(-45), Side = "Buy", Status = "Market", TotalVolume = 25, AveragePrice = 46500.50, CurrentPrice = 46800.00, Pnl = 7500.00m },
-                new Position { SymbolName = "RELIANCE", LastInAt = DateTime.Now.AddHours(-2), Side = "Buy", Status = "Limit", TotalVolume = 100, AveragePrice = 2850.00, CurrentPrice = 2865.00, Pnl = 1500.00m },
-                new Position { SymbolName = "HDFCBANK", LastInAt = DateTime.Now.AddHours(-4), Side = "Sell", Status = "Market", TotalVolume = 50, AveragePrice = 1450.00, CurrentPrice = 1440.00, Pnl = 500.00m },
-                new Position { SymbolName = "TATAMOTORS", LastInAt = DateTime.Now.AddDays(-1), Side = "Buy", Status = "Market", TotalVolume = 200, AveragePrice = 950.00, CurrentPrice = 945.00, Pnl = -1000.00m },
-                new Position { SymbolName = "INFY", LastInAt = DateTime.Now.AddMinutes(-5), Side = "Sell", Status = "Market", TotalVolume = 100, AveragePrice = 1600.00, CurrentPrice = 1610.00, Pnl = -1000.00m },
-                new Position { SymbolName = "SBIN", LastInAt = DateTime.Now.AddMinutes(-30), Side = "Buy", Status = "Limit", TotalVolume = 300, AveragePrice = 750.00, CurrentPrice = 755.00, Pnl = 1500.00m }
-            };
+                var positionTask = _positionService.GetPositionsAsync();
+                var orderTask = _positionService.GetOrdersAsync();
 
-            foreach (var item in dummyData)
+                await Task.WhenAll(positionTask, orderTask);
+
+                var posResult = await positionTask;
+                var ordResult = await orderTask;
+
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    GridRows.Clear();
+
+                    var positionsList = posResult.Positions ?? new List<Position>();
+                    var ordersList = ordResult.Orders ?? new List<OrderModel>();
+
+                    // --- A. ADD POSITIONS ---
+                    foreach (var pos in positionsList)
+                    {
+                        // Mapping: Bid/Ask -> Sell/Buy
+                        string displaySide = pos.Side;
+                        if (string.Equals(pos.Side, "Bid", StringComparison.OrdinalIgnoreCase)) displaySide = "Sell";
+                        else if (string.Equals(pos.Side, "Ask", StringComparison.OrdinalIgnoreCase)) displaySide = "Buy";
+
+                        GridRows.Add(new PositionGridRow
+                        {
+                            Id = pos.Id,
+                            SymbolName = pos.SymbolName,
+                            Time = pos.LastInAt,
+                            Side = displaySide,
+                            OrderType = "Market",
+                            Volume = pos.TotalVolume,
+                            AveragePrice = pos.AveragePrice,
+                            CurrentPrice = pos.CurrentPrice,
+                            Pnl = pos.Pnl, // P/L Real Data
+                            Type = RowType.Position
+                        });
+                    }
+
+                    // --- B. ADD FOOTER (Summary) ---
+                    decimal totalPnl = positionsList.Sum(p => p.Pnl ?? 0);
+
+                    double balance = 50000.00;
+                    double credit = 1000.00;
+                    double equity = balance + credit + (double)totalPnl;
+                    double margin = 2000.00;
+                    double freeMargin = equity - margin;
+
+                    string footerText = $"Balance: {balance:N2}   Eq: {equity:N2}   Credit: {credit:N2}   Margin: {margin:N2}   Free: {freeMargin:N2}";
+
+                    GridRows.Add(new PositionGridRow
+                    {
+                        SymbolName = footerText,
+                        Type = RowType.Footer,
+                        Pnl = totalPnl, // Total Floating P/L
+                        Volume = null,
+                        AveragePrice = null,
+                        CurrentPrice = null
+                    });
+
+                    // --- C. ADD ORDERS ---
+                    foreach (var ord in ordersList)
+                    {
+                        string displaySide = ord.Side;
+                        if (string.Equals(ord.Side, "Bid", StringComparison.OrdinalIgnoreCase)) displaySide = "Sell";
+                        else if (string.Equals(ord.Side, "Ask", StringComparison.OrdinalIgnoreCase)) displaySide = "Buy";
+
+                        GridRows.Add(new PositionGridRow
+                        {
+                            Id = ord.OrderId,
+                            SymbolName = ord.SymbolName,
+                            Time = ord.UpdatedAt,
+                            Side = displaySide,
+                            OrderType = ord.OrderType,
+                            Volume = ord.Volume,
+                            AveragePrice = ord.Price, // Order Price
+                            CurrentPrice = ord.CurrentPrice,
+                            Pnl = null, // Orders me P/L nahi hota
+                            Type = RowType.Order
+                        });
+                    }
+                });
+            }
+            catch (Exception ex)
             {
-                Positions.Add(item);
+                Console.WriteLine("Data Load Error: " + ex.Message);
             }
         }
 
+        // Custom Sorting (Positions Only)
+        public void SortData(string sortBy, ListSortDirection direction)
+        {
+            var positions = GridRows.Where(r => r.Type == RowType.Position).ToList();
+            var footer = GridRows.FirstOrDefault(r => r.Type == RowType.Footer);
+            var orders = GridRows.Where(r => r.Type == RowType.Order).ToList();
+
+            Func<PositionGridRow, object> keySelector = sortBy switch
+            {
+                "SymbolName" => r => r.SymbolName,
+                "Time" => r => r.Time,
+                "Side" => r => r.Side,
+                "OrderType" => r => r.OrderType,
+                "Volume" => r => r.Volume,
+                "AveragePrice" => r => r.AveragePrice,
+                "CurrentPrice" => r => r.CurrentPrice,
+                "Pnl" => r => r.Pnl,
+                _ => r => r.Id
+            };
+
+            if (direction == ListSortDirection.Ascending)
+                positions = positions.OrderBy(keySelector).ToList();
+            else
+                positions = positions.OrderByDescending(keySelector).ToList();
+
+            GridRows.Clear();
+            foreach (var p in positions) GridRows.Add(p);
+            if (footer != null) GridRows.Add(footer);
+            foreach (var o in orders) GridRows.Add(o);
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string name = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
     }
 }

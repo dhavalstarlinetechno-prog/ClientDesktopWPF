@@ -1,5 +1,6 @@
 ﻿using AvalonDock.Layout;
 using AvalonDock.Layout.Serialization;
+using ClientDesktop.Infrastructure.Services;
 using ClientDesktop.View.Disclaimer;
 using ClientDesktop.ViewModel;
 using System.IO;
@@ -146,6 +147,8 @@ namespace ClientDesktop.Main
                 UserIconPath.Fill = new SolidColorBrush(Colors.Green);
                 MenuConnect.Visibility = Visibility.Collapsed;
                 MenuDisconnect.Visibility = Visibility.Visible;
+
+                SessionManager.TriggerLogin();
             }
             else
             {
@@ -154,6 +157,8 @@ namespace ClientDesktop.Main
                 UserIconPath.Fill = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#666666"));
                 MenuConnect.Visibility = Visibility.Visible;
                 MenuDisconnect.Visibility = Visibility.Collapsed;
+
+                SessionManager.TriggerLogout();
             }
         }
     }

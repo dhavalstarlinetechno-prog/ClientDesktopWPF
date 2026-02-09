@@ -1,28 +1,45 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using ClientDesktop.Infrastructure; // SessionManager ke liye
+using ClientDesktop.Infrastructure.Services;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace ClientDesktop.View.Details
 {
-    /// <summary>
-    /// Interaction logic for DetailsMainView.xaml
-    /// </summary>
     public partial class DetailsMainView : UserControl
     {
         public DetailsMainView()
         {
             InitializeComponent();
+
+            UpdateTabsVisibility(false);
+
+            // 2. Events Subscribe karo
+            SessionManager.OnLoginSuccess += () => Dispatcher.Invoke(() => UpdateTabsVisibility(true));
+            SessionManager.OnLogout += () => Dispatcher.Invoke(() => UpdateTabsVisibility(false));
+        }
+
+        private void UpdateTabsVisibility(bool isLoggedIn)
+        {
+            if (isLoggedIn)
+            {
+                if (TabPosition != null) TabPosition.Visibility = Visibility.Visible;
+                if (TabHistory != null) TabHistory.Visibility = Visibility.Visible;
+
+                if (MainTabControl != null && TabPosition != null)
+                {
+                    MainTabControl.SelectedItem = TabPosition;
+                }
+            }
+            else
+            {
+                if (TabPosition != null) TabPosition.Visibility = Visibility.Collapsed;
+                if (TabHistory != null) TabHistory.Visibility = Visibility.Collapsed;
+
+                if (MainTabControl != null && TabJournal != null)
+                {
+                    MainTabControl.SelectedItem = TabJournal;
+                }
+            }
         }
     }
 }

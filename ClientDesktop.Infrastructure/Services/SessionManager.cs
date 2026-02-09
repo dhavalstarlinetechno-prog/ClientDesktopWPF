@@ -66,6 +66,16 @@ namespace ClientDesktop.Infrastructure.Services
             //ServerListData = null;
         }
         #endregion
+
+        #region Action (Callbacks)
+
+        public static event Action OnLoginSuccess;
+        public static event Action OnLogout;
+
+        public static void TriggerLogin() => OnLoginSuccess?.Invoke();
+        public static void TriggerLogout() => OnLogout?.Invoke();
+
+        #endregion Action (Callbacks)
     }
 
     #region LoginInfo Class

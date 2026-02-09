@@ -11,7 +11,6 @@
     <UserControl.Resources>
         <conv:ProfitToColorConverter x:Key="ProfitColorConverter"/>
         <conv:OrderTypeToColorConverter x:Key="OrderTypeColorConverter"/>
-
         <Style x:Key="RightAlignCell" TargetType="TextBlock">
             <Setter Property="HorizontalAlignment" Value="Right"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
@@ -24,97 +23,200 @@
     </UserControl.DataContext>
 
     <Grid Background="White">
-
-        <DataGrid ItemsSource="{Binding Positions}"
+        <DataGrid ItemsSource="{Binding GridRows}"
                   Style="{StaticResource CustomDataGrid}"  
                   HeadersVisibility="Column"
                   GridLinesVisibility="All"
-                  BorderThickness="0">
+                  BorderThickness="0"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  CanUserSortColumns="True"
+                  Sorting="DataGrid_Sorting"
+                  SelectionUnit="FullRow">
+
+            <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow">
+
+                    <Setter Property="Background" Value="White"/>
+                    <Setter Property="Foreground" Value="Black"/>
+                    <Setter Property="FontWeight" Value="Normal"/>
+
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="DataGridRow">
+                                <Border x:Name="DGR_Border"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        Background="{TemplateBinding Background}"
+                                        SnapsToDevicePixels="True">
+                                    <Grid>
+                                        <DataGridCellsPresenter x:Name="CellsPresenter"
+                                                                ItemsPanel="{TemplateBinding ItemsPanel}"
+                                                                SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+
+                                        <Grid x:Name="FooterPanel" Visibility="Collapsed">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="100"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <TextBlock Text="{Binding SymbolName}" 
+                                                       Grid.Column="0"
+                                                       VerticalAlignment="Center"
+                                                       Margin="5,0,0,0"
+                                                       FontWeight="Bold"/>
+
+                                            <TextBlock x:Name="FooterPnlText"
+                                                       Text="{Binding Pnl}" 
+                                                       Grid.Column="1"
+                                                       HorizontalAlignment="Right"
+                                                       VerticalAlignment="Center"
+                                                       Margin="0,0,10,0"
+                                                       FontWeight="Bold"
+                                                       Foreground="{Binding Pnl, Converter={StaticResource ProfitColorConverter}}"/>
+                                        </Grid>
+                                    </Grid>
+                                </Border>
+
+                                <ControlTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding Type}" Value="Footer">
+                                        <Setter TargetName="CellsPresenter" Property="Visibility" Value="Collapsed"/>
+                                        <Setter TargetName="FooterPanel" Property="Visibility" Value="Visible"/>
+                                        <Setter TargetName="DGR_Border" Property="Background" Value="#E0E0E0"/>
+                                    </DataTrigger>
+
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding Type}" Value="Footer"/>
+                                            <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource Self}}" Value="True"/>
+                                        </MultiDataTrigger.Conditions>
+                                        <Setter TargetName="DGR_Border" Property="Background" Value="#E0E0E0"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter TargetName="FooterPnlText" Property="Foreground" Value="White"/>
+                                    </MultiDataTrigger>
+
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding Type}" Value="Position"/>
+                                            <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource Self}}" Value="True"/>
+                                        </MultiDataTrigger.Conditions>
+                                        <Setter TargetName="DGR_Border" Property="Background" Value="#0078D7"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                    </MultiDataTrigger>
+
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding Type}" Value="Order"/>
+                                            <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource Self}}" Value="True"/>
+                                        </MultiDataTrigger.Conditions>
+                                        <Setter TargetName="DGR_Border" Property="Background" Value="#0078D7"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                    </MultiDataTrigger>
+
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </DataGrid.RowStyle>
 
             <DataGrid.Columns>
-
-                <!--For adding icon in front of symbol, we can use DataGridTemplateColumn, but it will cause performance issue when there are many rows. So we use DataGridTextColumn for better performance.-->
+                <DataGridTemplateColumn Header="Symbol" Width="2.5*" SortMemberPath="SymbolName">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding SymbolName}" VerticalAlignment="Center" FontWeight="SemiBold" Margin="5,0,0,0"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                
+                <!--added for adding icon infront of symbol--> 
                 <!--<DataGridTemplateColumn Header="Symbol" Width="1.5*" SortMemberPath="SymbolName">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
 
                                 <Border Margin="5,0,6,0" VerticalAlignment="Center">
-
                                     <Border.LayoutTransform>
                                         <ScaleTransform ScaleX="0.8" ScaleY="0.8"/>
                                     </Border.LayoutTransform>
 
                                     <Grid Width="14" Height="16">
                                         <Path Data="M 2,0 L 10,0 L 14,4 L 14,16 L 2,16 Z"
-                              Stroke="{Binding Side, Converter={StaticResource OrderTypeColorConverter}}"
-                              StrokeThickness="1"
-                              Fill="White"/>
+                                              Stroke="{Binding Side, Converter={StaticResource OrderTypeColorConverter}}"
+                                              StrokeThickness="1"
+                                              Fill="White"/>
 
                                         <Path Data="M 10,0 L 10,4 L 14,4"
-                              Stroke="{Binding Side, Converter={StaticResource OrderTypeColorConverter}}"
-                              StrokeThickness="1"
-                              Fill="White"/>
+                                              Stroke="{Binding Side, Converter={StaticResource OrderTypeColorConverter}}"
+                                              StrokeThickness="1"
+                                              Fill="White"/>
 
                                         <Path Data="M 4,6 L 10,6 M 4,9 L 10,9 M 4,12 L 8,12"
-                              Stroke="{Binding Side, Converter={StaticResource OrderTypeColorConverter}}"
-                              StrokeThickness="1"/>
+                                              Stroke="{Binding Side, Converter={StaticResource OrderTypeColorConverter}}"
+                                              StrokeThickness="1"/>
                                     </Grid>
                                 </Border>
-
                                 <TextBlock Text="{Binding SymbolName}" 
-                           VerticalAlignment="Center" 
-                           FontWeight="SemiBold"/>
+                                           VerticalAlignment="Center" 
+                                           FontWeight="SemiBold"/>
                             </StackPanel>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>-->
 
-                <DataGridTextColumn Header="Symbol" 
-                    Binding="{Binding SymbolName}" 
-                    Width="1.5*" 
-                    FontWeight="SemiBold"/>
+                <DataGridTextColumn Header="Time" Binding="{Binding Time, StringFormat='{}{0:yyyy.MM.dd HH:mm}'}" ElementStyle="{StaticResource RightAlignCell}" Width="1.5*" SortMemberPath="Time"/>
 
-                <DataGridTextColumn Header="Time" 
-                                    Binding="{Binding LastInAt, StringFormat='{}{0:yyyy.MM.dd HH:mm:ss}'}" 
-                                    ElementStyle="{StaticResource RightAlignCell}" HeaderStyle="{StaticResource RightHeaderStyle}"
-                                    Width="1.8*"/>
+                <DataGridTemplateColumn Header="Type" Width="0.8*" SortMemberPath="Side">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Side}" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,5,0">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="Black"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Side}" Value="Buy">
+                                                <Setter Property="Foreground" Value="#007ACC"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Side}" Value="Sell">
+                                                <Setter Property="Foreground" Value="#FF3B30"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected}" Value="True">
+                                                <Setter Property="Foreground" Value="White"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
 
-                <DataGridTextColumn Header="Type" Binding="{Binding Side}" 
-                                    ElementStyle="{StaticResource RightAlignCell}" HeaderStyle="{StaticResource RightHeaderStyle}"
-                                    Width="0.8*"/>
+                <DataGridTextColumn Header="Order Type" Binding="{Binding OrderType}" ElementStyle="{StaticResource RightAlignCell}" Width="1*" SortMemberPath="OrderType"/>
+                <DataGridTextColumn Header="Volume" Binding="{Binding Volume}" ElementStyle="{StaticResource RightAlignCell}" Width="0.8*" SortMemberPath="Volume"/>
+                <DataGridTextColumn Header="Avg Price" Binding="{Binding AveragePrice}" ElementStyle="{StaticResource RightAlignCell}" Width="1*" SortMemberPath="AveragePrice"/>
+                <DataGridTextColumn Header="Price" Binding="{Binding CurrentPrice}" ElementStyle="{StaticResource RightAlignCell}" Width="1*" SortMemberPath="CurrentPrice"/>
 
-                <DataGridTextColumn Header="Order Type" Binding="{Binding Status}" 
-                                    ElementStyle="{StaticResource RightAlignCell}" HeaderStyle="{StaticResource RightHeaderStyle}"
-                                    Width="1*"/>
-
-                <DataGridTextColumn Header="Volume" Binding="{Binding TotalVolume}" 
-                                    ElementStyle="{StaticResource RightAlignCell}" HeaderStyle="{StaticResource RightHeaderStyle}"
-                                    Width="0.8*"/>
-
-                <DataGridTextColumn Header="Avg Price" Binding="{Binding AveragePrice}" 
-                                    ElementStyle="{StaticResource RightAlignCell}" HeaderStyle="{StaticResource RightHeaderStyle}"
-                                    Width="1*"/>
-
-                <DataGridTextColumn Header="Price" Binding="{Binding CurrentPrice}" 
-                                    ElementStyle="{StaticResource RightAlignCell}" HeaderStyle="{StaticResource RightHeaderStyle}"
-                                    Width="1*"/>
-
-                <DataGridTextColumn Header="Floating P/L" Binding="{Binding Pnl}" Width="1.2*" HeaderStyle="{StaticResource RightHeaderStyle}">
-                    <DataGridTextColumn.ElementStyle>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="HorizontalAlignment" Value="Right"/>
-                            <Setter Property="Margin" Value="0,0,10,0"/>
-                            <Setter Property="Foreground" Value="{Binding Pnl, Converter={StaticResource ProfitColorConverter}}"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected}" Value="True">
-                                    <Setter Property="Foreground" Value="White"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </DataGridTextColumn.ElementStyle>
-                </DataGridTextColumn>
-
+                <DataGridTemplateColumn Header="Floating P/L" Width="1.2*" SortMemberPath="Pnl">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Pnl}" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,10,0">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="{Binding Pnl, Converter={StaticResource ProfitColorConverter}}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Type}" Value="Order">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected}" Value="True">
+                                                <Setter Property="Foreground" Value="White"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
     </Grid>

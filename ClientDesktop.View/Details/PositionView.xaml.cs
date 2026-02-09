@@ -1,28 +1,30 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
+﻿using ClientDesktop.ViewModel;
+using System.ComponentModel;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace ClientDesktop.View.Details
 {
-    /// <summary>
-    /// Interaction logic for PositionView.xaml
-    /// </summary>
     public partial class PositionView : UserControl
     {
         public PositionView()
         {
             InitializeComponent();
+        }
+
+        private void DataGrid_Sorting(object sender, DataGridSortingEventArgs e)
+        {
+            e.Handled = true;
+
+            if (this.DataContext is PositionViewModel vm)
+            {
+                ListSortDirection direction = (e.Column.SortDirection != ListSortDirection.Ascending)
+                                            ? ListSortDirection.Ascending
+                                            : ListSortDirection.Descending;
+
+                vm.SortData(e.Column.SortMemberPath, direction);
+
+                e.Column.SortDirection = direction;
+            }
         }
     }
 }

@@ -2,53 +2,63 @@
 {
     public class RootOrderResponse
     {
-        public List<OrderModel> data { get; set; }
-        public string exception { get; set; }
-        public string successMessage { get; set; }
-        public int returnID { get; set; }
-        public int action { get; set; }
-        public bool isSuccess { get; set; }
+        public List<OrderModel> Data { get; set; }
+        public string Exception { get; set; }
+        public string SuccessMessage { get; set; }
+        public int ReturnID { get; set; }
+        public int Action { get; set; }
+        public bool IsSuccess { get; set; }
     }
 
     public class OrderParentSharing
     {
-        public string dealerId { get; set; }
-        public decimal sharing { get; set; }
+        public string DealerId { get; set; }
+        public decimal Sharing { get; set; }
     }
 
     public class OrderModel
     {
-        public string orderId { get; set; }
-        public string device { get; set; }
-        public int symbolId { get; set; }
-        public string symbolName { get; set; }
-        public int securityId { get; set; }
-        public int symbolDigit { get; set; }
-        public string side { get; set; }
-        public DateTime? symbolExpiry { get; set; }
-        public DateTime? symbolExpiryClose { get; set; }
-        public double symbolContractSize { get; set; }
-        public double currentPrice { get; set; }
-        public string reason { get; set; }
-        public string clientIp { get; set; }
-        public decimal margin { get; set; }
-        public double price { get; set; }
-        public double volume { get; set; }
-        public List<OrderParentSharing> parentSharing { get; set; }
-        public DateTime createdAt { get; set; }
-        public string masterSymbolName { get; set; }
-        public string orderType { get; set; }
-        public string marginType { get; set; }
-        public string orderFulfillment { get; set; }
-        public string comment { get; set; }
-        public DateTime updatedAt { get; set; }
-        public string securityName { get; set; }
-        public string symbolDetail { get; set; }
-        public string spreadType { get; set; }
-        public double spreadValue { get; set; }
-        public double spreadBalance { get; set; }
-        public string operatorId { get; set; }
-        public string username { get; set; }
-        public string userId { get; set; }
+        public string OrderId { get; set; }
+        public string Device { get; set; }
+        public int SymbolId { get; set; }
+        public string SymbolName { get; set; }
+        public int SecurityId { get; set; }
+        public int SymbolDigit { get; set; }
+        public string Side { get; set; }
+
+        public DateTime? SymbolExpiry { get; set; }
+        public DateTime? SymbolExpiryClose { get; set; }
+
+        public double SymbolContractSize { get; set; }
+        public double CurrentPrice { get; set; }
+        public string Reason { get; set; }
+        public string ClientIp { get; set; }
+
+        public decimal Margin { get; set; }
+        public double Price { get; set; }
+        public double Volume { get; set; }
+
+        public List<OrderParentSharing> ParentSharing { get; set; }
+
+        public DateTime CreatedAt { get; set; }
+
+        public string MasterSymbolName { get; set; }
+        public string OrderType { get; set; }
+        public string MarginType { get; set; }
+        public string OrderFulfillment { get; set; }
+        public string Comment { get; set; }
+
+        public DateTime UpdatedAt { get; set; }
+
+        public string SecurityName { get; set; }
+        public string SymbolDetail { get; set; }
+
+        public string SpreadType { get; set; }
+        public double SpreadValue { get; set; }
+        public double SpreadBalance { get; set; }
+
+        public string OperatorId { get; set; }
+        public string UserName { get; set; }
+        public string UserId { get; set; }
     }
 }

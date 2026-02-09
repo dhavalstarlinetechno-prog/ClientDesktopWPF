@@ -5,23 +5,23 @@
              xmlns:local="clr-namespace:ClientDesktop.View.Details">
 
     <Grid>
-        <TabControl TabStripPlacement="Bottom" 
-            Style="{StaticResource CustomTabControl}" Background="White">
+        <TabControl x:Name="MainTabControl" TabStripPlacement="Bottom" 
+                    Style="{StaticResource CustomTabControl}" Background="White">
 
-            <TabItem Header="Position" Style="{StaticResource CustomTabItem}">
+            <TabItem x:Name="TabPosition" Header="Position" Style="{StaticResource CustomTabItem}">
                 <local:PositionView />
             </TabItem>
 
-            <TabItem Header="History" Style="{StaticResource CustomTabItem}">
+            <TabItem x:Name="TabHistory" Header="History" Style="{StaticResource CustomTabItem}">
                 <TextBlock Text="History Coming Soon..." VerticalAlignment="Center" HorizontalAlignment="Center"/>
             </TabItem>
 
-            <TabItem Header="Message" Style="{StaticResource CustomTabItem}">
-                <TextBlock Text="No Messages" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+            <TabItem x:Name="TabMessage" Header="Message" Style="{StaticResource CustomTabItem}">
+                <views:MessageView />
             </TabItem>
 
-            <TabItem Header="Journal" Style="{StaticResource CustomTabItem}">
-                <TextBlock Text="Journal Empty" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+            <TabItem x:Name="TabJournal" Header="Journal" Style="{StaticResource CustomTabItem}">
+                <views:JournalView />
             </TabItem>
 
         </TabControl>
