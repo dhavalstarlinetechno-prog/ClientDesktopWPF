@@ -1,11 +1,10 @@
-﻿using System;
-using System.Windows;
+﻿using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media.Imaging;
 
 namespace ClientDesktop.Main.Login
 {
-    public partial class LoginPage : Window
+    public partial class LoginPage : UserControl
     {
         private bool _isPasswordVisible = false;
 
@@ -38,7 +37,7 @@ namespace ClientDesktop.Main.Login
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
-            this.Close();
+            //this.Close();
         }
 
         private void BtnEye_Click(object sender, RoutedEventArgs e)

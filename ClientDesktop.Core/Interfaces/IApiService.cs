@@ -1,4 +1,6 @@
-﻿namespace ClientDesktop.Core.Interfaces
+﻿using System.Net.Http;
+
+namespace ClientDesktop.Core.Interfaces
 {
     public interface IApiService
     {

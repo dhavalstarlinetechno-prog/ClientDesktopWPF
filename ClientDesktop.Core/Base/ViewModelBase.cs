@@ -1,11 +1,14 @@
-﻿using System.ComponentModel;
+﻿using ClientDesktop.Core.Interfaces;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace ClientDesktop.Infrastructure.Base
+namespace ClientDesktop.Core.Base
 {
-    public class ViewModelBase : INotifyPropertyChanged
+    public class ViewModelBase : INotifyPropertyChanged, ICloseable
     {
         public event PropertyChangedEventHandler? PropertyChanged;
+
+        public Action? CloseAction { get; set; }
 
         protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {

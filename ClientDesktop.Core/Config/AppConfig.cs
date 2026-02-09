@@ -1,4 +1,6 @@
-﻿namespace ClientDesktop.Core.Config
+﻿using System.IO;
+
+namespace ClientDesktop.Core.Config
 {
     public static class AppConfig
     {
@@ -55,7 +57,7 @@
         public static readonly string ServerListFile = @"C:\Client Desktop\Json Response\serverlist.txt";
         public static readonly string dataFolder = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "TraderApp",
+            "ClientDesktop",
             "Data"
         );
         #endregion

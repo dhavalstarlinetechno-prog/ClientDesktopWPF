@@ -52,6 +52,15 @@ obj/
 /ClientDesktop.Main/obj/ClientDesktop.Main.csproj.nuget.g.targets
 /ClientDesktop.View/obj/ClientDesktop.View.csproj.nuget.g.targets
 /ClientDesktop.ViewModel/obj/ClientDesktop.ViewModel.csproj.nuget.g.targets
+/ClientDesktop.Main/bin/Debug/net8.0-windows/ClientDesktop.Main.runtimeconfig.json
+/ClientDesktop.ViewModel/obj/Debug/net8.0/ClientDesktop.ViewModel.GlobalUsings.g.cs
+/ClientDesktop.Core/obj/Debug/net8.0/.NETCoreApp,Version=v8.0.AssemblyAttributes.cs
+/ClientDesktop.Core/obj/Debug/net8.0/ClientDesktop.Core.GlobalUsings.g.cs
+/ClientDesktop.Infrastructure/obj/Debug/net8.0/.NETCoreApp,Version=v8.0.AssemblyAttributes.cs
+/ClientDesktop.Infrastructure/obj/Debug/net8.0/ClientDesktop.Infrastructure.GlobalUsings.g.cs
+/ClientDesktop.Main/obj/Debug/net8.0-windows/Login/LoginWindow.g.i.cs
+/ClientDesktop.Main/obj/Release/net8.0-windows/Login/LoginPage.baml
+/ClientDesktop.Main/obj/Release/net8.0-windows/Login/LoginPage.g.cs
 /.vs/ProjectSettings.json
 /.vs/slnx.sqlite
 /ClientDesktop.Main/obj/Debug/net8.0-windows/Login/LoginWindow.g.i.cs
