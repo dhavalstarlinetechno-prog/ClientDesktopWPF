@@ -2,6 +2,7 @@
 using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Helpers;
+using ClientDesktop.Models;
 using Newtonsoft.Json;
 using System.Text;
 
@@ -57,7 +58,7 @@ namespace ClientDesktop.Infrastructure.Services
                 else
                 {
                     // Incremental update check
-                    var lastDate = historyList.Max(h => h.createdOn);
+                    var lastDate = historyList.Max(h => h.CreatedOn);
                     if (lastDate.Date <= DateTime.Today)
                     {
                         fromDate = lastDate;
@@ -76,7 +77,7 @@ namespace ClientDesktop.Infrastructure.Services
                     if (success && apiData != null && apiData.Count > 0)
                     {
                         // Remove overlaps and add new data
-                        var dataToRemove = historyList.Where(h => h.createdOn >= fromDate && h.createdOn <= toDate).ToList();
+                        var dataToRemove = historyList.Where(h => h.CreatedOn >= fromDate && h.CreatedOn <= toDate).ToList();
                         foreach (var item in dataToRemove) historyList.Remove(item);
 
                         historyList.AddRange(apiData);
@@ -277,10 +278,10 @@ namespace ClientDesktop.Infrastructure.Services
                     var result = JsonConvert.DeserializeObject<HistoryResponse>(responseString);
 
                     if (result == null) return (false, "Invalid response from server", null);
-                    if (!result.isSuccess || result.data == null)
-                        return (false, result.successMessage ?? "Failed to retrieve history data", null);
+                    if (!result.IsSuccess || result.Data == null)
+                        return (false, result.SuccessMessage ?? "Failed to retrieve history data", null);
 
-                    return (true, null, result.data);
+                    return (true, null, result.Data);
                 }
             }
             catch (Exception ex)

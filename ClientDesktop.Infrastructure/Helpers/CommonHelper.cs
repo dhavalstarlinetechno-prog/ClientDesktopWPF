@@ -1,6 +1,7 @@
 ﻿using ClientDesktop.Core.Config;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Services;
+using ClientDesktop.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Data;

@@ -1,49 +1,61 @@
-﻿namespace ClientDesktop.Core.Models
+﻿using System;
+using System.Collections.Generic;
+
+namespace ClientDesktop.Models
 {
     public class HistoryModel
     {
-        public int clientDealId { get; set; }
-        public string operatorId { get; set; }
-        public string clientId { get; set; }
-        public string clientName { get; set; }
-        public string dealerId { get; set; }
-        public string orderId { get; set; }
-        public string symbolName { get; set; }
-        public string orderType { get; set; }
-        public string dealType { get; set; }
-        public string side { get; set; }
-        public decimal price { get; set; }
-        public decimal volume { get; set; }
-        public decimal currentPrice { get; set; }
-        public string dealStatus { get; set; }
-        public decimal inVolume { get; set; }
-        public decimal outVolume { get; set; }
-        public decimal pnl { get; set; }
-        public decimal uplineCommission { get; set; }
-        public string clientIp { get; set; }
-        public string device { get; set; }
-        public string reason { get; set; }
-        public string comment { get; set; }
-        public DateTime createdOn { get; set; }
-        public string symbolDetail { get; set; }
-        public int symbolDigits { get; set; }
-        public string refId { get; set; }
-        public string positionId { get; set; }
-        public string currency { get; set; }
-        public decimal fee { get; set; }
-        public decimal swap { get; set; }
-        public decimal sl { get; set; }
-        public decimal tp { get; set; }
-        public int refIDAuto { get; set; }
-        public int orderIDAuto { get; set; }
-        public int positionIDAuto { get; set; }
+        public int ClientDealId { get; set; }
+        public string OperatorId { get; set; }
+        public string ClientId { get; set; }
+        public string ClientName { get; set; }
+        public string DealerId { get; set; }
+        public string OrderId { get; set; }
+        public string SymbolName { get; set; }
+        public string OrderType { get; set; }
+        public string DealType { get; set; }
+        public string Side { get; set; }
+
+        public decimal Price { get; set; }
+        public decimal Volume { get; set; }
+        public decimal CurrentPrice { get; set; }
+
+        public string DealStatus { get; set; }
+
+        public decimal InVolume { get; set; }
+        public decimal OutVolume { get; set; }
+        public decimal Pnl { get; set; }
+        public decimal UplineCommission { get; set; }
+
+        public string ClientIp { get; set; }
+        public string Device { get; set; }
+        public string Reason { get; set; }
+        public string Comment { get; set; }
+
+        public DateTime CreatedOn { get; set; }
+
+        public string SymbolDetail { get; set; }
+        public int SymbolDigits { get; set; }
+
+        public string RefId { get; set; }
+        public string PositionId { get; set; }
+        public string Currency { get; set; }
+
+        public decimal Fee { get; set; }
+        public decimal Swap { get; set; }
+        public decimal Sl { get; set; }
+        public decimal Tp { get; set; }
+
+        public int RefIDAuto { get; set; }
+        public int OrderIDAuto { get; set; }
+        public int PositionIDAuto { get; set; }
     }
 
     public class HistoryResponse
     {
-        public List<HistoryModel> data { get; set; }
-        public bool isSuccess { get; set; }
-        public string exception { get; set; }
-        public string successMessage { get; set; }
+        public List<HistoryModel> Data { get; set; }
+        public bool IsSuccess { get; set; }
+        public string Exception { get; set; }
+        public string SuccessMessage { get; set; }
     }
 }
