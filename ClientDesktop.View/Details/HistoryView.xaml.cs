@@ -38,9 +38,7 @@ namespace ClientDesktop.View.Details
             MenuOrders.IsChecked = false;
             MenuPosition.IsChecked = false;
 
-            // Sirf current wale ko Check karo
             item.IsChecked = true;
-
 
             HistoryItems.Clear();
             NoDataLabel.Visibility = Visibility.Visible;

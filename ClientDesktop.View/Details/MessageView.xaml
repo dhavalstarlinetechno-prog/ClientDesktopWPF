@@ -13,13 +13,13 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Background="#E0E0E0" Padding="5">
+        <Border Grid.Row="0" Background="#FFF" Padding="5">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <TextBlock Text="Start Date:" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                <DatePicker SelectedDate="{Binding StartDate}" Width="100" Margin="0,0,10,0"/>
+                <TextBlock Text="Start Date: " VerticalAlignment="Center" Margin="0,0,5,0" FontSize="13"/>
+                <DatePicker SelectedDate="{Binding StartDate}" Style="{StaticResource CustomDatePickerStyle}" Width="120" Margin="0,0,10,0"/>
 
-                <TextBlock Text="End Date:" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                <DatePicker SelectedDate="{Binding EndDate}" Width="100" Margin="0,0,10,0"/>
+                <TextBlock Text="End Date: " VerticalAlignment="Center" Margin="0,0,5,0" FontSize="13"/>
+                <DatePicker SelectedDate="{Binding EndDate}" Style="{StaticResource CustomDatePickerStyle}" Width="120" Margin="0,0,10,0"/>
 
                 <Button Content="Go" Command="{Binding FilterCommand}" 
                         Width="50" Background="#007ACC" Foreground="White"/>

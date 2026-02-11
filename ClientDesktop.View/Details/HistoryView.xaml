@@ -114,9 +114,12 @@
                         <ComboBoxItem Content="All History"/>
                     </ComboBox>
 
-                    <DatePicker x:Name="StartDatePicker" Width="100"/>
+                    <DatePicker x:Name="StartDatePicker" Width="130" 
+            Style="{StaticResource CustomDatePickerStyle}"/>
                     <TextBlock Text="-" Style="{StaticResource HeaderLabel}"/>
-                    <DatePicker x:Name="EndDatePicker" Width="100"/>
+                    <DatePicker x:Name="EndDatePicker" Width="130" 
+            Style="{StaticResource CustomDatePickerStyle}"/>
+
 
                     <Button Content="Request" Width="70" Margin="5,0,5,0" 
                             Background="#5D9CEC" Foreground="White" BorderThickness="0" 
@@ -142,7 +145,7 @@
                       
                       Background="White" 
                       RowHeaderWidth="0"
-                      RowHeight="28">
+                      RowHeight="22">
 
                 <DataGrid.Resources>
                     <Style TargetType="DataGridColumnHeader">
@@ -153,10 +156,18 @@
                         <Setter Property="HorizontalContentAlignment" Value="Left"/>
                         <Setter Property="VerticalContentAlignment" Value="Center"/>
                         <Setter Property="FontWeight" Value="SemiBold"/>
-
                         <Setter Property="BorderThickness" Value="0,0,1,1"/>
                         <Setter Property="BorderBrush" Value="#D0D0D0"/>
+
+                        <!-- Disable Hover Effect -->
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#F4F4F4"/>
+                                <Setter Property="Foreground" Value="#333333"/>
+                            </Trigger>
+                        </Style.Triggers>
                     </Style>
+
 
                     <Style TargetType="DataGridCell">
                         <Setter Property="Padding" Value="5,0"/>
@@ -204,7 +215,7 @@
                       
                       Background="White" 
                       RowHeaderWidth="0"
-                      RowHeight="28">
+                      RowHeight="22">
 
                 <DataGrid.Resources>
                     <Style TargetType="DataGridColumnHeader">
