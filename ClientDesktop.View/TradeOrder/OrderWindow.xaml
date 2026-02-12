@@ -1,0 +1,297 @@
+﻿<Window x:Class="ClientDesktop.View.TradeOrder.OrderWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Order" Height="410" Width="800"
+        Background="White" ResizeMode="NoResize" WindowStartupLocation="CenterScreen"
+        Loaded="Window_Loaded">
+
+    <Window.Resources>
+        <!-- Standard Label Style -->
+        <Style x:Key="LabelStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#444"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="HorizontalAlignment" Value="Right"/>
+            <Setter Property="Margin" Value="0,0,10,0"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+
+        <!-- Value Text Style -->
+        <Style x:Key="ValueStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+        </Style>
+
+        <!-- Input Box Style -->
+        <Style TargetType="TextBox">
+            <Setter Property="Height" Value="26"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="5,0"/>
+            <Setter Property="BorderBrush" Value="#CCC"/>
+        </Style>
+
+        <!-- ComboBox Style -->
+        <Style TargetType="ComboBox">
+            <Setter Property="Height" Value="26"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+    </Window.Resources>
+
+    <!-- Main Layout Grid -->
+    <Grid Margin="15">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="280"/>
+            <!-- Left: Info -->
+            <ColumnDefinition Width="*"/>
+            <!-- Right: Action -->
+        </Grid.ColumnDefinitions>
+
+        <!-- ========================================== -->
+        <!-- LEFT COLUMN: Information Panels -->
+        <!-- ========================================== -->
+        <StackPanel Grid.Column="0" Margin="0,0,15,0" VerticalAlignment="Top">
+
+            <!-- 1. Account Detail Group -->
+            <GroupBox Header="Account Detail:" BorderBrush="#DDD" Padding="10">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="22"/>
+                        <RowDefinition Height="22"/>
+                        <RowDefinition Height="22"/>
+                        <RowDefinition Height="22"/>
+                        <RowDefinition Height="22"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="User Name :" Grid.Row="0" Style="{StaticResource LabelStyle}"/>
+                    <TextBlock x:Name="lblUsername" Text="Demo" Grid.Row="0" Grid.Column="1" Style="{StaticResource ValueStyle}"/>
+
+                    <TextBlock Text="Balance :" Grid.Row="1" Style="{StaticResource LabelStyle}"/>
+                    <TextBlock x:Name="lblBalance" Text="579.60" Grid.Row="1" Grid.Column="1" Style="{StaticResource ValueStyle}"/>
+
+                    <TextBlock Text="Credit :" Grid.Row="2" Style="{StaticResource LabelStyle}"/>
+                    <TextBlock x:Name="lblCredit" Text="500 100.00" Grid.Row="2" Grid.Column="1" Style="{StaticResource ValueStyle}"/>
+
+                    <TextBlock Text="Occupied Margin :" Grid.Row="3" Style="{StaticResource LabelStyle}"/>
+                    <TextBlock x:Name="lblOcupiedMargin" Text="328 921.17" Grid.Row="3" Grid.Column="1" Style="{StaticResource ValueStyle}"/>
+
+                    <TextBlock Text="Free Margin :" Grid.Row="4" Style="{StaticResource LabelStyle}"/>
+                    <TextBlock x:Name="lblFreeMargin" Text="171 284.79" Grid.Row="4" Grid.Column="1" Style="{StaticResource ValueStyle}"/>
+                </Grid>
+            </GroupBox>
+
+            <!-- 2. Symbol Detail Group -->
+            <GroupBox Header="Symbol Detail:" Margin="0,15,0,0" BorderBrush="#DDD" Padding="10">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="22"/>
+                        <RowDefinition Height="22"/>
+                        <RowDefinition Height="22"/>
+                        <RowDefinition Height="22"/>
+                        <RowDefinition Height="22"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="Min Value :" Grid.Row="0" Style="{StaticResource LabelStyle}"/>
+                    <TextBlock x:Name="lblMinValue" Text="0.1" Grid.Row="0" Grid.Column="1" Style="{StaticResource ValueStyle}"/>
+
+                    <TextBlock Text="Step Value :" Grid.Row="1" Style="{StaticResource LabelStyle}"/>
+                    <TextBlock x:Name="lblStepValue" Text="0.1" Grid.Row="1" Grid.Column="1" Style="{StaticResource ValueStyle}"/>
+
+                    <TextBlock Text="One Value :" Grid.Row="2" Style="{StaticResource LabelStyle}"/>
+                    <TextBlock x:Name="lblOneValue" Text="5" Grid.Row="2" Grid.Column="1" Style="{StaticResource ValueStyle}"/>
+
+                    <TextBlock Text="Total Value :" Grid.Row="3" Style="{StaticResource LabelStyle}"/>
+                    <TextBlock x:Name="lblTotalValue" Text="10" Grid.Row="3" Grid.Column="1" Style="{StaticResource ValueStyle}"/>
+
+                    <TextBlock Text="Limit Stop Value :" Grid.Row="4" Style="{StaticResource LabelStyle}"/>
+                    <TextBlock x:Name="lblLimitStop" Text="100" Grid.Row="4" Grid.Column="1" Style="{StaticResource ValueStyle}"/>
+                </Grid>
+            </GroupBox>
+        </StackPanel>
+
+        <!-- ========================================== -->
+        <!-- RIGHT COLUMN: Actions (StackPanel) -->
+        <!-- ========================================== -->
+        <!-- Fixed: Margin Top reduced to 5 to align with GroupBox top -->
+        <StackPanel Grid.Column="1" Margin="10,5,0,0" VerticalAlignment="Top">
+
+            <!-- 1. Unified Inputs Grid (Compacted Rows) -->
+            <Grid Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="70"/>
+                    <!-- Labels Left -->
+                    <ColumnDefinition Width="*"/>
+                    <!-- Quantity/Rate/Comment -->
+                    <ColumnDefinition Width="20"/>
+                    <!-- Spacer -->
+                    <ColumnDefinition Width="60"/>
+                    <!-- Labels Right -->
+                    <ColumnDefinition Width="*"/>
+                    <!-- Expiry/Date -->
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="35"/>
+                    <!-- Symbol -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- Buttons -->
+                    <RowDefinition Height="35"/>
+                    <!-- Quantity -->
+                    <RowDefinition Height="35"/>
+                    <!-- Rate -->
+                    <RowDefinition Height="35"/>
+                    <!-- Comment -->
+                </Grid.RowDefinitions>
+
+                <!-- Row 0: Symbol -->
+                <TextBlock Text="Symbol :" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0" FontWeight="SemiBold"/>
+                <ComboBox x:Name="Cmbsymbol" Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="4" SelectedIndex="0">
+                    <ComboBoxItem Content="Select"/>
+                    <ComboBoxItem Content="XAUUSD-M" IsSelected="True"/>
+                </ComboBox>
+
+                <!-- Row 1: Order Type Buttons -->
+                <Border Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="4" 
+                        BorderBrush="#2196F3" BorderThickness="1" CornerRadius="3" Height="30" Margin="0,0,0,10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Button x:Name="BtnLimit" Grid.Column="0" Content="Limit" 
+                                Click="BtnLimit_Click"
+                                Background="White" Foreground="#2196F3" BorderThickness="0"/>
+
+                        <!-- Middle Button with Borders -->
+                        <Button x:Name="BtnMarket" Grid.Column="1" Content="Market" 
+                                Click="BtnMarket_Click"
+                                Background="#2196F3" Foreground="White" FontWeight="Bold" 
+                                BorderThickness="1,0,1,0" BorderBrush="#2196F3"/>
+
+                        <Button x:Name="BtnStopLimit" Grid.Column="2" Content="Stop Limit" 
+                                Click="BtnStopLimit_Click"
+                                Background="White" Foreground="#2196F3" BorderThickness="0" Margin="0,1,0,-1"/>
+                    </Grid>
+                </Border>
+
+                <!-- Row 2: Quantity & Expiry -->
+                <TextBlock Text="Quantity :" Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
+                <TextBox x:Name="Quantitytextbox" Grid.Row="2" Grid.Column="1" Text="0.1"/>
+
+                <TextBlock Text="Expiry :" Grid.Row="2" Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
+                <ComboBox x:Name="Cmbexpiry" Grid.Row="2" Grid.Column="4" SelectedIndex="0" 
+                          SelectionChanged="Cmbexpiry_SelectionChanged">
+                    <ComboBoxItem Content="GTC"/>
+                    <ComboBoxItem Content="Today"/>
+                    <ComboBoxItem Content="Specific Date"/>
+                </ComboBox>
+
+                <!-- Row 3: Rate & Specific Date -->
+                <TextBlock x:Name="lblRateLabel" Text="Rate :" Grid.Row="3" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
+                <TextBox x:Name="txtLimitRate" Grid.Row="3" Grid.Column="1" Text="5056.18" Background="#F5F5F5"/>
+
+                <!-- DatePicker: Hidden by default -->
+                <DatePicker x:Name="ExpirydatemonthPicker" Grid.Row="3" Grid.Column="4" 
+                            VerticalAlignment="Center" Visibility="Collapsed"/>
+
+                <!-- Row 4: Comment -->
+                <TextBlock Text="Comment :" Grid.Row="4" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
+                <TextBox x:Name="commenttextbox" Grid.Row="4" Grid.Column="1"/>
+            </Grid>
+
+            <!-- 2. Price Display -->
+            <Grid Margin="0,0,0,15">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock x:Name="lblSellBid" Text="5056.03" Foreground="#DC3545" FontSize="26" FontWeight="Bold" HorizontalAlignment="Center"/>
+                <TextBlock x:Name="lblBuyBid" Text="5056.18" Grid.Column="1" Foreground="#28A745" FontSize="26" FontWeight="Bold" HorizontalAlignment="Center"/>
+            </Grid>
+
+            <!-- 3. Action Area (Buy/Sell + Close Button) -->
+            <Grid VerticalAlignment="Top">
+
+                <!-- A. Trading Buttons -->
+                <Grid x:Name="TradeActionPanel" Visibility="Visible">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="38"/>
+                        <!-- Buy/Sell -->
+                        <RowDefinition Height="8"/>
+                        <!-- Spacer -->
+                        <RowDefinition Height="38"/>
+                        <!-- Close Button -->
+                    </Grid.RowDefinitions>
+
+                    <!-- Row 0: Sell and Buy -->
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="15"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Button x:Name="btnSellOrder" Grid.Column="0" Content="SELL" Background="#DC3545" Foreground="White" FontSize="14" FontWeight="Bold" BorderThickness="0" Margin="0,-8,0,8">
+                            <Button.Resources>
+                                <Style TargetType="Border">
+                                    <Setter Property="CornerRadius" Value="4"/>
+                                </Style>
+                            </Button.Resources>
+                        </Button>
+
+                        <Button x:Name="btnBuyOrder" Grid.Column="2" Content="BUY" Background="#2196F3" Foreground="White" FontSize="14" FontWeight="Bold" BorderThickness="0" Margin="0,-8,0,8">
+                            <Button.Resources>
+                                <Style TargetType="Border">
+                                    <Setter Property="CornerRadius" Value="4"/>
+                                </Style>
+                            </Button.Resources>
+                        </Button>
+                    </Grid>
+
+                    <!-- Row 2: Close Button (Full Width) -->
+                    <Button x:Name="BtnClose" Content="Close Position" 
+                            Background="#FFC107" Foreground="Black" FontSize="14" FontWeight="Bold" BorderThickness="0" Margin="0,0,0,8" Grid.RowSpan="2" Grid.Row="1">
+                        <Button.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="4"/>
+                            </Style>
+                        </Button.Resources>
+                    </Button>
+                </Grid>
+
+                <!-- B. Result/Confirmation Panel (Overlay) -->
+                <Grid x:Name="OkOrderPanel" Background="White" Visibility="Collapsed" Height="84">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock x:Name="lblTradeMsg" Text="Order Placed Successfully!" 
+                               HorizontalAlignment="Center" VerticalAlignment="Center" 
+                               FontSize="14" Foreground="#333" TextWrapping="Wrap"/>
+
+                    <Button x:Name="btnOk" Grid.Row="1" Content="OK" Width="100" Height="28" Margin="0,5,0,0"
+                            Background="#2196F3" Foreground="White" FontWeight="Bold" BorderThickness="0">
+                        <Button.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="4"/>
+                            </Style>
+                        </Button.Resources>
+                    </Button>
+                </Grid>
+
+            </Grid>
+
+        </StackPanel>
+    </Grid>
+</Window>

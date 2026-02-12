@@ -2,6 +2,7 @@
 using AvalonDock.Layout.Serialization;
 using ClientDesktop.Infrastructure.Services;
 using ClientDesktop.View.Disclaimer;
+using ClientDesktop.View.TradeOrder;
 using ClientDesktop.ViewModel;
 using System.IO;
 using System.Windows;
@@ -160,6 +161,13 @@ namespace ClientDesktop.Main
 
                 SessionManager.TriggerLogout();
             }
+        }
+
+        private void NewOrder_Click(object sender, RoutedEventArgs e)
+        {
+            var orderWin = new OrderWindow();
+            orderWin.Owner = this;
+            orderWin.Show();
         }
     }
 }
