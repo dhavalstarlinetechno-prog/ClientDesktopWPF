@@ -68,4 +68,23 @@ namespace ClientDesktop.View.Converters
             throw new NotImplementedException();
         }
     }
+
+    public class SideConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is string side)
+            {
+                return side.ToLower() == "bid" ? "Sell" : "Buy";
+            }
+            return value;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+
 }

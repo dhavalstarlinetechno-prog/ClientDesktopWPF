@@ -1,38 +1,227 @@
-﻿using System;
+﻿using ClientDesktop.Core.Enums;
+using ClientDesktop.Core.Models;
+using ClientDesktop.Infrastructure.Helpers;
+using ClientDesktop.Models;
+using ClientDesktop.ViewModel;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
-using ClientDesktop.Models;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ClientDesktop.View.Details
 {
     public partial class HistoryView : UserControl
     {
+        public ObservableCollection<HistoryModel> AllHistoryItems { get; set; }
         public ObservableCollection<HistoryModel> HistoryItems { get; set; }
 
-        private string _currentMode = "Deals";
+        public ObservableCollection<PositionHistoryModel> AllPositionItems { get; set; }
+        public ObservableCollection<PositionHistoryModel> PositionHistoryItems { get; set; }
+
+        private HistoryViewModel _historyViewModel;
+
+        HistoryType currentType = HistoryType.Deals;
 
         public HistoryView()
         {
             InitializeComponent();
+            AllHistoryItems = new ObservableCollection<HistoryModel>();
             HistoryItems = new ObservableCollection<HistoryModel>();
 
-            GridDealsOrders.ItemsSource = HistoryItems;
-            GridPosition.ItemsSource = HistoryItems;
+            AllPositionItems = new ObservableCollection<PositionHistoryModel>();
+            PositionHistoryItems = new ObservableCollection<PositionHistoryModel>();
+
+            DataContext = this;
 
             StartDatePicker.SelectedDate = DateTime.Today;
             EndDatePicker.SelectedDate = DateTime.Today.AddDays(1);
+
+            _historyViewModel = new HistoryViewModel();
+            _historyViewModel.OnHistoryDataLoaded = () =>
+            {
+                FillDataInList();
+            };
         }
 
-        // --- CONTEXT MENU HANDLER ---
+        private void FillDataInList()
+        {
+            var history = _historyViewModel.GetHistoryData() ?? new List<HistoryModel>();
+            var position = _historyViewModel.GetPositionHistoryData() ?? new List<PositionHistoryModel>();
+
+            // 🔒 Fill master lists
+            AllHistoryItems.Clear();
+            foreach (var item in history)
+                AllHistoryItems.Add(item);
+
+            AllPositionItems.Clear();
+            foreach (var item in position)
+                AllPositionItems.Add(item);
+        }
+
+        private void RequestButton_Click(object sender, RoutedEventArgs e)
+        {
+            HistoryItems.Clear();
+            PositionHistoryItems.Clear();
+            FillDataGrid();
+            FillComboFilters();
+            UpdateUIState();
+        }
+
+        private void FillDataGrid()
+        {
+            var start = StartDatePicker.SelectedDate;
+            var end = EndDatePicker.SelectedDate.Value.Date.AddDays(1).AddTicks(-1);
+
+            HashSet<string> orderTypeFilter;
+            HashSet<string> symbolNameFilter;
+
+            if (currentType == HistoryType.Deals)
+            {
+                orderTypeFilter = new HashSet<string>
+                {
+                    "BuyLimit",
+                    "SellLimit",
+                    "BuyStop",
+                    "SellStop"
+                };
+
+                symbolNameFilter = new HashSet<string>
+                {
+                    "Credit",
+                    "Balance"
+                };
+
+                HistoryItems = new ObservableCollection<HistoryModel>(AllHistoryItems.Where(h =>
+                {
+                    if (orderTypeFilter.Contains(h.OrderType))
+                        return false;
+
+                    if (symbolNameFilter.Contains(h.SymbolName))
+                        return false;
+
+                    var istTime = GMTTime.ConvertUtcToIst(h.CreatedOn);
+                    return istTime >= start && istTime <= end;
+                }).OrderBy(s => s.CreatedOn));
+                GridDealsOrders.ItemsSource = HistoryItems;
+            }
+            else if (currentType == HistoryType.Orders)
+            {
+                orderTypeFilter = new HashSet<string>();
+                symbolNameFilter = new HashSet<string>();
+
+                HistoryItems = new ObservableCollection<HistoryModel>(AllHistoryItems.Where(h =>
+                {
+                    if (orderTypeFilter.Contains(h.OrderType))
+                        return false;
+
+                    if (symbolNameFilter.Contains(h.SymbolName))
+                        return false;
+
+                    var istTime = GMTTime.ConvertUtcToIst(h.CreatedOn);
+                    return istTime >= start && istTime <= end;
+                }).OrderBy(s => s.CreatedOn));
+
+                GridDealsOrders.ItemsSource = HistoryItems;
+            }
+            else
+            {
+                PositionHistoryItems = new ObservableCollection<PositionHistoryModel>(AllPositionItems.Where(h => h.LastOutAt == null || GMTTime.ConvertUtcToIst(h.UpdatedAt) >= start.Value.Date &&
+                  GMTTime.ConvertUtcToIst(h.UpdatedAt) <= end.Date.AddDays(1).AddTicks(-1)).OrderBy(s => s.UpdatedAt));
+                GridPosition.ItemsSource = PositionHistoryItems;
+            }
+        }
+
+        private void FillComboFilters()
+        {
+            if (currentType == HistoryType.Position)
+            {
+                // Check if PositionHistoryItems is null or empty
+                if (PositionHistoryItems == null || !PositionHistoryItems.Any())
+                {
+                    SetComboItems(FilterPosSymbol, new List<string> { "All" });
+                    return;
+                }
+
+                var symbols = PositionHistoryItems
+                    .Where(x => !string.IsNullOrEmpty(x.SymbolName))  // Filter out null/empty symbols
+                    .Select(x => x.SymbolName)
+                    .Distinct()
+                    .OrderBy(x => x)
+                    .ToList();
+
+                symbols.Insert(0, "All");
+                SetComboItems(FilterPosSymbol, symbols);
+            }
+            else
+            {
+                // Check if HistoryItems is null or empty
+                if (HistoryItems == null || !HistoryItems.Any())
+                {
+                    SetComboItems(FilterSymbol, new List<string> { "All" });
+                    SetComboItems(FilterExecution, new List<string> { "All" });
+                    SetComboItems(FilterType, new List<string> { "All" });
+                    SetComboItems(FilterEntry, new List<string> { "All" });
+                    return;
+                }
+
+                var symbols = HistoryItems
+                    .Where(x => !string.IsNullOrEmpty(x.SymbolName))
+                    .Select(x => x.SymbolName)
+                    .Distinct()
+                    .OrderBy(x => x)
+                    .ToList();
+
+                var executions = HistoryItems
+                    .Where(x => !string.IsNullOrEmpty(x.OrderType))
+                    .Select(x => x.OrderType)
+                    .Distinct()
+                    .OrderBy(x => x)
+                    .ToList();
+
+                var types = HistoryItems
+                    .Where(x => !string.IsNullOrEmpty(x.Side))
+                    .Select(x => x.Side)
+                    .Distinct()
+                    .OrderBy(x => x)
+                    .ToList();
+
+                var entries = HistoryItems
+                    .Where(x => !string.IsNullOrEmpty(x.DealType))
+                    .Select(x => x.DealType)
+                    .Distinct()
+                    .OrderBy(x => x)
+                    .ToList();
+
+                symbols.Insert(0, "All");
+                executions.Insert(0, "All");
+                types.Insert(0, "All");
+                entries.Insert(0, "All");
+
+                SetComboItems(FilterSymbol, symbols);
+                SetComboItems(FilterExecution, executions);
+                SetComboItems(FilterType, types);
+                SetComboItems(FilterEntry, entries);
+            }
+        }
+
+        private void SetComboItems(ComboBox combo, List<string> items)
+        {
+            combo.ItemsSource = null;
+            combo.Items.Clear();
+
+            combo.ItemsSource = items;
+            combo.SelectedIndex = 0;
+        }
+
         private void ChangeView_Click(object sender, RoutedEventArgs e)
         {
             MenuItem item = sender as MenuItem;
-            if (item == null) return; // Safety check
+            if (item == null) return;
 
-            string mode = item.Tag.ToString();
-            _currentMode = mode;
+            var mode = Enum.Parse<HistoryType>(item.Tag.ToString());
+            currentType = mode;
 
             MenuDeals.IsChecked = false;
             MenuOrders.IsChecked = false;
@@ -41,6 +230,7 @@ namespace ClientDesktop.View.Details
             item.IsChecked = true;
 
             HistoryItems.Clear();
+            PositionHistoryItems.Clear();
             NoDataLabel.Visibility = Visibility.Visible;
             GridDealsOrders.Visibility = Visibility.Collapsed;
             GridPosition.Visibility = Visibility.Collapsed;
@@ -50,19 +240,19 @@ namespace ClientDesktop.View.Details
 
             switch (mode)
             {
-                case "Deals":
+                case HistoryType.Deals:
                     lblTitleDealsOrders.Text = "Deals";
                     HeaderDealsOrders.Visibility = Visibility.Visible;
                     GridDealsOrders.Visibility = Visibility.Visible;
                     break;
 
-                case "Orders":
+                case HistoryType.Orders:
                     lblTitleDealsOrders.Text = "Orders";
                     HeaderDealsOrders.Visibility = Visibility.Visible;
                     GridDealsOrders.Visibility = Visibility.Visible;
                     break;
 
-                case "Position":
+                case HistoryType.Position:
                     HeaderPosition.Visibility = Visibility.Visible;
                     GridPosition.Visibility = Visibility.Visible;
                     break;
@@ -71,61 +261,50 @@ namespace ClientDesktop.View.Details
             UpdateUIState();
         }
 
-        private void RequestButton_Click(object sender, RoutedEventArgs e)
-        {
-            HistoryItems.Clear();
-
-            var dummyResponse = GetDummyData();
-            if (dummyResponse.IsSuccess)
-            {
-                foreach (var item in dummyResponse.Data)
-                {
-                    HistoryItems.Add(item);
-                }
-            }
-            UpdateUIState();
-        }
-
         private void UpdateUIState()
         {
-            bool hasData = HistoryItems.Count > 0;
+            bool hasHistoryData = HistoryItems.Count > 0;
+            bool hasPositionData = PositionHistoryItems.Count > 0;
 
-            if (_currentMode == "Position")
+            if (currentType == HistoryType.Position)
             {
-                GridPosition.Visibility = Visibility.Visible;
-                GridDealsOrders.Visibility = Visibility.Collapsed;
-            }
-            else // Deals or Orders
-            {
-                GridDealsOrders.Visibility = Visibility.Visible;
-                GridPosition.Visibility = Visibility.Collapsed;
-            }
-
-            if (hasData)
-            {
-                NoDataLabel.Visibility = Visibility.Collapsed;
-
-                if (_currentMode == "Position")
+                if (hasPositionData)
                 {
+                    NoDataLabel.Visibility = Visibility.Collapsed;
                     if (FilterPosSymbol != null) FilterPosSymbol.IsEnabled = true;
                 }
                 else
                 {
+                    NoDataLabel.Visibility = Visibility.Visible;
+                    if (FilterPosSymbol != null) FilterPosSymbol.IsEnabled = false;
+                }
+
+                GridPosition.Visibility = Visibility.Visible;
+                GridDealsOrders.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                if (hasHistoryData)
+                {
+                    NoDataLabel.Visibility = Visibility.Collapsed;
                     if (FilterSymbol != null) FilterSymbol.IsEnabled = true;
                     if (FilterExecution != null) FilterExecution.IsEnabled = true;
                     if (FilterType != null) FilterType.IsEnabled = true;
                     if (FilterEntry != null) FilterEntry.IsEnabled = true;
                 }
-            }
-            else
-            {
-                NoDataLabel.Visibility = Visibility.Visible;
+                else
+                {
+                    NoDataLabel.Visibility = Visibility.Visible;
 
-                if (FilterSymbol != null) FilterSymbol.IsEnabled = false;
-                if (FilterExecution != null) FilterExecution.IsEnabled = false;
-                if (FilterType != null) FilterType.IsEnabled = false;
-                if (FilterEntry != null) FilterEntry.IsEnabled = false;
-                if (FilterPosSymbol != null) FilterPosSymbol.IsEnabled = false;
+                    if (FilterSymbol != null) FilterSymbol.IsEnabled = false;
+                    if (FilterExecution != null) FilterExecution.IsEnabled = false;
+                    if (FilterType != null) FilterType.IsEnabled = false;
+                    if (FilterEntry != null) FilterEntry.IsEnabled = false;
+                    if (FilterPosSymbol != null) FilterPosSymbol.IsEnabled = false;
+                }
+
+                GridDealsOrders.Visibility = Visibility.Visible;
+                GridPosition.Visibility = Visibility.Collapsed;
             }
         }
 
@@ -166,147 +345,64 @@ namespace ClientDesktop.View.Details
             }
         }
 
-        private HistoryResponse GetDummyData()
+        private void Filter_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            var list = new List<HistoryModel>();
+            ApplyGridFilters();
+        }
 
-            switch (_currentMode)
+        private void ApplyGridFilters()
+        {
+            string selectedSymbol = GetComboValue(FilterSymbol);
+            string selectedExec = GetComboValue(FilterExecution);
+            string selectedType = GetComboValue(FilterType); 
+            string selectedEntry = GetComboValue(FilterEntry);
+            string selectedPosSymbol = GetComboValue(FilterPosSymbol);
+
+            if (currentType != HistoryType.Position)
             {
-                case "Deals":
-                    list.Add(new HistoryModel
-                    {
-                        CreatedOn = DateTime.Now.AddMinutes(-15),
-                        ClientDealId = 8801,
-                        PositionId = "5001",
-                        SymbolName = "XAUUSD",
-                        OrderType = "Market",
-                        Side = "Buy",
-                        DealType = "In",
-                        Volume = 0.50m,
-                        Price = 2035.50m,
-                        Fee = -5.00m,
-                        Pnl = 0.00m, 
-                        Comment = "Gold Scalp Entry"
-                    });
-                    list.Add(new HistoryModel
-                    {
-                        CreatedOn = DateTime.Now.AddMinutes(-5),
-                        ClientDealId = 8802,
-                        PositionId = "5001",
-                        SymbolName = "XAUUSD",
-                        OrderType = "Market",
-                        Side = "Sell",
-                        DealType = "Out",
-                        Volume = 0.50m,
-                        Price = 2038.50m,
-                        Fee = 0.00m,
-                        Pnl = 150.00m, 
-                        Comment = "TP Hit"
-                    });
-                    list.Add(new HistoryModel
-                    {
-                        CreatedOn = DateTime.Now.AddHours(-2),
-                        ClientDealId = 8799,
-                        PositionId = "4990",
-                        SymbolName = "EURUSD",
-                        OrderType = "Limit",
-                        Side = "Sell",
-                        DealType = "Out",
-                        Volume = 1.0m,
-                        Price = 1.0850m,
-                        Fee = -2.50m,
-                        Pnl = -25.00m, // Loss
-                        Comment = "SL Hit"
-                    });
-                    break;
+                if (HistoryItems == null || !HistoryItems.Any())
+                    return;
 
-                case "Orders":
-                    list.Add(new HistoryModel
-                    {
-                        CreatedOn = DateTime.Now,
-                        ClientDealId = 9001,
-                        PositionId = "-", 
-                        SymbolName = "GBPUSD",
-                        OrderType = "Buy Limit",
-                        Side = "Buy",
-                        DealType = "Order",
-                        Volume = 0.10m,
-                        Price = 1.2600m,
-                        Fee = 0.00m,
-                        Pnl = 0.00m,
-                        Comment = "Waiting for dip"
-                    });
-                    list.Add(new HistoryModel
-                    {
-                        CreatedOn = DateTime.Now.AddMinutes(-30),
-                        ClientDealId = 9002,
-                        PositionId = "-",
-                        SymbolName = "US30",
-                        OrderType = "Sell Stop",
-                        Side = "Sell",
-                        DealType = "Order",
-                        Volume = 0.05m,
-                        Price = 38500.00m,
-                        Fee = 0.00m,
-                        Pnl = 0.00m,
-                        Comment = "Breakout Strategy"
-                    });
-                    list.Add(new HistoryModel
-                    {
-                        CreatedOn = DateTime.Now.AddHours(-5),
-                        ClientDealId = 9003,
-                        PositionId = "-",
-                        SymbolName = "BTCUSD",
-                        OrderType = "Buy Market",
-                        Side = "Buy",
-                        DealType = "Cancelled",
-                        Volume = 1.00m,
-                        Price = 45000.00m,
-                        Fee = 0.00m,
-                        Pnl = 0.00m,
-                        Comment = "Cancelled by user"
-                    });
-                    break;
+                IEnumerable<HistoryModel> filterHistoryList = HistoryItems;
 
-                case "Position":
-                    list.Add(new HistoryModel
-                    {
-                        CreatedOn = DateTime.Now.AddDays(-1),
-                        ClientDealId = 5501,
-                        PositionId = "5501",
-                        SymbolName = "DJ30",
-                        OrderType = "Market",
-                        Side = "Buy",
-                        DealType = "In",
-                        Volume = 2.0m,
-                        Price = 34500.00m,
-                        Fee = -10.00m,
-                        Pnl = 350.50m, // Running Profit
-                        Comment = "Swing Trade"
-                    });
-                    list.Add(new HistoryModel
-                    {
-                        CreatedOn = DateTime.Now.AddHours(-4),
-                        ClientDealId = 5502,
-                        PositionId = "5502",
-                        SymbolName = "USDJPY",
-                        OrderType = "Limit",
-                        Side = "Sell",
-                        DealType = "In",
-                        Volume = 0.20m,
-                        Price = 150.50m,
-                        Fee = -1.50m,
-                        Pnl = -12.40m, // Running Loss
-                        Comment = "Scalping"
-                    });
-                    break;
+                if (selectedSymbol != "All")
+                    filterHistoryList = filterHistoryList.Where(x => x.SymbolName == selectedSymbol);
+
+                if (selectedExec != "All")
+                    filterHistoryList = filterHistoryList.Where(x => x.OrderType == selectedExec);
+
+                if (selectedType != "All")
+                    filterHistoryList = filterHistoryList.Where(x => x.Side == selectedType);
+
+                if (selectedEntry != "All")
+                    filterHistoryList = filterHistoryList.Where(x => x.DealType == selectedEntry);
+
+                // Update UI
+                var finalCollection = new ObservableCollection<HistoryModel>(filterHistoryList.OrderBy(s => s.CreatedOn));
+                GridDealsOrders.ItemsSource = finalCollection;
             }
-
-            return new HistoryResponse
+            else
             {
-                IsSuccess = true,
-                Data = list
-            };
+                if (PositionHistoryItems == null || !PositionHistoryItems.Any())
+                    return;
+
+                IEnumerable<PositionHistoryModel> filterPositionList = PositionHistoryItems;
+                if (selectedPosSymbol != "All")
+                    filterPositionList = filterPositionList.Where(x => x.SymbolName == selectedPosSymbol);
+
+                // Update UI
+                var finalCollection = new ObservableCollection<PositionHistoryModel>(filterPositionList.OrderBy(s => s.UpdatedAt));
+                GridPosition.ItemsSource = finalCollection;
+            }
+        }
+
+        private string GetComboValue(ComboBox filterSymbol)
+        {
+            if (filterSymbol != null && filterSymbol.SelectedItem != null)
+            {
+                return filterSymbol.SelectedItem.ToString();
+            }
+            return "All";
         }
     }
 }

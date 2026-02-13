@@ -6,8 +6,8 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks; // Async tasks ke liye
-using System.Windows;       // UI Dispatcher ke liye
+using System.Threading.Tasks; 
+using System.Windows;      
 using System.Windows.Data;
 
 namespace ClientDesktop.ViewModel
@@ -24,8 +24,6 @@ namespace ClientDesktop.ViewModel
 
             SessionManager.OnLoginSuccess += HandleLogin;
             //SessionManager.OnLogout += HandleLogout;
-
-
         }
 
         private void HandleLogin()

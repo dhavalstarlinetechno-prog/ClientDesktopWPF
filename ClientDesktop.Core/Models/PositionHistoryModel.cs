@@ -21,6 +21,7 @@
         public double InVolume { get; set; }
         public double OutVolume { get; set; }
         public double TotalVolume { get; set; }
+        public string VolumeDisplay => $"{OutVolume}/{InVolume}";
         public string Reason { get; set; }
         public string ClientIp { get; set; }
         public string Device { get; set; }
