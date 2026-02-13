@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ClientDesktop.Infrastructure.Services;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -32,6 +33,7 @@ namespace ClientDesktop.View.Disclaimer
 
         private void Acknowledge_Click(object sender, RoutedEventArgs e)
         {
+            SessionManager.TriggerLogin();
             this.DialogResult = true;
             this.Close();
         }

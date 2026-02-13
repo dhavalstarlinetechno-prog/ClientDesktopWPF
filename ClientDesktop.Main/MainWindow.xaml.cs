@@ -149,7 +149,6 @@ namespace ClientDesktop.Main
                 MenuConnect.Visibility = Visibility.Collapsed;
                 MenuDisconnect.Visibility = Visibility.Visible;
 
-                SessionManager.TriggerLogin();
             }
             else
             {
@@ -159,7 +158,6 @@ namespace ClientDesktop.Main
                 MenuConnect.Visibility = Visibility.Visible;
                 MenuDisconnect.Visibility = Visibility.Collapsed;
 
-                SessionManager.TriggerLogout();
             }
         }
 

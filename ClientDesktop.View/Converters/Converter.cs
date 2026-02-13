@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ClientDesktop.Infrastructure.Helpers;
+using System;
 using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Media;
@@ -37,10 +38,10 @@ namespace ClientDesktop.View.Converters
                 string lowerSide = side.ToLower();
 
                 if (lowerSide.Contains("buy"))
-                    return new SolidColorBrush(Color.FromRgb(0, 114, 188)); 
+                    return new SolidColorBrush(Color.FromRgb(0, 114, 188));
 
                 if (lowerSide.Contains("sell"))
-                    return new SolidColorBrush(Color.FromRgb(220, 53, 69)); 
+                    return new SolidColorBrush(Color.FromRgb(220, 53, 69));
             }
             return Brushes.Gray; // Default fallback
         }
@@ -86,5 +87,38 @@ namespace ClientDesktop.View.Converters
         }
     }
 
+    public class StringTruncateConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is string text && !string.IsNullOrEmpty(text) && text.Length > 8)
+            {
+                return text.Substring(0, 8) + "...";
+            }
+            return value;
+        }
 
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class UtcToIstConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is DateTime utcDate)
+            {
+                DateTime istTime = GMTTime.ConvertUtcToIst(utcDate);
+                return istTime.ToString("dd/MM/yy HH:mm:ss", CultureInfo.InvariantCulture);
+            }
+            return value;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
 }

@@ -220,6 +220,8 @@ namespace ClientDesktop.View.Details
             MenuItem item = sender as MenuItem;
             if (item == null) return;
 
+            GridDealsOrders.ItemsSource = null;
+            GridPosition.ItemsSource = null;
             var mode = Enum.Parse<HistoryType>(item.Tag.ToString());
             currentType = mode;
 
@@ -403,6 +405,16 @@ namespace ClientDesktop.View.Details
                 return filterSymbol.SelectedItem.ToString();
             }
             return "All";
+        }
+
+        private void CopyId_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag != null)
+            {
+                string fullId = btn.Tag.ToString();
+                Clipboard.SetText(fullId);
+
+            }
         }
     }
 }

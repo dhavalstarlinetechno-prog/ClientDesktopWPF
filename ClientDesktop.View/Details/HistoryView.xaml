@@ -9,6 +9,8 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <conv:SideConverter x:Key="SideConverter"/>
+        <conv:UtcToIstConverter x:Key="UtcToIstConverter"/>
+        <conv:StringTruncateConverter x:Key="TruncateConverter"/>
         <Style x:Key="HeaderLabel" TargetType="TextBlock">
             <Setter Property="Foreground" Value="#333333"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
@@ -191,17 +193,79 @@
                 </DataGrid.Resources>
 
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Time" Binding="{Binding CreatedOn, StringFormat='{}{0:yyyy.MM.dd HH:mm}'}" Width="1.5*"/>
-                    <DataGridTextColumn Header="Deal Id" Binding="{Binding RefId}" Width="*"/>
-                    <DataGridTextColumn Header="Position Id" Binding="{Binding PositionId}" Width="*"/>
-                    <DataGridTextColumn Header="Symbol" Binding="{Binding SymbolName}" Width="*" FontWeight="Bold"/>
+                    <DataGridTextColumn Header="Time" Binding="{Binding CreatedOn, Converter={StaticResource UtcToIstConverter}}" Width="1.5*"/>
+                    <DataGridTemplateColumn Header="Deal Id" Width="*" SortMemberPath="RefId">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding RefId, Converter={StaticResource TruncateConverter}}" 
+                           VerticalAlignment="Center" 
+                           ToolTip="{Binding RefId}"/>
+
+                                    <Button Margin="5,0,0,0"
+                        Click="CopyId_Click"
+                        Tag="{Binding RefId}"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Cursor="Hand"
+                        ToolTip="Copy to Clipboard">
+                                        <Path Data="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
+                          Fill="#555"
+                          Stretch="Uniform"
+                          Height="12" Width="12"/>
+                                    </Button>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="Position Id" Width="*" SortMemberPath="PositionId">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+
+                                    <TextBlock Text="{Binding PositionId, Converter={StaticResource TruncateConverter}, TargetNullValue='--', FallbackValue='--'}" 
+                           VerticalAlignment="Center" 
+                           ToolTip="{Binding PositionId}"/>
+
+                                    <Button Margin="5,0,0,0"
+                        Click="CopyId_Click"
+                        Tag="{Binding PositionId}"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Cursor="Hand"
+                        ToolTip="Copy Id">
+
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                                <Style.Triggers>
+                                                    <Trigger Property="Tag" Value="{x:Null}">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </Trigger>
+                                                    <Trigger Property="Tag" Value="">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+
+                                        <Path Data="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
+                          Fill="#555"
+                          Stretch="Uniform"
+                          Height="12" Width="12"/>
+                                    </Button>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn> 
+                    <DataGridTextColumn Header="Symbol" Binding="{Binding SymbolName}" Width="*" />
                     <DataGridTextColumn Header="Execution" Binding="{Binding OrderType}" Width="0.8*"/>
                     <DataGridTextColumn Header="Type" Binding="{Binding Side}" Width="0.6*"/>
                     <DataGridTextColumn Header="Entry" Binding="{Binding DealType}" Width="0.6*"/>
-                    <DataGridTextColumn Header="Volume" Binding="{Binding VolumeDisplay}" Width="0.8*"/>
+                    <DataGridTextColumn Header="Volume" Binding="{Binding Volume}" Width="0.8*"/>
                     <DataGridTextColumn Header="Price" Binding="{Binding Price}" Width="*"/>
                     <DataGridTextColumn Header="Comm." Binding="{Binding UplineCommission}" Width="0.8*"/>
-                    <DataGridTextColumn Header="Profit" Binding="{Binding Pnl}" Width="*" FontWeight="Bold"/>
+                    <DataGridTextColumn Header="Profit" Binding="{Binding Pnl}" Width="*" />
                     <DataGridTextColumn Header="Comment" Binding="{Binding Comment}" Width="2*"/>
                 </DataGrid.Columns>
             </DataGrid>
@@ -254,15 +318,38 @@
                 </DataGrid.Resources>
 
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Time" Binding="{Binding UpdatedAt, StringFormat='{}{0:dd/MM/yy HH:mm:ss}'}" Width="1.2*"/>
-                    <DataGridTextColumn Header="Last Out Time" Binding="{Binding LastOutAt, StringFormat='{}{0:dd/MM/yy HH:mm:ss}', TargetNullValue='--'}" Width="1.2*"/>
-                    <DataGridTextColumn Header="PositionId" Binding="{Binding RefId}" Width="*"/>
+                    <DataGridTextColumn Header="Time" Binding="{Binding UpdatedAt, Converter={StaticResource UtcToIstConverter}}" Width="1.2*"/>
+                    <DataGridTextColumn Header="Last Out Time" Binding="{Binding LastOutAt, Converter={StaticResource UtcToIstConverter}, TargetNullValue='--'}" Width="1.2*"/>
+                    <DataGridTemplateColumn Header="PositionId" Width="*" SortMemberPath="RefId">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding RefId, Converter={StaticResource TruncateConverter}}" 
+       VerticalAlignment="Center" 
+       ToolTip="{Binding RefId}"/>
+
+                                    <Button Margin="5,0,0,0"
+    Click="CopyId_Click"
+    Tag="{Binding RefId}"
+    Background="Transparent"
+    BorderThickness="0"
+    Cursor="Hand"
+    ToolTip="Copy to Clipboard">
+                                        <Path Data="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
+      Fill="#555"
+      Stretch="Uniform"
+      Height="12" Width="12"/>
+                                    </Button>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
                     <DataGridTextColumn Header="Type" Binding="{Binding Side, Converter={StaticResource SideConverter}}"  Width="0.6*"/>
                     <DataGridTextColumn Header="Volume" Binding="{Binding VolumeDisplay}" Width="0.8*"/>
-                    <DataGridTextColumn Header="Symbol" Binding="{Binding SymbolName}" Width="*" FontWeight="Bold"/>
+                    <DataGridTextColumn Header="Symbol" Binding="{Binding SymbolName}" Width="*" />
                     <DataGridTextColumn Header="Price" Binding="{Binding AveragePrice}" Width="*"/>
                     <DataGridTextColumn Header="Comm." Binding="{Binding Fee}" Width="0.8*"/>
-                    <DataGridTextColumn Header="Profit" Binding="{Binding Pnl}" Width="*" FontWeight="Bold"/>
+                    <DataGridTextColumn Header="Profit" Binding="{Binding Pnl}" Width="*" />
                     <DataGridTextColumn Header="Comment" Binding="{Binding Comment}" Width="2*"/>
                 </DataGrid.Columns>
             </DataGrid>
