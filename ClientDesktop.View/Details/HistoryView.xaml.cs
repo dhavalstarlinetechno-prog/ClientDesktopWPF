@@ -65,6 +65,7 @@ namespace ClientDesktop.View.Details
             HistoryItems.Clear();
             PositionHistoryItems.Clear();
             FillDataGrid();
+            ApplyGridFilters();
             FillComboFilters();
             UpdateUIState();
         }
@@ -260,6 +261,8 @@ namespace ClientDesktop.View.Details
                     break;
             }
 
+            ApplyGridFilters(); // Refresh data and Footer immediately
+            FillComboFilters(); // Refresh dropdowns
             UpdateUIState();
         }
 
@@ -356,7 +359,7 @@ namespace ClientDesktop.View.Details
         {
             string selectedSymbol = GetComboValue(FilterSymbol);
             string selectedExec = GetComboValue(FilterExecution);
-            string selectedType = GetComboValue(FilterType); 
+            string selectedType = GetComboValue(FilterType);
             string selectedEntry = GetComboValue(FilterEntry);
             string selectedPosSymbol = GetComboValue(FilterPosSymbol);
 
@@ -379,9 +382,46 @@ namespace ClientDesktop.View.Details
                 if (selectedEntry != "All")
                     filterHistoryList = filterHistoryList.Where(x => x.DealType == selectedEntry);
 
-                // Update UI
-                var finalCollection = new ObservableCollection<HistoryModel>(filterHistoryList.OrderBy(s => s.CreatedOn));
-                GridDealsOrders.ItemsSource = finalCollection;
+                var finalData = filterHistoryList.OrderBy(s => s.CreatedOn).ToList();
+
+                if (finalData.Any())
+                {
+                    decimal totalProfit = finalData.Where(x => x.OrderType != "Bill").Sum(x => x.Pnl);
+                    decimal totalComm = finalData.Where(x => x.OrderType != "Bill").Sum(x => x.UplineCommission);
+
+                    var start = StartDatePicker.SelectedDate.Value;
+                    var end = EndDatePicker.SelectedDate.Value.Date.AddDays(1).AddTicks(-1);
+
+                    var billEntry = AllHistoryItems
+                        .Where(x => x.OrderType == "Bill" &&
+                                    GMTTime.ConvertUtcToIst(x.CreatedOn) >= start &&
+                                    GMTTime.ConvertUtcToIst(x.CreatedOn) <= end)
+                        .FirstOrDefault();
+
+                    decimal credit = billEntry?.UplineCommission ?? 0;
+                    decimal balance = billEntry?.Pnl ?? 0;
+
+                    var footerRow = new HistoryModel
+                    {
+                        RefId = "FOOTER",
+                        CreatedOn = DateTime.MaxValue,      // ✅ Always sorts to bottom
+                        SymbolName = "ZZZZZZZZZZ",          // ✅ Always sorts to bottom
+                        OrderType = "ZZZZZZZZZZ",
+                        Side = "ZZZZZZZZZZ",
+                        Volume = decimal.MaxValue,
+                        Price = decimal.MaxValue,
+                        UplineCommission = totalComm,
+                        Pnl = totalProfit,
+                        Comment = $"Profit: {totalProfit:N2}  Credit: {credit:N2}  Balance: {balance:F3}INR"
+                    };
+
+                    finalData.Add(footerRow);
+                }
+
+                GridDealsOrders.ItemsSource = finalData;
+                NoDataLabel.Visibility = finalData.Any() ? Visibility.Collapsed : Visibility.Visible;
+
+
             }
             else
             {
@@ -392,9 +432,30 @@ namespace ClientDesktop.View.Details
                 if (selectedPosSymbol != "All")
                     filterPositionList = filterPositionList.Where(x => x.SymbolName == selectedPosSymbol);
 
-                // Update UI
-                var finalCollection = new ObservableCollection<PositionHistoryModel>(filterPositionList.OrderBy(s => s.UpdatedAt));
-                GridPosition.ItemsSource = finalCollection;
+                var finalData = filterPositionList.OrderBy(s => s.UpdatedAt).ToList();
+                if (finalData.Any())
+                {
+                    double totalProfit = finalData.Sum(x => x.Pnl);
+
+                    // 2. Create Footer Row
+                    var footerRow = new PositionHistoryModel
+                    {
+                        RefId = "FOOTER",
+                        UpdatedAt = DateTime.MaxValue,      // ✅ Always sorts to bottom
+                        SymbolName = "ZZZZZZZZZZ",          // ✅ Always sorts to bottom
+                        Side = "ZZZZZZZZZZ",
+                        TotalVolume = double.MaxValue,
+                        AveragePrice = double.MaxValue,
+                        CurrentPrice = double.MaxValue,
+                        Pnl = totalProfit,
+                        Comment = $"Profit: {totalProfit:N2}  Credit: {"credit":N2}  Balance: {"balance":F3}INR"
+                    };
+
+                    finalData.Add(footerRow);
+                }
+
+                GridPosition.ItemsSource = finalData;
+                NoDataLabel.Visibility = PositionHistoryItems.Any() ? Visibility.Collapsed : Visibility.Visible;
             }
         }
 
@@ -416,5 +477,6 @@ namespace ClientDesktop.View.Details
 
             }
         }
+
     }
 }

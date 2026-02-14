@@ -22,7 +22,7 @@
     <UserControl.DataContext>
         <vm:HistoryViewModel />
     </UserControl.DataContext>
-    
+
     <Grid Background="White">
         <Grid.ContextMenu>
             <ContextMenu>
@@ -152,6 +152,96 @@
                       RowHeaderWidth="0"
                       RowHeight="22">
 
+                <DataGrid.RowStyle>
+                    <Style TargetType="DataGridRow">
+                        <Setter Property="Background" Value="White"/>
+                        <Setter Property="Foreground" Value="Black"/>
+                        <Setter Property="FontWeight" Value="Normal"/>
+
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="DataGridRow">
+                                    <Border x:Name="DGR_Border"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            Background="{TemplateBinding Background}"
+                            SnapsToDevicePixels="True">
+                                        <Grid>
+                                            <!-- Normal DataGrid Cells -->
+                                            <DataGridCellsPresenter x:Name="CellsPresenter"
+                                                    ItemsPanel="{TemplateBinding ItemsPanel}"
+                                                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+
+                                            <!-- Custom Footer Panel -->
+                                            <Grid x:Name="FooterPanel" Visibility="Collapsed">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="3*"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="0.8*"/>
+                                                    <ColumnDefinition Width="0.6*"/>
+                                                    <ColumnDefinition Width="0.6*"/>
+                                                    <ColumnDefinition Width="0.8*"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="0.8*"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="2*"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <!-- Profit/Credit/Balance Text -->
+                                                <TextBlock Text="{Binding Comment}" 
+                                           Grid.Column="0"
+                                           VerticalAlignment="Center"
+                                           Margin="10,0,0,0"
+                                           FontWeight="Bold"
+                                           TextWrapping="Wrap"/>
+
+                                                <!-- Comm Column with Borders -->
+                                                <Border Grid.Column="9" 
+                                        BorderBrush="#E0E0E0" 
+                                        BorderThickness="1,0,1,0">
+                                                    <TextBlock Text="{Binding UplineCommission}" 
+                                               HorizontalAlignment="Right"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,5,0"
+                                               FontWeight="Bold"/>
+                                                </Border>
+
+                                                <!-- Profit Column with Border -->
+                                                <Border Grid.Column="10" 
+                                        BorderBrush="#E0E0E0" 
+                                        BorderThickness="0,0,1,0">
+                                                    <TextBlock Text="{Binding Pnl}" 
+                                               HorizontalAlignment="Right"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,5,0"
+                                               FontWeight="Bold"/>
+                                                </Border>
+                                            </Grid>
+                                        </Grid>
+                                    </Border>
+
+                                    <ControlTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding RefId}" Value="FOOTER">
+                                            <Setter TargetName="CellsPresenter" Property="Visibility" Value="Collapsed"/>
+                                            <Setter TargetName="FooterPanel" Property="Visibility" Value="Visible"/>
+                                            <Setter TargetName="DGR_Border" Property="Background" Value="#D3D3D3"/>
+                                        </DataTrigger>
+
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter TargetName="DGR_Border" Property="Background" Value="#0078D7"/>
+                                            <Setter Property="Foreground" Value="White"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </DataGrid.RowStyle>
+
+
+
                 <DataGrid.Resources>
                     <Style TargetType="DataGridColumnHeader">
                         <Setter Property="Background" Value="#F4F4F4"/>
@@ -193,14 +283,45 @@
                 </DataGrid.Resources>
 
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Time" Binding="{Binding CreatedOn, Converter={StaticResource UtcToIstConverter}}" Width="1.5*"/>
+                    <DataGridTemplateColumn Header="Time" Width="1.5*">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock>
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <!-- Normal rows show time -->
+                                            <Setter Property="Text" Value="{Binding CreatedOn, Converter={StaticResource UtcToIstConverter}}"/>
+
+                                            <!-- Footer row shows the Comment text (which contains Profit/Credit/Balance) -->
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding RefId}" Value="FOOTER">
+                                                    <Setter Property="Text" Value="{Binding Comment}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
                     <DataGridTemplateColumn Header="Deal Id" Width="*" SortMemberPath="RefId">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock Text="{Binding RefId, Converter={StaticResource TruncateConverter}}" 
-                           VerticalAlignment="Center" 
-                           ToolTip="{Binding RefId}"/>
+                                    <!-- Add Trigger to hide text for FOOTER -->
+                                    <TextBlock VerticalAlignment="Center" ToolTip="{Binding RefId}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Text" Value="{Binding RefId, Converter={StaticResource TruncateConverter}}"/>
+                                                <!-- Hide FOOTER text -->
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding RefId}" Value="FOOTER">
+                                                        <Setter Property="Text" Value=""/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
 
                                     <Button Margin="5,0,0,0"
                         Click="CopyId_Click"
@@ -209,6 +330,17 @@
                         BorderThickness="0"
                         Cursor="Hand"
                         ToolTip="Copy to Clipboard">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                                <Style.Triggers>
+                                                    <!-- Hide button for FOOTER -->
+                                                    <Trigger Property="Tag" Value="FOOTER">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
                                         <Path Data="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
                           Fill="#555"
                           Stretch="Uniform"
@@ -218,6 +350,7 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
+
                     <DataGridTemplateColumn Header="Position Id" Width="*" SortMemberPath="PositionId">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
@@ -245,6 +378,11 @@
                                                     <Trigger Property="Tag" Value="">
                                                         <Setter Property="Visibility" Value="Collapsed"/>
                                                     </Trigger>
+
+                                                    <Trigger Property="Tag" Value="FOOTER">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </Trigger>
+
                                                 </Style.Triggers>
                                             </Style>
                                         </Button.Style>
@@ -257,7 +395,7 @@
                                 </StackPanel>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn> 
+                    </DataGridTemplateColumn>
                     <DataGridTextColumn Header="Symbol" Binding="{Binding SymbolName}" Width="*" />
                     <DataGridTextColumn Header="Execution" Binding="{Binding OrderType}" Width="0.8*"/>
                     <DataGridTextColumn Header="Type" Binding="{Binding Side}" Width="0.6*"/>
@@ -266,7 +404,29 @@
                     <DataGridTextColumn Header="Price" Binding="{Binding Price}" Width="*"/>
                     <DataGridTextColumn Header="Comm." Binding="{Binding UplineCommission}" Width="0.8*"/>
                     <DataGridTextColumn Header="Profit" Binding="{Binding Pnl}" Width="*" />
-                    <DataGridTextColumn Header="Comment" Binding="{Binding Comment}" Width="2*"/>
+                    <DataGridTemplateColumn Header="Comment" Width="2*">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock>
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <!-- Normal rows show comment -->
+                                            <Setter Property="Text" Value="{Binding Comment}"/>
+
+                                            <!-- Footer row shows blank -->
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding RefId}" Value="FOOTER">
+                                                    <Setter Property="Text" Value=""/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+
                 </DataGrid.Columns>
             </DataGrid>
 
@@ -317,6 +477,105 @@
                     </Style>
                 </DataGrid.Resources>
 
+                <DataGrid.RowStyle>
+                    <Style TargetType="DataGridRow">
+                        <Setter Property="Background" Value="White"/>
+                        <Setter Property="Foreground" Value="Black"/>
+                        <Setter Property="FontWeight" Value="Normal"/>
+
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="DataGridRow">
+                                    <Border x:Name="DGR_Border"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            Background="{TemplateBinding Background}"
+                            SnapsToDevicePixels="True">
+                                        <Grid>
+                                            <!-- Normal DataGrid Cells -->
+                                            <DataGridCellsPresenter x:Name="CellsPresenter"
+                                                    ItemsPanel="{TemplateBinding ItemsPanel}"
+                                                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+
+                                            <!-- Custom Footer Panel -->
+                                            <Grid x:Name="FooterPanel" Visibility="Collapsed">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="1.5*"/>
+                                                    <!-- Time -->
+                                                    <ColumnDefinition Width="1.2*"/>
+                                                    <!-- Last Out Time -->
+                                                    <ColumnDefinition Width="*"/>
+                                                    <!-- PositionId -->
+                                                    <ColumnDefinition Width="0.6*"/>
+                                                    <!-- Type -->
+                                                    <ColumnDefinition Width="0.8*"/>
+                                                    <!-- Volume -->
+                                                    <ColumnDefinition Width="*"/>
+                                                    <!-- Symbol -->
+                                                    <ColumnDefinition Width="*"/>
+                                                    <!-- Price -->
+                                                    <ColumnDefinition Width="0.8*"/>
+                                                    <!-- Comm -->
+                                                    <ColumnDefinition Width="*"/>
+                                                    <!-- Profit -->
+                                                    <ColumnDefinition Width="2*"/>
+                                                    <!-- Comment -->
+                                                </Grid.ColumnDefinitions>
+
+                                                <!-- Footer Text: Total in Time column -->
+                                                <TextBlock Text="{Binding Comment}" 
+                                           Grid.Column="0"
+                                           VerticalAlignment="Center"
+                                           Margin="10,0,0,0"
+                                           FontWeight="Bold"
+                                           TextWrapping="Wrap"/>
+
+                                                <!-- Comm Column with Borders -->
+                                                <Border Grid.Column="7" 
+                                        BorderBrush="#E0E0E0" 
+                                        BorderThickness="1,0,1,0">
+                                                    <TextBlock Text="{Binding Fee}" 
+                                               HorizontalAlignment="Right"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,5,0"
+                                               FontWeight="Bold"/>
+                                                </Border>
+
+                                                <!-- Profit Column with Border -->
+                                                <Border Grid.Column="8" 
+                                        BorderBrush="#E0E0E0" 
+                                        BorderThickness="0,0,1,0">
+                                                    <TextBlock Text="{Binding Pnl}" 
+                                               HorizontalAlignment="Right"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,5,0"
+                                               FontWeight="Bold"/>
+                                                </Border>
+                                            </Grid>
+                                        </Grid>
+                                    </Border>
+
+                                    <ControlTemplate.Triggers>
+                                        <!-- Show Footer Panel for FOOTER row -->
+                                        <DataTrigger Binding="{Binding RefId}" Value="FOOTER">
+                                            <Setter TargetName="CellsPresenter" Property="Visibility" Value="Collapsed"/>
+                                            <Setter TargetName="FooterPanel" Property="Visibility" Value="Visible"/>
+                                            <Setter TargetName="DGR_Border" Property="Background" Value="#D3D3D3"/>
+                                        </DataTrigger>
+
+                                        <!-- Selection state -->
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter TargetName="DGR_Border" Property="Background" Value="#0078D7"/>
+                                            <Setter Property="Foreground" Value="White"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </DataGrid.RowStyle>
+
+
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Time" Binding="{Binding UpdatedAt, Converter={StaticResource UtcToIstConverter}}" Width="1.2*"/>
                     <DataGridTextColumn Header="Last Out Time" Binding="{Binding LastOutAt, Converter={StaticResource UtcToIstConverter}, TargetNullValue='--'}" Width="1.2*"/>
@@ -348,9 +607,16 @@
                     <DataGridTextColumn Header="Volume" Binding="{Binding VolumeDisplay}" Width="0.8*"/>
                     <DataGridTextColumn Header="Symbol" Binding="{Binding SymbolName}" Width="*" />
                     <DataGridTextColumn Header="Price" Binding="{Binding AveragePrice}" Width="*"/>
-                    <DataGridTextColumn Header="Comm." Binding="{Binding Fee}" Width="0.8*"/>
+                    <DataGridTextColumn Header="Comm." Binding="{Binding UplineCommission}" Width="0.8*"/>
                     <DataGridTextColumn Header="Profit" Binding="{Binding Pnl}" Width="*" />
-                    <DataGridTextColumn Header="Comment" Binding="{Binding Comment}" Width="2*"/>
+                    <DataGridTemplateColumn Header="Comment" Width="2*">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Comment}" TextWrapping="NoWrap"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
                 </DataGrid.Columns>
             </DataGrid>
 
@@ -360,5 +626,6 @@
                        HorizontalAlignment="Center" VerticalAlignment="Center"
                        Visibility="Visible"/>
         </Grid>
+
     </Grid>
 </UserControl>
