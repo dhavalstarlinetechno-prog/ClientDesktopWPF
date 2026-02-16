@@ -17,6 +17,7 @@
             <Setter Property="Margin" Value="5,0"/>
             <Setter Property="FontWeight" Value="Bold"/>
         </Style>
+        
     </UserControl.Resources>
 
     <UserControl.DataContext>
@@ -67,19 +68,19 @@
                                Text="Deals" Style="{StaticResource HeaderLabel}" 
                                FontSize="14" Margin="10,0,0,0"/>
 
-                    <ComboBox x:Name="FilterSymbol" Grid.Column="3" Margin="1" SelectedIndex="0" IsEnabled="False" SelectionChanged="Filter_SelectionChanged">
+                    <ComboBox x:Name="FilterSymbol" Style="{StaticResource CustomComboBoxStyle}" ItemContainerStyle="{StaticResource CustomComboBoxItemStyle}" Grid.Column="3" Margin="1" SelectedIndex="0" IsEnabled="False" SelectionChanged="Filter_SelectionChanged">
                         <ComboBoxItem Content="All"/>
                     </ComboBox>
 
-                    <ComboBox x:Name="FilterExecution" Grid.Column="4" Margin="1" SelectedIndex="0" IsEnabled="False" SelectionChanged="Filter_SelectionChanged">
+                    <ComboBox x:Name="FilterExecution" Style="{StaticResource CustomComboBoxStyle}" ItemContainerStyle="{StaticResource CustomComboBoxItemStyle}" Grid.Column="4" Margin="1" SelectedIndex="0" IsEnabled="False" SelectionChanged="Filter_SelectionChanged">
                         <ComboBoxItem Content="All"/>
                     </ComboBox>
 
-                    <ComboBox x:Name="FilterType" Grid.Column="5" Margin="1" SelectedIndex="0" IsEnabled="False" SelectionChanged="Filter_SelectionChanged">
+                    <ComboBox x:Name="FilterType" Style="{StaticResource CustomComboBoxStyle}" ItemContainerStyle="{StaticResource CustomComboBoxItemStyle}" Grid.Column="5" Margin="1" SelectedIndex="0" IsEnabled="False" SelectionChanged="Filter_SelectionChanged">
                         <ComboBoxItem Content="All"/>
                     </ComboBox>
 
-                    <ComboBox x:Name="FilterEntry" Grid.Column="6" Margin="1" SelectedIndex="0" IsEnabled="False" SelectionChanged="Filter_SelectionChanged">
+                    <ComboBox x:Name="FilterEntry" Style="{StaticResource CustomComboBoxStyle}" ItemContainerStyle="{StaticResource CustomComboBoxItemStyle}" Grid.Column="6" Margin="1" SelectedIndex="0" IsEnabled="False" SelectionChanged="Filter_SelectionChanged">
                         <ComboBoxItem Content="All"/>
                     </ComboBox>
                 </Grid>
@@ -102,13 +103,13 @@
                     <TextBlock Text="Position" Grid.Column="0" Style="{StaticResource HeaderLabel}" 
                                FontSize="14" Margin="10,0,0,0"/>
 
-                    <ComboBox Grid.Column="6" SelectedIndex="0" IsEnabled="False" x:Name="FilterPosSymbol" SelectionChanged="Filter_SelectionChanged">
+                    <ComboBox Grid.Column="6" SelectedIndex="0"  IsEnabled="False" x:Name="FilterPosSymbol" SelectionChanged="Filter_SelectionChanged" ItemContainerStyle="{StaticResource CustomComboBoxItemStyle}" Style="{StaticResource CustomComboBoxStyle}">
                         <ComboBoxItem Content="All"/>
                     </ComboBox>
                 </Grid>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,10,0" VerticalAlignment="Center">
-                    <ComboBox x:Name="PeriodCombo" Width="120" Margin="5,0" SelectedIndex="0" SelectionChanged="PeriodCombo_SelectionChanged">
+                    <ComboBox x:Name="PeriodCombo" Width="120" Margin="5,0" SelectedIndex="0" SelectionChanged="PeriodCombo_SelectionChanged" ItemContainerStyle="{StaticResource CustomComboBoxItemStyle}" Style="{StaticResource CustomComboBoxStyle}" >
                         <ComboBoxItem Content="Today"/>
                         <ComboBoxItem Content="Last 3 Days"/>
                         <ComboBoxItem Content="Last Week"/>
@@ -129,8 +130,8 @@
                             Background="#5D9CEC" Foreground="White" BorderThickness="0" 
                             Click="RequestButton_Click"/>
 
-                    <Button Content="📊" ToolTip="Excel" Width="25" Background="#27AE60" Foreground="White" Margin="1,0"/>
-                    <Button Content="📄" ToolTip="PDF" Width="25" Background="#C0392B" Foreground="White" Margin="1,0"/>
+                    <Button Content="📊" ToolTip="Excel" Width="25" Background="#27AE60" Foreground="White" Margin="1,0" Click="ExcelExport_Click" />
+                    <Button Content="📄" ToolTip="PDF" Width="25" Background="#C0392B" Foreground="White" Margin="1,0" Click="PdfExport_Click" />
                 </StackPanel>
             </Grid>
         </Border>

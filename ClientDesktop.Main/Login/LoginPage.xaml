@@ -134,11 +134,10 @@
         <!-- Added SelectedItem Binding -->
         <ComboBox x:Name="cmbServerName" 
                   Grid.Row="1" Grid.Column="1"
+                  Style="{StaticResource EditableComboBoxStyle}"
                   Height="28"
                   Margin="0,0,20,15"
-                  IsEditable="True"
                   IsTextSearchEnabled="False"  
-                  StaysOpenOnEdit="True"       
                   FontSize="12"
                   VerticalContentAlignment="Center"
                   ItemsSource="{Binding FilteredServers}"
@@ -157,7 +156,7 @@
                    Margin="0,0,15,15" FontSize="13"/>
 
         <!-- Added ItemsSource and Text Binding -->
-        <ComboBox x:Name="cmbLogin" Grid.Row="2" Grid.Column="1"
+        <ComboBox x:Name="cmbLogin" Grid.Row="2" Grid.Column="1" Style="{StaticResource EditableComboBoxStyle}"
                   Height="28" HorizontalAlignment="Stretch"
                   IsEditable="True" Margin="0,0,20,15" VerticalContentAlignment="Center"
                   FontSize="12"

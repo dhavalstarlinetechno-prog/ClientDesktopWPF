@@ -21,6 +21,7 @@ namespace ClientDesktop.View.Details
         public ObservableCollection<PositionHistoryModel> PositionHistoryItems { get; set; }
 
         private HistoryViewModel _historyViewModel;
+        private PDFBuilder _pdfBuilder = new PDFBuilder();
 
         HistoryType currentType = HistoryType.Deals;
 
@@ -404,8 +405,8 @@ namespace ClientDesktop.View.Details
                     var footerRow = new HistoryModel
                     {
                         RefId = "FOOTER",
-                        CreatedOn = DateTime.MaxValue,      // ✅ Always sorts to bottom
-                        SymbolName = "ZZZZZZZZZZ",          // ✅ Always sorts to bottom
+                        CreatedOn = DateTime.MaxValue,      
+                        SymbolName = "ZZZZZZZZZZ",          
                         OrderType = "ZZZZZZZZZZ",
                         Side = "ZZZZZZZZZZ",
                         Volume = decimal.MaxValue,
@@ -441,8 +442,8 @@ namespace ClientDesktop.View.Details
                     var footerRow = new PositionHistoryModel
                     {
                         RefId = "FOOTER",
-                        UpdatedAt = DateTime.MaxValue,      // ✅ Always sorts to bottom
-                        SymbolName = "ZZZZZZZZZZ",          // ✅ Always sorts to bottom
+                        UpdatedAt = DateTime.MaxValue,      
+                        SymbolName = "ZZZZZZZZZZ",          
                         Side = "ZZZZZZZZZZ",
                         TotalVolume = double.MaxValue,
                         AveragePrice = double.MaxValue,
@@ -477,6 +478,35 @@ namespace ClientDesktop.View.Details
 
             }
         }
+
+        private void ExcelExport_Click(object sender, RoutedEventArgs e)
+        {
+            if (currentType == HistoryType.Position)
+            {
+                var data = GridPosition.ItemsSource as List<PositionHistoryModel>;
+                _historyViewModel.ExportPositionToExcel(data);
+            }
+            else
+            {
+                var data = GridDealsOrders.ItemsSource as List<HistoryModel>;
+                _historyViewModel.ExportToExcel(data, currentType);
+            }
+        }
+
+        private void PdfExport_Click(object sender, RoutedEventArgs e)
+        {
+            if (currentType == HistoryType.Position)
+            {
+                var data = GridPosition.ItemsSource as List<PositionHistoryModel>;
+                _historyViewModel.ExportPositionToPdf(data);
+            }
+            else
+            {
+                var data = GridDealsOrders.ItemsSource as List<HistoryModel>;
+                _historyViewModel.ExportToPdf(data, currentType);
+            }
+        }
+
 
     }
 }

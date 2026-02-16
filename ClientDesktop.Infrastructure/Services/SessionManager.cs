@@ -55,6 +55,7 @@ namespace ClientDesktop.Infrastructure.Services
         public static void SetClientList(List<ClientDetails> clients)
         {
             ClientListData = clients;
+            SessionManager.TriggerLogin();
         }
 
         public static void ClearSession()
