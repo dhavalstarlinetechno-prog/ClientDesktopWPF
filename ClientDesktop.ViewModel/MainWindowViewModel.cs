@@ -12,7 +12,7 @@ namespace ClientDesktop.ViewModel
     {
         private readonly AuthService _authService;
         private readonly ClientService _clientService;
-        private readonly IDialogService _dialogService; // Tera DialogService yaha use hoga
+        private readonly IDialogService _dialogService;
 
         private string _title = "Home";
         public string Title { get => _title; set => SetProperty(ref _title, value); }
@@ -23,7 +23,6 @@ namespace ClientDesktop.ViewModel
         private bool _isLoggedIn;
         public bool IsLoggedIn { get => _isLoggedIn; set => SetProperty(ref _isLoggedIn, value); }
 
-        // Disclaimer ke liye View se connect karne wala hook
         public Func<bool>? OpenDisclaimerAction { get; set; }
 
         public ICommand DisconnectCommand { get; }
@@ -32,7 +31,7 @@ namespace ClientDesktop.ViewModel
         public MainWindowViewModel(
             AuthService authService,
             ClientService clientService,
-            IDialogService dialogService) // Constructor Injection
+            IDialogService dialogService)
         {
             _authService = authService;
             _clientService = clientService;
@@ -42,7 +41,6 @@ namespace ClientDesktop.ViewModel
             ShowLoginCommand = new RelayCommand(_ => ShowLoginWindow());
         }
 
-        // --- MAIN STARTUP LOGIC (Same as Home.cs InitializeHome) ---
         public async Task InitializeHomeAsync()
         {
             await _authService.GetServerListAsync();
@@ -56,7 +54,7 @@ namespace ClientDesktop.ViewModel
                 SessionManager.SetSession(null, existingUser.UserId, existingUser.Username, existingUser.LicenseId, null, existingUser.Password);
             }
 
-            await _authService.GetServerListAsync();
+            SetRestrictedMode();
 
             if (!System.Net.NetworkInformation.NetworkInterface.GetIsNetworkAvailable())
             {
@@ -123,14 +121,11 @@ namespace ClientDesktop.ViewModel
             catch { }
             return false;
         }
-
-        // --- DIALOG SERVICE USAGE ---
+ 
         public void ShowLoginWindow()
         {
-            // Ye DialogService use karke Login Page dikhayega
             _dialogService.ShowDialog<LoginPageViewModel>("Login", (vm) =>
             {
-                // Jab dialog band hoga, ye code chalega
                 if (!string.IsNullOrEmpty(SessionManager.Token))
                 {
                     _ = PerformPostLoginSetup();
@@ -140,12 +135,10 @@ namespace ClientDesktop.ViewModel
 
         private async Task PerformPostLoginSetup()
         {
-            // 1. Show Disclaimer
             bool disclaimerAcknowledged = ShowDisclaimerAndCheck();
 
             if (disclaimerAcknowledged)
             {
-                // 2. Load Client Data
                 if (!string.IsNullOrEmpty(SessionManager.Token))
                 {
                     try
@@ -157,7 +150,7 @@ namespace ClientDesktop.ViewModel
                     }
                     catch (Exception ex)
                     {
-                        FileLogger.Log("Home", "Client Data Load Error: " + ex.Message);
+                        Console.WriteLine("Client Data Load Error: " + ex.Message);
                     }
                 }
 
@@ -165,13 +158,13 @@ namespace ClientDesktop.ViewModel
             }
             else
             {
+                SessionManager.ClearSession();
                 ShowLoginWindow();
             }
         }
 
         private bool ShowDisclaimerAndCheck()
         {
-            // Disclaimer Custom Window hai, isliye Delegate se open karenge
             if (OpenDisclaimerAction != null)
             {
                 return Application.Current.Dispatcher.Invoke(() => OpenDisclaimerAction.Invoke());
@@ -187,11 +180,20 @@ namespace ClientDesktop.ViewModel
             FileLogger.Log("System", "Login Successful.");
         }
 
+        private void SetRestrictedMode()
+        {
+            Title = "Trader App - Restricted Mode";
+            IsLoggedIn = false;
+            UserId = string.Empty;
+
+            // Yaha aap MarketWatch ko "Disconnected" state me daalne ka logic likh sakte ho
+            // Example: Messenger.Send(new UpdateMarketWatchStatusMessage(false));
+        }
+
         private void Disconnect()
         {
             SessionManager.ClearSession();
-            IsLoggedIn = false;
-            UserId = "";
+            SetRestrictedMode();
             FileLogger.Log("System", "User Disconnected.");
             ShowLoginWindow();
         }

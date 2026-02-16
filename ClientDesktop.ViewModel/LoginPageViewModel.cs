@@ -14,10 +14,9 @@ namespace ClientDesktop.ViewModel
 
         public Action CloseAction { get; set; }
 
-        // --- Collections ---
         public List<ServerList> AllServers { get; private set; } = new();
         public ObservableCollection<ServerList> FilteredServers { get; } = new();
-        public ObservableCollection<string> LoginHistory { get; } = new(); // For Username Dropdown
+        public ObservableCollection<string> LoginHistory { get; } = new(); 
 
         // --- Properties ---
         private ServerList _selectedServer;
@@ -28,7 +27,6 @@ namespace ClientDesktop.ViewModel
             {
                 if (SetProperty(ref _selectedServer, value))
                 {
-                    // WinForms Logic: Server change hone par history check karo
                     LoadLoginHistoryForServer();
                     CheckLoginHistory();
                 }
@@ -43,7 +41,6 @@ namespace ClientDesktop.ViewModel
             {
                 if (SetProperty(ref _username, value))
                 {
-                    // WinForms Logic: Username type karte hi password fill karo
                     CheckLoginHistory();
                 }
             }
@@ -77,13 +74,8 @@ namespace ClientDesktop.ViewModel
                 AllServers = serverList ?? new List<ServerList>();
                 SessionManager.SetServerList(AllServers);
 
-                // Reset Filtered List
                 FilteredServers.Clear();
-                // Initially populate filtered list if needed, or code-behind handles filter
-                // But for auto-selection logic, we need items in VM sometimes.
-                // Assuming CodeBehind handles the "Filtering", but we hold the data.
 
-                // --- WINFORMS LOGIC: Auto-Select Last Login ---
                 string cLic = SessionManager.LastSelectedLogin.LicenseId;
                 string cUser = SessionManager.LastSelectedLogin.UserId;
 
@@ -149,14 +141,8 @@ namespace ClientDesktop.ViewModel
             }
             else
             {
-                // Don't clear password if user is typing, only clear if we switched context completely?
-                // WinForms clears it: txtpassword.Text = string.Empty;
-                // But in MVVM binding, be careful. Let's keep WinForms behavior.
-                // Note: Only clear if it was an auto-filled password? 
-                // For safety, let's clear only if the logic implies a reset.
-                // WinForms clears it if match NOT found.
-                // Password = string.Empty; 
-                // IsRememberMe = false;
+                Password = string.Empty;
+                IsRememberMe = false;
             }
         }
 
@@ -166,8 +152,6 @@ namespace ClientDesktop.ViewModel
 
             string licenseId = SelectedServer?.licenseId.ToString() ?? "";
 
-            // Note: If server is not selected via list but typed text matches logic?
-            // In WPF hybrid, SelectedServer should be set. If null, maybe fallback?
             if (string.IsNullOrEmpty(licenseId)) return;
 
             SessionManager.SetSession(string.Empty, Username, Username, licenseId, null, Password);

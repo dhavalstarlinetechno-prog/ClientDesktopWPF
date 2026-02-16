@@ -1,5 +1,5 @@
 ﻿using ClientDesktop.Core.Models;
-using ClientDesktop.Infrastructure.Services;
+using ClientDesktop.View.Disclaimer;
 using ClientDesktop.ViewModel;
 using System.Windows;
 using System.Windows.Controls;
@@ -49,27 +49,18 @@ namespace ClientDesktop.Main.Login
                 };
             }
 
-            cmbServerName.Focus();
-        }
+                    cmbServerName.Focus();
+                }
 
-        // 🔥 FIX 2: PasswordBox se ViewModel ko update karo (Manual Typing ke liye)
-        // Ye method XAML mein "PasswordChanged" se link hai, par code mein missing tha.
         private void TxtPassword_PasswordChanged(object sender, RoutedEventArgs e)
         {
             if (DataContext is LoginPageViewModel vm)
             {
-                // Loop rokne ke liye check
                 if (vm.Password != txtPassword.Password)
                 {
                     vm.Password = txtPassword.Password;
                 }
             }
-        }
-
-        // --- Baki code Same rahega ---
-
-        private void CancelButton_Click(object sender, RoutedEventArgs e)
-        {
         }
 
         private void BtnEye_Click(object sender, RoutedEventArgs e)
@@ -96,7 +87,9 @@ namespace ClientDesktop.Main.Login
 
         private void Disclaimer_Click(object sender, MouseButtonEventArgs e)
         {
-            MessageBox.Show("This application is for authorized use only.\nUnauthorized access is prohibited.", "Disclaimer", MessageBoxButton.OK, MessageBoxImage.Information);
+            var disclaimerView = new DisclaimerView();
+            disclaimerView.Owner = Window.GetWindow(this);
+            disclaimerView.ShowDialog();
         }
 
         #region Server List Management

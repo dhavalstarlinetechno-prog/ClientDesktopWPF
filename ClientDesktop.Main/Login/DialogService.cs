@@ -27,7 +27,9 @@ namespace ClientDesktop.Main.Login
                 Content = viewModel, // WPF DataTemplate se View dhund lega
                 SizeToContent = SizeToContent.WidthAndHeight,
                 ResizeMode = ResizeMode.NoResize,
-                WindowStartupLocation = WindowStartupLocation.CenterScreen
+                WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                ShowInTaskbar = false,
+                Owner = Application.Current.MainWindow
             };
 
             // 3. Logic handle karo

@@ -102,12 +102,6 @@ namespace ClientDesktop.Main
                     Console.WriteLine("Failed to load layout: " + ex.Message);
                 }
             }
-
-            // Trigger Startup Logic
-            if (DataContext is MainWindowViewModel vm)
-            {
-                _ = vm.InitializeHomeAsync();
-            }
         }
 
         private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
