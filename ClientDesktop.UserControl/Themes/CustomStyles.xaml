@@ -95,7 +95,7 @@
     </Style>
 
     <!-- Modern ComboBox Style with Disabled State -->
-    <Style TargetType="ComboBox">
+    <Style TargetType="ComboBox" x:Key="CustomComboBoxStyle">
         <Setter Property="Background" Value="White"/>
         <Setter Property="Foreground" Value="#333333"/>
         <Setter Property="BorderBrush" Value="#D0D0D0"/>
@@ -210,7 +210,7 @@
     </Style>
 
     <!-- ComboBox Item Style (same as before) -->
-    <Style TargetType="ComboBoxItem">
+    <Style TargetType="ComboBoxItem" x:Key="CustomComboBoxItemStyle">
         <Setter Property="Background" Value="White"/>
         <Setter Property="Foreground" Value="#333333"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
