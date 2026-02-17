@@ -3,7 +3,7 @@
 
     <!-- DatePicker Style -->
     <Style x:Key="CustomDatePickerStyle" TargetType="DatePicker">
-        <Setter Property="Height" Value="24"/>
+        <Setter Property="Height" Value="22"/>
         <Setter Property="Foreground" Value="#333333"/>
         <Setter Property="Background" Value="White"/>
         <Setter Property="BorderBrush" Value="#D0D0D0"/>
@@ -39,8 +39,8 @@
                             <!-- Calendar Button (Smaller Icon) -->
                             <Button x:Name="PART_Button" 
                                 Grid.Column="1"
-                                Width="24"
-                                Height="24"
+                                Width="22"
+                                Height="22"
                                 Margin="0,0,2,0"
                                 Focusable="False"
                                 Background="Transparent"
@@ -100,7 +100,7 @@
         <Setter Property="Foreground" Value="#333333"/>
         <Setter Property="BorderBrush" Value="#D0D0D0"/>
         <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="Height" Value="28"/>
+        <Setter Property="Height" Value="22"/>
         <Setter Property="FontSize" Value="13"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Padding" Value="8,0,5,0"/>

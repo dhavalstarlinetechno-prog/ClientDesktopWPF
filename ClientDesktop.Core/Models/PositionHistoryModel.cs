@@ -9,8 +9,8 @@
         public int SecurityId { get; set; }
         public int SymbolDigit { get; set; }
         public string Side { get; set; }
-        public DateTime SymbolExpiry { get; set; }
-        public DateTime SymbolExpiryClose { get; set; }
+        public DateTime? SymbolExpiry { get; set; }
+        public DateTime? SymbolExpiryClose { get; set; }
         public int SymbolContractSize { get; set; }
         public double AveragePrice { get; set; }
         public double AverageOutPrice { get; set; }

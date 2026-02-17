@@ -126,12 +126,45 @@
             Style="{StaticResource CustomDatePickerStyle}"/>
 
 
-                    <Button Content="Request" Width="70" Margin="5,0,5,0" 
+                    <Button Content="Request" Width="70" Margin="5,0,5,0"  Height="22" 
                             Background="#5D9CEC" Foreground="White" BorderThickness="0" 
                             Click="RequestButton_Click"/>
 
-                    <Button Content="📊" ToolTip="Excel" Width="25" Background="#27AE60" Foreground="White" Margin="1,0" Click="ExcelExport_Click" />
-                    <Button Content="📄" ToolTip="PDF" Width="25" Background="#C0392B" Foreground="White" Margin="1,0" Click="PdfExport_Click" />
+                    <Button ToolTip="Export to Excel" Width="28" Height="28" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="ExcelExport_Click">
+                        <Viewbox Width="22" Height="22">
+                            <Grid>
+                                <Path Fill="#217346" Data="M4,4 H20 A2,2 0 0 1 22,6 V26 A2,2 0 0 1 20,28 H4 A2,2 0 0 1 2,26 V6 A2,2 0 0 1 4,4 Z" />
+
+                                <Path Fill="#107C41" Opacity="0.5" Data="M22,15 V26 A2,2 0 0 1 20,28 H12 L22,15 Z" />
+
+                                <Path Stroke="White" StrokeThickness="0.8" Opacity="0.3" 
+                  Data="M12,8 H18 M12,12 H18 M12,16 H18 M12,20 H18 M12,24 H18 M11,8 V24" />
+
+                                <Border Background="#185C37" CornerRadius="2" Margin="0,4,10,4" HorizontalAlignment="Left" Width="14" Height="14">
+                                    <Grid>
+                                        <Path Fill="White" Opacity="0.1" Data="M0,0 H14 L0,14 Z" />
+                                        <TextBlock Text="X" Foreground="White" FontSize="10" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Center" FontFamily="Segoe UI" />
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                        </Viewbox>
+                    </Button>
+                    <Button ToolTip="Export to PDF" Width="35" Height="28" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="PdfExport_Click">
+                        <Viewbox Width="22" Height="22">
+                            <Grid>
+                                <Path Fill="#B30B00" Data="M4,4 H20 A2,2 0 0 1 22,6 V26 A2,2 0 0 1 20,28 H4 A2,2 0 0 1 2,26 V6 A2,2 0 0 1 4,4 Z" />
+
+                                <Path Fill="#7A0800" Opacity="0.4" Data="M22,15 V26 A2,2 0 0 1 20,28 H12 L22,15 Z" />
+
+                                <Path Stroke="White" StrokeThickness="1" Opacity="0.3" 
+                  Data="M6,10 H16 M6,14 H18 M6,18 H18 M6,22 H12" />
+
+                                <Border Background="#E52521" CornerRadius="2" Margin="8,10,0,4" VerticalAlignment="Bottom" HorizontalAlignment="Right" Padding="2,0">
+                                    <TextBlock Text="PDF" Foreground="White" FontSize="7" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Center" FontFamily="Segoe UI" />
+                                </Border>
+                            </Grid>
+                        </Viewbox>
+                    </Button>
                 </StackPanel>
             </Grid>
         </Border>
