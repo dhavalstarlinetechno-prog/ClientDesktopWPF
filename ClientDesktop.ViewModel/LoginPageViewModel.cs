@@ -11,12 +11,13 @@ namespace ClientDesktop.ViewModel
     public class LoginPageViewModel : ViewModelBase, ICloseable
     {
         private readonly AuthService _authService;
+        private const int Threshold = 3;
 
         public Action CloseAction { get; set; }
 
         public List<ServerList> AllServers { get; private set; } = new();
         public ObservableCollection<ServerList> FilteredServers { get; } = new();
-        public ObservableCollection<string> LoginHistory { get; } = new(); 
+        public ObservableCollection<string> LoginHistory { get; } = new();
 
         // --- Properties ---
         private ServerList _selectedServer;
@@ -39,6 +40,9 @@ namespace ClientDesktop.ViewModel
             get => _username;
             set
             {
+                if (!string.IsNullOrEmpty(value) && !value.All(char.IsDigit))
+                    return;
+
                 if (SetProperty(ref _username, value))
                 {
                     CheckLoginHistory();
@@ -47,7 +51,11 @@ namespace ClientDesktop.ViewModel
         }
 
         private string _password;
-        public string Password { get => _password; set => SetProperty(ref _password, value); }
+        public string Password
+        {
+            get => _password;
+            set => SetProperty(ref _password, value);
+        }
 
         private bool _isRememberMe;
         public bool IsRememberMe { get => _isRememberMe; set => SetProperty(ref _isRememberMe, value); }
@@ -87,10 +95,8 @@ namespace ClientDesktop.ViewModel
                     var server = AllServers.FirstOrDefault(s => s.licenseId.ToString() == cLic);
                     if (server != null)
                     {
-                        // Add to filtered list so it shows up
                         if (!FilteredServers.Contains(server)) FilteredServers.Add(server);
-
-                        SelectedServer = server; // This triggers history check
+                        SelectedServer = server;
                     }
                 }
 
@@ -105,10 +111,34 @@ namespace ClientDesktop.ViewModel
             }
         }
 
-        // --- HELPER: Dropdown Items ---
+        public void FilterServers(string input)
+        {
+            if (AllServers == null) return;
+
+            FilteredServers.Clear();
+
+            if (string.IsNullOrWhiteSpace(input) || input.Length < Threshold)
+            {
+                return;
+            }
+
+            var matches = AllServers
+                .Where(s => (s.companyName ?? string.Empty)
+                    .IndexOf(input.Trim(), StringComparison.OrdinalIgnoreCase) >= 0)
+                .Take(20)
+                .ToList();
+
+            foreach (var item in matches)
+            {
+                FilteredServers.Add(item);
+            }
+        }
+
         private void LoadLoginHistoryForServer()
         {
             LoginHistory.Clear();
+            Password = string.Empty;
+            IsRememberMe = false;
             var history = _authService.GetLoginHistory();
             if (history != null && SelectedServer != null)
             {
@@ -122,10 +152,14 @@ namespace ClientDesktop.ViewModel
             }
         }
 
-        // --- HELPER: Auto-Fill Password ---
         private void CheckLoginHistory()
         {
-            if (string.IsNullOrEmpty(Username) || SelectedServer == null) return;
+            if (string.IsNullOrEmpty(Username) || SelectedServer == null)
+            {
+                Password = string.Empty;
+                IsRememberMe = false;
+                return;
+            }
 
             var history = _authService.GetLoginHistory();
             var loginInfo = history?.FirstOrDefault(s =>
@@ -148,16 +182,18 @@ namespace ClientDesktop.ViewModel
 
         private async Task LoginAsync()
         {
-            if (string.IsNullOrEmpty(Username) || string.IsNullOrEmpty(Password)) return;
-
-            string licenseId = SelectedServer?.licenseId.ToString() ?? "";
-
-            if (string.IsNullOrEmpty(licenseId)) return;
-
-            SessionManager.SetSession(string.Empty, Username, Username, licenseId, null, Password);
-
             try
             {
+                if (string.IsNullOrEmpty(Username) || string.IsNullOrEmpty(Password) || SelectedServer == null)
+                {
+                    LogDisconnect();
+                    return;
+                }
+
+                string licenseId = SelectedServer?.licenseId.ToString() ?? "";
+
+                SessionManager.SetSession(string.Empty, Username, Username, licenseId, null, Password);
+
                 var result = await _authService.LoginAsync(Username, Password, licenseId, IsRememberMe);
 
                 if (result.Success)
@@ -182,14 +218,34 @@ namespace ClientDesktop.ViewModel
                         SessionManager.socketLoginInfos = socketInfo;
                         SessionManager.IsPasswordReadOnly = profileResult.data.isreadonlypassword;
                     }
-                }
 
-                CloseAction?.Invoke();
+                    FileLogger.Log("Network", $"User '{Username}' Authorized Successfully.");
+                }
+                else
+                {
+                    LogDisconnect();
+                }
             }
             catch (Exception ex)
             {
-                FileLogger.Log("Network", ex.Message);
+                LogDisconnect();
+            }
+            finally
+            {
                 CloseAction?.Invoke();
+            }
+        }
+
+        private void LogDisconnect()
+        {
+            string compName = SelectedServer?.companyName;
+            if (!string.IsNullOrEmpty(Username) && !string.IsNullOrEmpty(compName))
+            {
+                FileLogger.Log("Network", $"User '{Username}' Disconnected from {compName}");
+            }
+            else
+            {
+                FileLogger.Log("Network", "Disconnected");
             }
         }
     }

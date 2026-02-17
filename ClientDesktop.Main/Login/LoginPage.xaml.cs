@@ -27,16 +27,14 @@ namespace ClientDesktop.Main.Login
                 this.DataContext = new LoginPageViewModel();
             }
 
-            // 🔥 FIX 1: ViewModel se PasswordBox ko Sync karo (Auto-Fill ke liye)
+            // Sync Password on Load
             if (DataContext is LoginPageViewModel vm)
             {
-                // Agar VM mein pehle se password hai (Auto-fill), to UI mein dikhao
                 if (!string.IsNullOrEmpty(vm.Password) && txtPassword.Password != vm.Password)
                 {
                     txtPassword.Password = vm.Password;
                 }
 
-                // Agar future mein VM change hota hai, to UI update karo
                 vm.PropertyChanged += (s, args) =>
                 {
                     if (args.PropertyName == nameof(LoginPageViewModel.Password))
@@ -49,8 +47,8 @@ namespace ClientDesktop.Main.Login
                 };
             }
 
-                    cmbServerName.Focus();
-                }
+            cmbServerName.Focus();
+        }
 
         private void TxtPassword_PasswordChanged(object sender, RoutedEventArgs e)
         {
@@ -127,19 +125,6 @@ namespace ClientDesktop.Main.Login
                 if (textBox == null) return;
 
                 string txt = textBox.Text;
-                int caret = textBox.CaretIndex;
-
-                if (!string.IsNullOrEmpty(txt))
-                {
-                    textBox.Background = Brushes.White;
-                    cmbServerName.Background = Brushes.White;
-                }
-                else
-                {
-                    var errorBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFC7CE"));
-                    textBox.Background = errorBrush;
-                    cmbServerName.Background = errorBrush;
-                }
 
                 var results = Filter(txt);
 
@@ -160,20 +145,22 @@ namespace ClientDesktop.Main.Login
 
                 if (needsUpdate)
                 {
+                    // Lock events
+                    _isInternalChange = true;
+
+                    // Clear items to force refresh
                     vm.FilteredServers.Clear();
 
                     if (results.Count > 0)
                     {
                         foreach (var item in results) vm.FilteredServers.Add(item);
-                        cmbServerName.IsDropDownOpen = true;
 
                         var firstMatch = results[0];
+
+                        // Auto-Select Logic
                         if (firstMatch.companyName.StartsWith(txt, StringComparison.OrdinalIgnoreCase))
                         {
-                            _isInternalChange = true;
-
                             cmbServerName.SelectedItem = firstMatch;
-
                             textBox.Text = firstMatch.companyName;
 
                             int userTypedLength = txt.Length;
@@ -183,26 +170,44 @@ namespace ClientDesktop.Main.Login
                                 textBox.Select(userTypedLength, fullLength - userTypedLength);
 
                             cmbServerName.IsDropDownOpen = true;
-                            _isInternalChange = false;
+                        }
+                        else
+                        {
+                            // Partial match but not prefix match -> Restore text
+                            cmbServerName.SelectedItem = null;
+                            cmbServerName.Text = txt;
+                            textBox.Text = txt;
+                            textBox.Select(txt.Length, 0);
+
+                            cmbServerName.IsDropDownOpen = true;
                         }
                     }
                     else
                     {
+                        // No results (or threshold not met) -> Clear selection but KEEP text
                         cmbServerName.IsDropDownOpen = false;
+                        cmbServerName.SelectedItem = null;
+
+                        // Explicitly restore text because setting SelectedItem=null clears it
+                        cmbServerName.Text = txt;
+                        textBox.Text = txt;
+                        textBox.Select(txt.Length, 0);
                     }
+
+                    _isInternalChange = false;
                 }
                 else
                 {
                     if (results.Count > 0) cmbServerName.IsDropDownOpen = true;
                 }
 
+                // Extra safety: If results are empty but selection exists (rare mismatch)
                 if (results.Count == 0 && cmbServerName.SelectedItem != null)
                 {
                     _isInternalChange = true;
                     cmbServerName.SelectedItem = null;
-
+                    cmbServerName.Text = txt;
                     if (textBox.Text != txt) textBox.Text = txt;
-
                     textBox.Select(txt.Length, 0);
                     _isInternalChange = false;
                 }
@@ -236,9 +241,7 @@ namespace ClientDesktop.Main.Login
                 if (textBox != null)
                 {
                     textBox.Select(cmbServerName.Text.Length, 0);
-                    textBox.Background = Brushes.White;
                 }
-                cmbServerName.Background = Brushes.White;
 
                 cmbServerName.IsDropDownOpen = false;
 

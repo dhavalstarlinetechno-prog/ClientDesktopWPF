@@ -2,9 +2,8 @@
 using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Infrastructure.Logger;
 using ClientDesktop.Infrastructure.Services;
-using ClientDesktop.Core.Models;
-using System.Windows.Input;
 using System.Windows;
+using System.Windows.Input;
 
 namespace ClientDesktop.ViewModel
 {
@@ -14,7 +13,7 @@ namespace ClientDesktop.ViewModel
         private readonly ClientService _clientService;
         private readonly IDialogService _dialogService;
 
-        private string _title = "Home";
+        private string _title = string.Empty;
         public string Title { get => _title; set => SetProperty(ref _title, value); }
 
         private string _userId;
@@ -182,12 +181,9 @@ namespace ClientDesktop.ViewModel
 
         private void SetRestrictedMode()
         {
-            Title = "Trader App - Restricted Mode";
+            Title = string.Empty;
             IsLoggedIn = false;
             UserId = string.Empty;
-
-            // Yaha aap MarketWatch ko "Disconnected" state me daalne ka logic likh sakte ho
-            // Example: Messenger.Send(new UpdateMarketWatchStatusMessage(false));
         }
 
         private void Disconnect()
