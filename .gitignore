@@ -122,3 +122,5 @@ obj/
 /ClientDesktop.ViewModel/obj/Release/net8.0/ClientDesktop.ViewModel.assets.cache
 /ClientDesktop.ViewModel/obj/Release/net8.0/ClientDesktop.ViewModel.GeneratedMSBuildEditorConfig.editorconfig
 /ClientDesktop.ViewModel/obj/Release/net8.0/ClientDesktop.ViewModel.GlobalUsings.g.cs
+/ClientDesktop.View/obj/Debug/net8.0-windows/ClientDesktop.View.GlobalUsings.g.cs
+/ClientDesktop.Main/obj/Debug/net8.0-windows/ClientDesktop.Main.GlobalUsings.g.cs
