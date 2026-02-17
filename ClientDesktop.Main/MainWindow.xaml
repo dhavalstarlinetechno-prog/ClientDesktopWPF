@@ -7,6 +7,7 @@
         xmlns:dock="https://github.com/Dirkster99/AvalonDock"
         xmlns:dockThemes="clr-namespace:AvalonDock.Themes;assembly=AvalonDock.Themes.VS2013"
         xmlns:details="clr-namespace:ClientDesktop.View.Details;assembly=ClientDesktop.View"
+        xmlns:navigation="clr-namespace:ClientDesktop.View.Navigation;assembly=ClientDesktop.View"
         WindowState="Maximized"
         mc:Ignorable="d"
         Title="{Binding Title, UpdateSourceTrigger=PropertyChanged}" Height="800" Width="1200"
@@ -160,7 +161,9 @@
                             <!-- Navigator -->
                             <dock:LayoutAnchorablePane DockHeight="*">
                                 <dock:LayoutAnchorable x:Name="NavigatorPane" Title="Navigator" ContentId="Navigator" CanClose="False" CanAutoHide="False">
-                                    <Grid Background="White"/>
+                                    <Grid>
+                                        <navigation:NavigationView />
+                                    </Grid>
                                 </dock:LayoutAnchorable>
                             </dock:LayoutAnchorablePane>
 

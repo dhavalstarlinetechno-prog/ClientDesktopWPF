@@ -8,7 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Navigation\" />
     <Folder Include="Chart\" />
     <Folder Include="MarketWatch\" />
   </ItemGroup>

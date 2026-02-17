@@ -1,5 +1,12 @@
-﻿namespace ClientDesktop.Core.Models
+﻿using Newtonsoft.Json;
+
+namespace ClientDesktop.Core.Models
 {
+    public class BanScriptResponse
+    {
+        [JsonProperty("data")]
+        public List<BanScripts> BanScripts { get; set; }
+    }
     public class BanScripts
     {
         public int BanScriptId { get; set; }
