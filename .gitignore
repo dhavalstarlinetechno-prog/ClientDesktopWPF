@@ -127,3 +127,4 @@ obj/
 /ClientDesktop.Main/obj/Debug/net8.0-windows/ClientDesktop.Main.GlobalUsings.g.cs
 /ClientDesktop.UserControl/obj/Debug/net8.0-windows/ClientDesktop.UserControl.GlobalUsings.g.cs
 /ClientDesktop.View/obj/Debug/net8.0-windows/ClientDesktop.View.GlobalUsings.g.cs
+/ClientDesktop.UserControl/obj/Debug/net8.0-windows/ClientDesktop.UserControl.GlobalUsings.g.cs
