@@ -3,10 +3,11 @@
 namespace ClientDesktop.Infrastructure.Logger
 {
     public static class FileLogger
-    {
+    { 
         public static Action<string, string, string> OnLogReceived;
 
-        private static readonly string LogDirectory = Path.Combine(AppConfig.AppDataPath, "Logs");
+        private static readonly string LogDirectory = Path.Combine(Directory.GetParent(AppConfig.AppDataPath).FullName, "Logs");
+        private static readonly string ApplicationLogDirectory = Path.Combine(Directory.GetParent(AppConfig.AppDataPath).FullName, "Application Logger");
 
         public static void Log(string source, string message)
         {
@@ -24,6 +25,27 @@ namespace ClientDesktop.Infrastructure.Logger
                 File.AppendAllText(filePath, logLine);
 
                 OnLogReceived?.Invoke(timeForGrid, source, message);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("Logging Failed: " + ex.Message);
+            }
+        }
+
+        public static void ApplicationLog(string FileName , string source, string message)
+        {
+            try
+            {
+                DateTime now = DateTime.Now;
+                string formateTime = now.ToString("yyyy.MM.dd HH:mm:ss.fff");
+
+                if (!Directory.Exists(ApplicationLogDirectory)) Directory.CreateDirectory(ApplicationLogDirectory);
+
+                string filePath = Path.Combine(ApplicationLogDirectory, "ApplicationLogs.log");
+
+                string logLine = $"{formateTime}\t{FileName}\t{source}\t{message}{Environment.NewLine}";
+                File.AppendAllText(filePath, logLine);
+
             }
             catch (Exception ex)
             {

@@ -2,6 +2,7 @@
 using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Helpers;
+using ClientDesktop.Infrastructure.Logger;
 using ClientDesktop.Models;
 using Newtonsoft.Json;
 using System.Text;
@@ -63,15 +64,22 @@ namespace ClientDesktop.Infrastructure.Services
 
         #region API Calls
 
-        public async Task<(bool Success, string ErrorMessage, List<HistoryModel> ResponseData)> FetchHistoryFromApiAsync(
-              DateTime fromDate, DateTime toDate)
+        public async Task<HistoryFetchResult> FetchHistoryFromApiAsync(
+    DateTime fromDate, DateTime toDate)
         {
             try
             {
+                var dealer = SessionManager.ClientListData?.FirstOrDefault();
+                if (dealer == null)
+                {
+                    FileLogger.ApplicationLog("HistoryService", "FetchHistoryFromApiAsync", "DealerId not found.");
+                    return TryLoadFromCache("DealerId missing");
+                }
+
                 var payload = new
                 {
                     clientID = SessionManager.UserId,
-                    dealerID = SessionManager.ClientListData.FirstOrDefault().DealerId,
+                    dealerID = dealer.DealerId,
                     fromDate = fromDate.ToString("yyyy-MM-dd"),
                     toDate = toDate.ToString("yyyy-MM-dd")
                 };
@@ -79,40 +87,109 @@ namespace ClientDesktop.Infrastructure.Services
                 var json = JsonConvert.SerializeObject(payload);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                using (var response = await _apiService.PostRawAsync(AppConfig.GetHistoryForClient.ToReplaceUrl(), content))
+                using (var response = await _apiService
+                    .PostRawAsync(AppConfig.GetHistoryForClient.ToReplaceUrl(), content))
                 {
-                    if (response.Content == null)
+                    if (response == null || response.Content == null)
                     {
-                        return (false, $"{(int)response.StatusCode}: {response.ReasonPhrase}", null);
+                        FileLogger.ApplicationLog("HistoryService", "FetchHistoryFromApiAsync", "Null response from API.");
+                        return TryLoadFromCache("Null response from API");
                     }
 
-                    var responseString = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    var responseString = await response.Content.ReadAsStringAsync();
 
                     if (!response.IsSuccessStatusCode)
                     {
-                        var error = JsonConvert.DeserializeObject<dynamic>(responseString);
-                        return (false, error?.exception?.message?.ToString() ??
-                                $"{(int)response.StatusCode}: {response.ReasonPhrase}", null);
+                        FileLogger.ApplicationLog("HistoryService", "FetchHistoryFromApiAsync",
+                            $"API failed: {(int)response.StatusCode} - {response.ReasonPhrase}");
+                        return TryLoadFromCache(response.ReasonPhrase);
                     }
 
                     var result = JsonConvert.DeserializeObject<HistoryResponse>(responseString);
 
-                    if (result == null) return (false, "Invalid response from server", null);
-                    if (!result.IsSuccess || result.Data == null)
-                        return (false, result.SuccessMessage ?? "Failed to retrieve history data", null);
+                    if (result == null || !result.IsSuccess || result.Data == null)
+                    {
+                        FileLogger.ApplicationLog("HistoryService", "FetchHistoryFromApiAsync",
+                            "Invalid response structure.");
+                        return TryLoadFromCache("Invalid response structure");
+                    }
 
-                    SaveStoredHistory(result.Data);
-                    return (true, null, result.Data);
+                    try
+                    {
+                        SaveStoredHistory(result.Data);
+                    }
+                    catch (Exception ex)
+                    {
+                        FileLogger.ApplicationLog("HistoryService", "FetchHistoryFromApiAsync",
+                            $"SaveStoredHistory failed: {ex.Message}");
+                    }
+
+                    return new HistoryFetchResult
+                    {
+                        IsSuccess = true,
+                        IsFromCache = false,
+                        Data = result.Data
+                    };
                 }
             }
             catch (Exception ex)
             {
-                return (false, ex.Message, null);
+                FileLogger.ApplicationLog("HistoryService", "FetchHistoryFromApiAsync",
+                    $"Exception: {ex.Message}");
+
+                return TryLoadFromCache(ex.Message);
             }
         }
 
-        public async Task<(bool Success, string ErrorMessage, List<PositionHistoryModel> ResponseData)> FetchPositionHistoryFromApiAsync(
-              DateTime fromDate, DateTime toDate)
+
+        private HistoryFetchResult TryLoadFromCache(string errorMessage)
+        {
+            try
+            {
+                var cached = GetStoredHistory();
+
+                if (cached != null && cached.Any())
+                {
+                    FileLogger.ApplicationLog("HistoryService", "TryLoadFromCache",
+                        "Loaded history from local cache.");
+
+                    return new HistoryFetchResult
+                    {
+                        IsSuccess = true,
+                        IsFromCache = true,
+                        ErrorMessage = errorMessage,
+                        Data = cached
+                    };
+                }
+
+                FileLogger.ApplicationLog("HistoryService", "TryLoadFromCache",
+                    "No local history cache available.");
+
+                return new HistoryFetchResult
+                {
+                    IsSuccess = false,
+                    IsFromCache = false,
+                    ErrorMessage = errorMessage,
+                    Data = new List<HistoryModel>()
+                };
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog("HistoryService", "TryLoadFromCache",
+                    $"Cache load failed: {ex.Message}");
+
+                return new HistoryFetchResult
+                {
+                    IsSuccess = false,
+                    IsFromCache = false,
+                    ErrorMessage = ex.Message,
+                    Data = new List<HistoryModel>()
+                };
+            }
+        }
+
+        public async Task<PositionHistoryFetchResult> FetchPositionHistoryFromApiAsync(
+    DateTime fromDate, DateTime toDate)
         {
             try
             {
@@ -126,36 +203,109 @@ namespace ClientDesktop.Infrastructure.Services
                 var json = JsonConvert.SerializeObject(payload);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                using (var response = await _apiService.PostRawAsync(AppConfig.GetPositionHistoryForClient.ToReplaceUrl(), content).ConfigureAwait(false))
+                using (var response = await _apiService
+                    .PostRawAsync(AppConfig.GetPositionHistoryForClient.ToReplaceUrl(), content)
+                    .ConfigureAwait(false))
                 {
-                    // ✅ FIX: Check if Content is null here too
-                    if (response.Content == null)
+                    if (response == null || response.Content == null)
                     {
-                        return (false, $"{(int)response.StatusCode}: {response.ReasonPhrase}", null);
+                        FileLogger.ApplicationLog("HistoryService", "FetchPositionHistoryFromApiAsync",
+                            "Null response from PositionHistory API.");
+
+                        return TryLoadPositionHistoryFromCache("Null response from API");
                     }
 
-                    var responseString = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    var responseString = await response.Content.ReadAsStringAsync()
+                        .ConfigureAwait(false);
 
                     if (!response.IsSuccessStatusCode)
                     {
-                        var error = JsonConvert.DeserializeObject<dynamic>(responseString);
-                        return (false, error?.exception?.message?.ToString() ??
-                                $"{(int)response.StatusCode}: {response.ReasonPhrase}", null);
+                        FileLogger.ApplicationLog("HistoryService", "FetchPositionHistoryFromApiAsync",
+                            $"API failed: {(int)response.StatusCode} - {response.ReasonPhrase}");
+
+                        return TryLoadPositionHistoryFromCache(response.ReasonPhrase);
                     }
 
                     var result = JsonConvert.DeserializeObject<PositionHistoryResponse>(responseString);
 
-                    if (result == null) return (false, "Invalid response from server", null);
-                    if (!result.IsSuccess || result.Data == null)
-                        return (false, result.SuccessMessage ?? "Failed to retrieve position history data", null);
+                    if (result == null || !result.IsSuccess || result.Data == null)
+                    {
+                        FileLogger.ApplicationLog("HistoryService", "FetchPositionHistoryFromApiAsync",
+                            "Invalid response structure.");
 
-                    SaveStoredPositionHistory(result.Data);
-                    return (true, null, result.Data);
+                        return TryLoadPositionHistoryFromCache("Invalid response structure");
+                    }
+
+                    try
+                    {
+                        SaveStoredPositionHistory(result.Data);
+                    }
+                    catch (Exception ex)
+                    {
+                        FileLogger.ApplicationLog("HistoryService", "FetchPositionHistoryFromApiAsync",
+                            $"SaveStoredPositionHistory failed: {ex.Message}");
+                    }
+
+                    return new PositionHistoryFetchResult
+                    {
+                        IsSuccess = true,
+                        IsFromCache = false,
+                        Data = result.Data
+                    };
                 }
             }
             catch (Exception ex)
             {
-                return (false, ex.Message, null);
+                FileLogger.ApplicationLog("HistoryService", "FetchPositionHistoryFromApiAsync",
+                    $"Exception: {ex.Message}");
+
+                return TryLoadPositionHistoryFromCache(ex.Message);
+            }
+        }
+
+        private PositionHistoryFetchResult TryLoadPositionHistoryFromCache(string errorMessage)
+        {
+            try
+            {
+                var cached = GetStoredPositionHistory();
+
+                if (cached != null && cached.Any())
+                {
+                    FileLogger.ApplicationLog("HistoryService", "TryLoadPositionHistoryFromCache",
+                        "Loaded position history from local cache.");
+
+                    return new PositionHistoryFetchResult
+                    {
+                        IsSuccess = true,
+                        IsFromCache = true,
+                        ErrorMessage = errorMessage,
+                        Data = cached
+                    };
+                }
+
+                FileLogger.ApplicationLog("HistoryService", "TryLoadPositionHistoryFromCache",
+                    "No local position history cache available.");
+
+                return new PositionHistoryFetchResult
+                {
+                    IsSuccess = false,
+                    IsFromCache = false,
+                    ErrorMessage = errorMessage,
+                    Data = new List<PositionHistoryModel>()
+                };
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog("HistoryService", "TryLoadPositionHistoryFromCache",
+                    $"Cache load failed: {ex.Message}");
+
+                return new PositionHistoryFetchResult
+                {
+                    IsSuccess = false,
+                    IsFromCache = false,
+                    ErrorMessage = ex.Message,
+                    Data = new List<PositionHistoryModel>()
+                };
             }
         }
 

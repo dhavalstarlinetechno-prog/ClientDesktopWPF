@@ -56,4 +56,12 @@
         public int Action { get; set; }
         public bool IsSuccess { get; set; }
     }
+
+    public class PositionHistoryFetchResult
+    {
+        public bool IsSuccess { get; set; }
+        public bool IsFromCache { get; set; }
+        public string ErrorMessage { get; set; }
+        public List<PositionHistoryModel> Data { get; set; }
+    }
 }

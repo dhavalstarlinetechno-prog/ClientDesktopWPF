@@ -257,6 +257,23 @@
                                     </Border>
 
                                     <ControlTemplate.Triggers>
+                                        <Trigger Property="ItemsControl.AlternationIndex" Value="1">
+                                            <Setter TargetName="DGR_Border" Property="Background" Value="#EEEEEE"/>
+                                        </Trigger>
+
+                                        <!-- Your existing FOOTER trigger -->
+                                        <DataTrigger Binding="{Binding RefId}" Value="FOOTER">
+                                            <Setter TargetName="CellsPresenter" Property="Visibility" Value="Collapsed"/>
+                                            <Setter TargetName="FooterPanel" Property="Visibility" Value="Visible"/>
+                                            <Setter TargetName="DGR_Border" Property="Background" Value="#D3D3D3"/>
+                                        </DataTrigger>
+
+                                        <!-- Your existing selection trigger -->
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter TargetName="DGR_Border" Property="Background" Value="#0078D7"/>
+                                            <Setter Property="Foreground" Value="White"/>
+                                        </Trigger>
+                                        
                                         <DataTrigger Binding="{Binding RefId}" Value="FOOTER">
                                             <Setter TargetName="CellsPresenter" Property="Visibility" Value="Collapsed"/>
                                             <Setter TargetName="FooterPanel" Property="Visibility" Value="Visible"/>
@@ -590,6 +607,23 @@
                                     </Border>
 
                                     <ControlTemplate.Triggers>
+                                        <Trigger Property="ItemsControl.AlternationIndex" Value="1">
+                                            <Setter TargetName="DGR_Border" Property="Background" Value="#EEEEEE"/>
+                                        </Trigger>
+
+                                        <!-- Your existing FOOTER trigger -->
+                                        <DataTrigger Binding="{Binding RefId}" Value="FOOTER">
+                                            <Setter TargetName="CellsPresenter" Property="Visibility" Value="Collapsed"/>
+                                            <Setter TargetName="FooterPanel" Property="Visibility" Value="Visible"/>
+                                            <Setter TargetName="DGR_Border" Property="Background" Value="#D3D3D3"/>
+                                        </DataTrigger>
+
+                                        <!-- Your existing selection trigger -->
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter TargetName="DGR_Border" Property="Background" Value="#0078D7"/>
+                                            <Setter Property="Foreground" Value="White"/>
+                                        </Trigger>
+                                        
                                         <!-- Show Footer Panel for FOOTER row -->
                                         <DataTrigger Binding="{Binding RefId}" Value="FOOTER">
                                             <Setter TargetName="CellsPresenter" Property="Visibility" Value="Collapsed"/>

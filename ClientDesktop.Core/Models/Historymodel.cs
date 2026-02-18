@@ -58,4 +58,12 @@ namespace ClientDesktop.Models
         public string Exception { get; set; }
         public string SuccessMessage { get; set; }
     }
+
+    public class HistoryFetchResult
+    {
+        public bool IsSuccess { get; set; }
+        public bool IsFromCache { get; set; }
+        public string ErrorMessage { get; set; }
+        public List<HistoryModel> Data { get; set; }
+    }
 }

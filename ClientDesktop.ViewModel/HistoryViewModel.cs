@@ -1,6 +1,7 @@
 ﻿using ClientDesktop.Core.Enums;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Helpers;
+using ClientDesktop.Infrastructure.Logger;
 using ClientDesktop.Infrastructure.Services;
 using ClientDesktop.Models;
 using ClosedXML.Excel;
@@ -8,6 +9,7 @@ using iTextSharp.text;
 using iTextSharp.text.pdf;
 using iTextSharp.text.pdf.draw;
 using Microsoft.Win32;
+using System.Collections.ObjectModel;
 using System.Windows;
 
 namespace ClientDesktop.ViewModel
@@ -15,6 +17,14 @@ namespace ClientDesktop.ViewModel
 
     public class HistoryViewModel
     {
+        public ObservableCollection<HistoryModel> HistoryItems { get; }
+    = new ObservableCollection<HistoryModel>();
+
+        public ObservableCollection<PositionHistoryModel> PositionHistoryItems { get; }
+            = new ObservableCollection<PositionHistoryModel>();
+
+        public bool IsLoading { get; private set; }
+
         private readonly HistoryService _historyService;
         public Action OnHistoryDataLoaded { get; set; }
         public HistoryViewModel()
@@ -31,31 +41,63 @@ namespace ClientDesktop.ViewModel
 
         public async Task LoadDataAsync()
         {
+            if (IsLoading) return;
+
+            IsLoading = true;
+
             try
             {
                 var fromDate = new DateTime(1970, 1, 1);
                 var toDate = DateTime.Now;
 
-                // Run both APIs parallelly ⚡
                 var historyTask = _historyService.FetchHistoryFromApiAsync(fromDate, toDate);
-                var positionHistoryTask = _historyService.FetchPositionHistoryFromApiAsync(fromDate, toDate);
+                var positionTask = _historyService.FetchPositionHistoryFromApiAsync(fromDate, toDate);
 
-                // Await both
                 var historyResult = await historyTask;
-                var positionResult = await positionHistoryTask;
+                var positionResult = await positionTask;
+
+                UpdateCollection(HistoryItems, historyResult.Data);
+                UpdateCollection(PositionHistoryItems, positionResult.Data);
+
+                if (historyResult.IsFromCache)
+                {
+                    FileLogger.Log("System", "History loaded from local cache.");
+                }
+
+                if (!historyResult.IsSuccess)
+                {
+                    FileLogger.Log("System" , "History sync failed.");
+                }
 
                 OnHistoryDataLoaded?.Invoke();
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading data: {ex.Message}");
+                FileLogger.ApplicationLog("HistoryViewModel", "LoadDataAsync", ex.Message);
             }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        private void UpdateCollection<T>(
+    ObservableCollection<T> collection,
+    List<T> data)
+        {
+            collection.Clear();
+
+            if (data == null) return;
+
+            foreach (var item in data)
+                collection.Add(item);
         }
 
         public List<HistoryModel> GetHistoryData() => _historyService.GetStoredHistory();
 
         public List<PositionHistoryModel> GetPositionHistoryData() => _historyService.GetStoredPositionHistory();
 
+        #region Export Data to excel and PDF
         public void ExportToExcel(List<HistoryModel> data, HistoryType gridType)
         {
             try
@@ -164,7 +206,6 @@ namespace ClientDesktop.ViewModel
                 MessageBox.Show($"Export error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
 
         public void ExportPositionToExcel(List<PositionHistoryModel> data)
         {
@@ -282,8 +323,6 @@ namespace ClientDesktop.ViewModel
                 MessageBox.Show($"Export error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
-
 
         public void ExportToPdf(List<HistoryModel> data, HistoryType gridType)
         {
@@ -509,7 +548,6 @@ namespace ClientDesktop.ViewModel
             }
         }
 
-        // ✅ Helper Methods
         private PdfPCell CreateStyledCell(string text, Font font, int alignment, BaseColor bgColor)
         {
             PdfPCell cell = new PdfPCell(new Phrase(text, font))
@@ -535,7 +573,6 @@ namespace ClientDesktop.ViewModel
             };
             return cell;
         }
-
 
         public void ExportPositionToPdf(List<PositionHistoryModel> data)
         {
@@ -728,6 +765,7 @@ namespace ClientDesktop.ViewModel
             }
         }
 
+        #endregion Export Data to excel and PDF
 
     }
 }

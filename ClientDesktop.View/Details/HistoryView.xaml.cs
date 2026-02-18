@@ -48,8 +48,8 @@ namespace ClientDesktop.View.Details
 
         private void FillDataInList()
         {
-            var history = _historyViewModel.GetHistoryData() ?? new List<HistoryModel>();
-            var position = _historyViewModel.GetPositionHistoryData() ?? new List<PositionHistoryModel>();
+            var history = _historyViewModel.HistoryItems;
+            var position = _historyViewModel.PositionHistoryItems;
 
             // 🔒 Fill master lists
             AllHistoryItems.Clear();
