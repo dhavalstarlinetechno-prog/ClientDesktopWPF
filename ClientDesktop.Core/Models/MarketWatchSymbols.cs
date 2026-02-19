@@ -4,6 +4,8 @@ namespace ClientDesktop.Core.Models
 {
     public class MarketItem
     {
+        public int SymbolId { get; set; }
+        public int SymbolDigit { get; set; }
         public string SymbolName { get; set; }
         public double Bid { get; set; }
         public double Ask { get; set; }

@@ -124,7 +124,13 @@ namespace ClientDesktop.ViewModel
                         _sessionService.socketLoginInfos = socketInfo;
                         _sessionService.IsPasswordReadOnly = profileResult.data.isreadonlypassword;
                     }
+
+                    FileLogger.Log("Network", $"User '{user.UserId}' Authorized Successfully.");
                     return true;
+                }
+                else
+                {
+                    FileLogger.Log("Network", $"User '{user.UserId}' Disconnected");
                 }
             }
             catch { }
@@ -186,7 +192,6 @@ namespace ClientDesktop.ViewModel
             UserId = _sessionService.UserId;
             IsLoggedIn = true;
             Title = _sessionService.ServerListData?.FirstOrDefault(q => q?.licenseId.ToString() == _sessionService.LicenseId)?.serverDisplayName ?? "Home";
-            FileLogger.Log("System", "Login Successful.");
         }
 
         private void SetRestrictedMode()
@@ -200,7 +205,7 @@ namespace ClientDesktop.ViewModel
         {
             _sessionService.ClearSession();
             SetRestrictedMode();
-            FileLogger.Log("System", "User Disconnected.");
+            FileLogger.Log("Network", "Disconnected.");
             ShowLoginWindow();
         }
     }

@@ -1,6 +1,5 @@
 ﻿using AvalonDock.Layout;
 using AvalonDock.Layout.Serialization;
-using ClientDesktop.Infrastructure.Services;
 using ClientDesktop.View.Disclaimer;
 using ClientDesktop.View.TradeOrder;
 using ClientDesktop.ViewModel;
@@ -124,13 +123,14 @@ namespace ClientDesktop.Main
 
         private void MenuDisconnect_Click(object sender, RoutedEventArgs e)
         {
-            if (DataContext is MainWindowViewModel vm)
-            {
-                if (MessageBox.Show("Are you sure you want to disconnect?", "Disconnect", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
-                {
-                    vm.DisconnectCommand.Execute(null);
-                }
-            }
+            if (DataContext is MainWindowViewModel vm) vm.DisconnectCommand.Execute(null);
+            //if (DataContext is MainWindowViewModel vm)
+            //{
+            //    if (MessageBox.Show("Are you sure you want to disconnect?", "Disconnect", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+            //    {
+            //        vm.DisconnectCommand.Execute(null);
+            //    }
+            //}
         }
 
         public void UpdateLoginState(bool isLoggedIn, string username)

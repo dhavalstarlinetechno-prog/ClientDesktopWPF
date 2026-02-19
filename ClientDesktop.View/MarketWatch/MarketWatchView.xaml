@@ -154,7 +154,8 @@
                 </ComboBox>
                 <Button Content="Save" Width="60" Height="22" 
                         Background="#42A5F5" Foreground="White" BorderThickness="0"
-                        FontWeight="SemiBold" FontSize="12">
+                        FontWeight="SemiBold" FontSize="12"
+                        Command="{Binding SaveProfileCommand}">
                     <Button.Resources>
                         <Style TargetType="Border">
                             <Setter Property="CornerRadius" Value="2"/>
