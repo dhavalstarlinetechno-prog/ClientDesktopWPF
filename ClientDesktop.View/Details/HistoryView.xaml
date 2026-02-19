@@ -17,7 +17,6 @@
             <Setter Property="Margin" Value="5,0"/>
             <Setter Property="FontWeight" Value="Bold"/>
         </Style>
-        
     </UserControl.Resources>
 
     <d:UserControl.DataContext>
@@ -30,11 +29,9 @@
                 <MenuItem x:Name="MenuDeals" Header="Deals" 
                           Click="ChangeView_Click" Tag="Deals" 
                           IsCheckable="True" IsChecked="True"/>
-
                 <MenuItem x:Name="MenuOrders" Header="Orders" 
                           Click="ChangeView_Click" Tag="Orders" 
                           IsCheckable="True" IsChecked="False"/>
-
                 <MenuItem x:Name="MenuPosition" Header="Position" 
                           Click="ChangeView_Click" Tag="Position" 
                           IsCheckable="True" IsChecked="False"/>
@@ -71,15 +68,12 @@
                     <ComboBox x:Name="FilterSymbol" Style="{StaticResource CustomComboBoxStyle}" ItemContainerStyle="{StaticResource CustomComboBoxItemStyle}" Grid.Column="3" Margin="1" SelectedIndex="0" IsEnabled="False" SelectionChanged="Filter_SelectionChanged">
                         <ComboBoxItem Content="All"/>
                     </ComboBox>
-
                     <ComboBox x:Name="FilterExecution" Style="{StaticResource CustomComboBoxStyle}" ItemContainerStyle="{StaticResource CustomComboBoxItemStyle}" Grid.Column="4" Margin="1" SelectedIndex="0" IsEnabled="False" SelectionChanged="Filter_SelectionChanged">
                         <ComboBoxItem Content="All"/>
                     </ComboBox>
-
                     <ComboBox x:Name="FilterType" Style="{StaticResource CustomComboBoxStyle}" ItemContainerStyle="{StaticResource CustomComboBoxItemStyle}" Grid.Column="5" Margin="1" SelectedIndex="0" IsEnabled="False" SelectionChanged="Filter_SelectionChanged">
                         <ComboBoxItem Content="All"/>
                     </ComboBox>
-
                     <ComboBox x:Name="FilterEntry" Style="{StaticResource CustomComboBoxStyle}" ItemContainerStyle="{StaticResource CustomComboBoxItemStyle}" Grid.Column="6" Margin="1" SelectedIndex="0" IsEnabled="False" SelectionChanged="Filter_SelectionChanged">
                         <ComboBoxItem Content="All"/>
                     </ComboBox>
@@ -102,14 +96,13 @@
 
                     <TextBlock Text="Position" Grid.Column="0" Style="{StaticResource HeaderLabel}" 
                                FontSize="14" Margin="10,0,0,0"/>
-
-                    <ComboBox Grid.Column="6" SelectedIndex="0"  IsEnabled="False" x:Name="FilterPosSymbol" SelectionChanged="Filter_SelectionChanged" ItemContainerStyle="{StaticResource CustomComboBoxItemStyle}" Style="{StaticResource CustomComboBoxStyle}">
+                    <ComboBox Grid.Column="6" SelectedIndex="0" IsEnabled="False" x:Name="FilterPosSymbol" SelectionChanged="Filter_SelectionChanged" ItemContainerStyle="{StaticResource CustomComboBoxItemStyle}" Style="{StaticResource CustomComboBoxStyle}">
                         <ComboBoxItem Content="All"/>
                     </ComboBox>
                 </Grid>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,10,0" VerticalAlignment="Center">
-                    <ComboBox x:Name="PeriodCombo" Width="120" Margin="5,0" SelectedIndex="0" SelectionChanged="PeriodCombo_SelectionChanged" ItemContainerStyle="{StaticResource CustomComboBoxItemStyle}" Style="{StaticResource CustomComboBoxStyle}" >
+                    <ComboBox x:Name="PeriodCombo" Width="120" Margin="5,0" SelectedIndex="0" SelectionChanged="PeriodCombo_SelectionChanged" ItemContainerStyle="{StaticResource CustomComboBoxItemStyle}" Style="{StaticResource CustomComboBoxStyle}">
                         <ComboBoxItem Content="Today"/>
                         <ComboBoxItem Content="Last 3 Days"/>
                         <ComboBoxItem Content="Last Week"/>
@@ -118,28 +111,18 @@
                         <ComboBoxItem Content="Last 6 Months"/>
                         <ComboBoxItem Content="All History"/>
                     </ComboBox>
-
-                    <DatePicker x:Name="StartDatePicker" Width="130" 
-            Style="{StaticResource CustomDatePickerStyle}"/>
+                    <DatePicker x:Name="StartDatePicker" Width="130" Style="{StaticResource CustomDatePickerStyle}"/>
                     <TextBlock Text="-" Style="{StaticResource HeaderLabel}"/>
-                    <DatePicker x:Name="EndDatePicker" Width="130" 
-            Style="{StaticResource CustomDatePickerStyle}"/>
-
-
-                    <Button Content="Request" Width="70" Margin="5,0,5,0"  Height="22" 
+                    <DatePicker x:Name="EndDatePicker" Width="130" Style="{StaticResource CustomDatePickerStyle}"/>
+                    <Button Content="Request" Width="70" Margin="5,0,5,0" Height="22" 
                             Background="#5D9CEC" Foreground="White" BorderThickness="0" 
                             Click="RequestButton_Click"/>
-
                     <Button ToolTip="Export to Excel" Width="28" Height="28" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="ExcelExport_Click">
                         <Viewbox Width="22" Height="22">
                             <Grid>
                                 <Path Fill="#217346" Data="M4,4 H20 A2,2 0 0 1 22,6 V26 A2,2 0 0 1 20,28 H4 A2,2 0 0 1 2,26 V6 A2,2 0 0 1 4,4 Z" />
-
                                 <Path Fill="#107C41" Opacity="0.5" Data="M22,15 V26 A2,2 0 0 1 20,28 H12 L22,15 Z" />
-
-                                <Path Stroke="White" StrokeThickness="0.8" Opacity="0.3" 
-                  Data="M12,8 H18 M12,12 H18 M12,16 H18 M12,20 H18 M12,24 H18 M11,8 V24" />
-
+                                <Path Stroke="White" StrokeThickness="0.8" Opacity="0.3" Data="M12,8 H18 M12,12 H18 M12,16 H18 M12,20 H18 M12,24 H18 M11,8 V24" />
                                 <Border Background="#185C37" CornerRadius="2" Margin="0,4,10,4" HorizontalAlignment="Left" Width="14" Height="14">
                                     <Grid>
                                         <Path Fill="White" Opacity="0.1" Data="M0,0 H14 L0,14 Z" />
@@ -153,12 +136,8 @@
                         <Viewbox Width="22" Height="22">
                             <Grid>
                                 <Path Fill="#B30B00" Data="M4,4 H20 A2,2 0 0 1 22,6 V26 A2,2 0 0 1 20,28 H4 A2,2 0 0 1 2,26 V6 A2,2 0 0 1 4,4 Z" />
-
                                 <Path Fill="#7A0800" Opacity="0.4" Data="M22,15 V26 A2,2 0 0 1 20,28 H12 L22,15 Z" />
-
-                                <Path Stroke="White" StrokeThickness="1" Opacity="0.3" 
-                  Data="M6,10 H16 M6,14 H18 M6,18 H18 M6,22 H12" />
-
+                                <Path Stroke="White" StrokeThickness="1" Opacity="0.3" Data="M6,10 H16 M6,14 H18 M6,18 H18 M6,22 H12" />
                                 <Border Background="#E52521" CornerRadius="2" Margin="8,10,0,4" VerticalAlignment="Bottom" HorizontalAlignment="Right" Padding="2,0">
                                     <TextBlock Text="PDF" Foreground="White" FontSize="7" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Center" FontFamily="Segoe UI" />
                                 </Border>
@@ -171,20 +150,32 @@
 
         <Grid Grid.Row="1">
 
+            <!-- ═══════════════════════════════════════════════════════════════
+                 DEALS / ORDERS GRID
+                 
+                 KEY CHANGES vs original:
+                 1. Sorting="GridDealsOrders_Sorting" — code-behind intercepts
+                    sort, strips the footer, sorts data, re-appends footer.
+                 2. RowTemplate has NO custom FooterPanel Grid with hardcoded
+                    column widths. Instead all rows (including FOOTER) use the
+                    normal DataGridCellsPresenter, so Comm/Profit cells always
+                    sit inside the real DataGrid columns and auto-track resize.
+                 3. The Comm and Profit columns are now DataGridTemplateColumns
+                    so the footer cell can show the total value bold/right-aligned
+                    just like normal cells.
+            ═══════════════════════════════════════════════════════════════ -->
             <DataGrid x:Name="GridDealsOrders" Visibility="Visible"
                       Style="{StaticResource CustomDataGrid}"
-                      ItemsSource="{Binding HistoryItems}"
                       AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
                       HeadersVisibility="Column"
-                      
                       GridLinesVisibility="All" 
                       HorizontalGridLinesBrush="#E0E0E0" 
                       VerticalGridLinesBrush="#E0E0E0"
                       BorderThickness="0" 
-                      
                       Background="White" 
                       RowHeaderWidth="0"
-                      RowHeight="22">
+                      RowHeight="22"
+                      Sorting="GridDealsOrders_Sorting">
 
                 <DataGrid.RowStyle>
                     <Style TargetType="DataGridRow">
@@ -196,90 +187,51 @@
                             <Setter.Value>
                                 <ControlTemplate TargetType="DataGridRow">
                                     <Border x:Name="DGR_Border"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
-                            Background="{TemplateBinding Background}"
-                            SnapsToDevicePixels="True">
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                            Background="{TemplateBinding Background}"
+                                            SnapsToDevicePixels="True">
                                         <Grid>
-                                            <!-- Normal DataGrid Cells -->
+                                            <!-- All rows use CellsPresenter — footer cells are blank except Comm/Profit -->
                                             <DataGridCellsPresenter x:Name="CellsPresenter"
                                                     ItemsPanel="{TemplateBinding ItemsPanel}"
                                                     SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
 
-                                            <!-- Custom Footer Panel -->
-                                            <Grid x:Name="FooterPanel" Visibility="Collapsed">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="3*"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="0.8*"/>
-                                                    <ColumnDefinition Width="0.6*"/>
-                                                    <ColumnDefinition Width="0.6*"/>
-                                                    <ColumnDefinition Width="0.8*"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="0.8*"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="2*"/>
-                                                </Grid.ColumnDefinitions>
-
-                                                <!-- Profit/Credit/Balance Text -->
-                                                <TextBlock Text="{Binding Comment}" 
-                                           Grid.Column="0"
-                                           VerticalAlignment="Center"
-                                           Margin="10,0,0,0"
-                                           FontWeight="Bold"
-                                           TextWrapping="Wrap"/>
-
-                                                <!-- Comm Column with Borders -->
-                                                <Border Grid.Column="9" 
-                                        BorderBrush="#E0E0E0" 
-                                        BorderThickness="1,0,1,0">
-                                                    <TextBlock Text="{Binding UplineCommission}" 
-                                               HorizontalAlignment="Right"
-                                               VerticalAlignment="Center"
-                                               Margin="0,0,5,0"
-                                               FontWeight="Bold"/>
-                                                </Border>
-
-                                                <!-- Profit Column with Border -->
-                                                <Border Grid.Column="10" 
-                                        BorderBrush="#E0E0E0" 
-                                        BorderThickness="0,0,1,0">
-                                                    <TextBlock Text="{Binding Pnl}" 
-                                               HorizontalAlignment="Right"
-                                               VerticalAlignment="Center"
-                                               Margin="0,0,5,0"
-                                               FontWeight="Bold"/>
-                                                </Border>
-                                            </Grid>
+                                            <!--
+                                                Footer overlay TextBlock: sits on top of CellsPresenter.
+                                                Grid does NOT clip its children by default, so this TextBlock
+                                                can be wider than the Time cell.
+                                                It is only Visible when RefId == FOOTER.
+                                                Left margin of 5 matches cell padding.
+                                                Width="600" is enough to reach the Entry column area visually;
+                                                the Comm/Profit cells (which show real values) render on top
+                                                of this text anyway so no overlap issue there.
+                                            -->
+                                            <TextBlock x:Name="FooterText"
+                                                       Text="{Binding Comment}"
+                                                       FontWeight="Bold"
+                                                       VerticalAlignment="Center"
+                                                       Margin="5,0,0,0"
+                                                       Width="600"
+                                                       HorizontalAlignment="Left"
+                                                       TextWrapping="NoWrap"
+                                                       Visibility="Collapsed"
+                                                       Panel.ZIndex="1"/>
                                         </Grid>
                                     </Border>
 
                                     <ControlTemplate.Triggers>
+                                        <!-- Alternating rows -->
                                         <Trigger Property="ItemsControl.AlternationIndex" Value="1">
                                             <Setter TargetName="DGR_Border" Property="Background" Value="#EEEEEE"/>
                                         </Trigger>
-
-                                        <!-- Your existing FOOTER trigger -->
+                                        <!-- Footer row: grey background + show overlay text + NO border lines -->
                                         <DataTrigger Binding="{Binding RefId}" Value="FOOTER">
-                                            <Setter TargetName="CellsPresenter" Property="Visibility" Value="Collapsed"/>
-                                            <Setter TargetName="FooterPanel" Property="Visibility" Value="Visible"/>
                                             <Setter TargetName="DGR_Border" Property="Background" Value="#D3D3D3"/>
+                                            <Setter TargetName="DGR_Border" Property="BorderThickness" Value="0"/>
+                                            <Setter TargetName="FooterText"  Property="Visibility" Value="Visible"/>
                                         </DataTrigger>
-
-                                        <!-- Your existing selection trigger -->
-                                        <Trigger Property="IsSelected" Value="True">
-                                            <Setter TargetName="DGR_Border" Property="Background" Value="#0078D7"/>
-                                            <Setter Property="Foreground" Value="White"/>
-                                        </Trigger>
-                                        
-                                        <DataTrigger Binding="{Binding RefId}" Value="FOOTER">
-                                            <Setter TargetName="CellsPresenter" Property="Visibility" Value="Collapsed"/>
-                                            <Setter TargetName="FooterPanel" Property="Visibility" Value="Visible"/>
-                                            <Setter TargetName="DGR_Border" Property="Background" Value="#D3D3D3"/>
-                                        </DataTrigger>
-
+                                        <!-- Selection -->
                                         <Trigger Property="IsSelected" Value="True">
                                             <Setter TargetName="DGR_Border" Property="Background" Value="#0078D7"/>
                                             <Setter Property="Foreground" Value="White"/>
@@ -290,8 +242,6 @@
                         </Setter>
                     </Style>
                 </DataGrid.RowStyle>
-
-
 
                 <DataGrid.Resources>
                     <Style TargetType="DataGridColumnHeader">
@@ -304,8 +254,6 @@
                         <Setter Property="FontWeight" Value="SemiBold"/>
                         <Setter Property="BorderThickness" Value="0,0,1,1"/>
                         <Setter Property="BorderBrush" Value="#D0D0D0"/>
-
-                        <!-- Disable Hover Effect -->
                         <Style.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter Property="Background" Value="#F4F4F4"/>
@@ -313,20 +261,25 @@
                             </Trigger>
                         </Style.Triggers>
                     </Style>
-
-
                     <Style TargetType="DataGridCell">
                         <Setter Property="Padding" Value="5,0"/>
                         <Setter Property="Template">
                             <Setter.Value>
                                 <ControlTemplate TargetType="DataGridCell">
-                                    <Border Padding="{TemplateBinding Padding}" 
+                                    <Border x:Name="CellBorder"
+                                            Padding="{TemplateBinding Padding}" 
                                             BorderBrush="{TemplateBinding BorderBrush}" 
                                             BorderThickness="{TemplateBinding BorderThickness}" 
                                             Background="{TemplateBinding Background}" 
                                             SnapsToDevicePixels="True">
                                         <ContentPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="Center"/>
                                     </Border>
+                                    <ControlTemplate.Triggers>
+                                        <!-- Hide all cell borders in footer row — no vertical grid lines -->
+                                        <DataTrigger Binding="{Binding RefId}" Value="FOOTER">
+                                            <Setter TargetName="CellBorder" Property="BorderThickness" Value="0"/>
+                                        </DataTrigger>
+                                    </ControlTemplate.Triggers>
                                 </ControlTemplate>
                             </Setter.Value>
                         </Setter>
@@ -334,137 +287,14 @@
                 </DataGrid.Resources>
 
                 <DataGrid.Columns>
-                    <DataGridTemplateColumn Header="Time" Width="1.5*">
+
+                    <DataGridTemplateColumn Header="Time" Width="1.5*" SortMemberPath="CreatedOn">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock>
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
-                                            <!-- Normal rows show time -->
                                             <Setter Property="Text" Value="{Binding CreatedOn, Converter={StaticResource UtcToIstConverter}}"/>
-
-                                            <!-- Footer row shows the Comment text (which contains Profit/Credit/Balance) -->
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding RefId}" Value="FOOTER">
-                                                    <Setter Property="Text" Value="{Binding Comment}"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
-                                </TextBlock>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                    <DataGridTemplateColumn Header="Deal Id" Width="*" SortMemberPath="RefId">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <!-- Add Trigger to hide text for FOOTER -->
-                                    <TextBlock VerticalAlignment="Center" ToolTip="{Binding RefId}">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Text" Value="{Binding RefId, Converter={StaticResource TruncateConverter}}"/>
-                                                <!-- Hide FOOTER text -->
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding RefId}" Value="FOOTER">
-                                                        <Setter Property="Text" Value=""/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-
-                                    <Button Margin="5,0,0,0"
-                        Click="CopyId_Click"
-                        Tag="{Binding RefId}"
-                        Background="Transparent"
-                        BorderThickness="0"
-                        Cursor="Hand"
-                        ToolTip="Copy to Clipboard">
-                                        <Button.Style>
-                                            <Style TargetType="Button">
-                                                <Setter Property="Visibility" Value="Visible"/>
-                                                <Style.Triggers>
-                                                    <!-- Hide button for FOOTER -->
-                                                    <Trigger Property="Tag" Value="FOOTER">
-                                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                                    </Trigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Button.Style>
-                                        <Path Data="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
-                          Fill="#555"
-                          Stretch="Uniform"
-                          Height="12" Width="12"/>
-                                    </Button>
-                                </StackPanel>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-
-                    <DataGridTemplateColumn Header="Position Id" Width="*" SortMemberPath="PositionId">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-
-                                    <TextBlock Text="{Binding PositionId, Converter={StaticResource TruncateConverter}, TargetNullValue='--', FallbackValue='--'}" 
-                           VerticalAlignment="Center" 
-                           ToolTip="{Binding PositionId}"/>
-
-                                    <Button Margin="5,0,0,0"
-                        Click="CopyId_Click"
-                        Tag="{Binding PositionId}"
-                        Background="Transparent"
-                        BorderThickness="0"
-                        Cursor="Hand"
-                        ToolTip="Copy Id">
-
-                                        <Button.Style>
-                                            <Style TargetType="Button">
-                                                <Setter Property="Visibility" Value="Visible"/>
-                                                <Style.Triggers>
-                                                    <Trigger Property="Tag" Value="{x:Null}">
-                                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                                    </Trigger>
-                                                    <Trigger Property="Tag" Value="">
-                                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                                    </Trigger>
-
-                                                    <Trigger Property="Tag" Value="FOOTER">
-                                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                                    </Trigger>
-
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Button.Style>
-
-                                        <Path Data="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
-                          Fill="#555"
-                          Stretch="Uniform"
-                          Height="12" Width="12"/>
-                                    </Button>
-                                </StackPanel>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                    <DataGridTextColumn Header="Symbol" Binding="{Binding SymbolName}" Width="*" />
-                    <DataGridTextColumn Header="Execution" Binding="{Binding OrderType}" Width="0.8*"/>
-                    <DataGridTextColumn Header="Type" Binding="{Binding Side}" Width="0.6*"/>
-                    <DataGridTextColumn Header="Entry" Binding="{Binding DealType}" Width="0.6*"/>
-                    <DataGridTextColumn Header="Volume" Binding="{Binding Volume}" Width="0.8*"/>
-                    <DataGridTextColumn Header="Price" Binding="{Binding Price}" Width="*"/>
-                    <DataGridTextColumn Header="Comm." Binding="{Binding UplineCommission}" Width="0.8*"/>
-                    <DataGridTextColumn Header="Profit" Binding="{Binding Pnl}" Width="*" />
-                    <DataGridTemplateColumn Header="Comment" Width="2*">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <TextBlock>
-                                    <TextBlock.Style>
-                                        <Style TargetType="TextBlock">
-                                            <!-- Normal rows show comment -->
-                                            <Setter Property="Text" Value="{Binding Comment}"/>
-
-                                            <!-- Footer row shows blank -->
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding RefId}" Value="FOOTER">
                                                     <Setter Property="Text" Value=""/>
@@ -477,24 +307,286 @@
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
+                    <!-- DEAL ID — footer: blank -->
+                    <DataGridTemplateColumn Header="Deal Id" Width="*" SortMemberPath="RefId">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock VerticalAlignment="Center" ToolTip="{Binding RefId}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Text" Value="{Binding RefId, Converter={StaticResource TruncateConverter}}"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding RefId}" Value="FOOTER">
+                                                        <Setter Property="Text" Value=""/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <Button Margin="5,0,0,0" Click="CopyId_Click" Tag="{Binding RefId}"
+                                            Background="Transparent" BorderThickness="0" Cursor="Hand" ToolTip="Copy to Clipboard">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                                <Style.Triggers>
+                                                    <Trigger Property="Tag" Value="FOOTER">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                        <Path Data="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
+                                              Fill="#555" Stretch="Uniform" Height="12" Width="12"/>
+                                    </Button>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- POSITION ID — footer: blank -->
+                    <DataGridTemplateColumn Header="Position Id" Width="*" SortMemberPath="PositionId">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock VerticalAlignment="Center" ToolTip="{Binding PositionId}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Text" Value="{Binding PositionId, Converter={StaticResource TruncateConverter}, TargetNullValue='--', FallbackValue='--'}"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding RefId}" Value="FOOTER">
+                                                        <Setter Property="Text" Value=""/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <Button Margin="5,0,0,0" Click="CopyId_Click" Tag="{Binding PositionId}"
+                                            Background="Transparent" BorderThickness="0" Cursor="Hand" ToolTip="Copy Id">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                                <Style.Triggers>
+                                                    <Trigger Property="Tag" Value="{x:Null}">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </Trigger>
+                                                    <Trigger Property="Tag" Value="">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </Trigger>
+                                                    <Trigger Property="Tag" Value="FOOTER">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                        <Path Data="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
+                                              Fill="#555" Stretch="Uniform" Height="12" Width="12"/>
+                                    </Button>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- SYMBOL — footer blank -->
+                    <DataGridTemplateColumn Header="Symbol" Width="*" SortMemberPath="SymbolName">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock>
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="{Binding SymbolName}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding RefId}" Value="FOOTER">
+                                                    <Setter Property="Text" Value=""/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- EXECUTION — footer blank -->
+                    <DataGridTemplateColumn Header="Execution" Width="0.8*" SortMemberPath="OrderType">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock>
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="{Binding OrderType}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding RefId}" Value="FOOTER">
+                                                    <Setter Property="Text" Value=""/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- TYPE — footer blank -->
+                    <DataGridTemplateColumn Header="Type" Width="0.6*" SortMemberPath="Side">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock>
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="{Binding Side}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding RefId}" Value="FOOTER">
+                                                    <Setter Property="Text" Value=""/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- ENTRY — footer blank (text from Time overflows up to here) -->
+                    <DataGridTemplateColumn Header="Entry" Width="0.6*" SortMemberPath="DealType">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock>
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="{Binding DealType}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding RefId}" Value="FOOTER">
+                                                    <Setter Property="Text" Value=""/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- VOLUME — footer: blank -->
+                    <DataGridTemplateColumn Header="Volume" Width="0.8*" SortMemberPath="Volume">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock>
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="{Binding Volume}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding RefId}" Value="FOOTER">
+                                                    <Setter Property="Text" Value=""/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- PRICE — footer: blank -->
+                    <DataGridTemplateColumn Header="Price" Width="*" SortMemberPath="Price">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock>
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="{Binding Price}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding RefId}" Value="FOOTER">
+                                                    <Setter Property="Text" Value=""/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- COMM — footer: bold total. No extra border — grid lines already provide separators -->
+                    <DataGridTemplateColumn Header="Comm." Width="0.8*" SortMemberPath="UplineCommission">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock HorizontalAlignment="Right" Margin="0,0,5,0">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text"       Value="{Binding UplineCommission}"/>
+                                            <Setter Property="FontWeight" Value="Normal"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding RefId}" Value="FOOTER">
+                                                    <Setter Property="FontWeight" Value="Bold"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- PROFIT — footer: bold total. No extra border needed -->
+                    <DataGridTemplateColumn Header="Profit" Width="*" SortMemberPath="Pnl">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock HorizontalAlignment="Right" Margin="0,0,5,0">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text"       Value="{Binding Pnl}"/>
+                                            <Setter Property="FontWeight" Value="Normal"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding RefId}" Value="FOOTER">
+                                                    <Setter Property="FontWeight" Value="Bold"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- COMMENT — footer blank -->
+                    <DataGridTemplateColumn Header="Comment" Width="2*">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock>
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="{Binding Comment}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding RefId}" Value="FOOTER">
+                                                    <Setter Property="Text" Value=""/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
 
                 </DataGrid.Columns>
             </DataGrid>
 
+            <!-- ═══════════════════════════════════════════════════════════════
+                 POSITION GRID  — same two fixes applied
+            ═══════════════════════════════════════════════════════════════ -->
             <DataGrid x:Name="GridPosition" Visibility="Collapsed"
                       Style="{StaticResource CustomDataGrid}"
-                      ItemsSource="{Binding PositionHistoryItems}"
                       AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
                       HeadersVisibility="Column"
-                      
                       GridLinesVisibility="All" 
                       HorizontalGridLinesBrush="#E0E0E0" 
                       VerticalGridLinesBrush="#E0E0E0"
                       BorderThickness="0" 
-                      
                       Background="White" 
                       RowHeaderWidth="0"
-                      RowHeight="22">
+                      RowHeight="22"
+                      Sorting="GridPosition_Sorting">
 
                 <DataGrid.Resources>
                     <Style TargetType="DataGridColumnHeader">
@@ -505,133 +597,57 @@
                         <Setter Property="HorizontalContentAlignment" Value="Left"/>
                         <Setter Property="VerticalContentAlignment" Value="Center"/>
                         <Setter Property="FontWeight" Value="SemiBold"/>
-
                         <Setter Property="BorderThickness" Value="0,0,1,1"/>
                         <Setter Property="BorderBrush" Value="#D0D0D0"/>
                     </Style>
-
                     <Style TargetType="DataGridCell">
                         <Setter Property="Padding" Value="5,0"/>
                         <Setter Property="Template">
                             <Setter.Value>
                                 <ControlTemplate TargetType="DataGridCell">
-                                    <Border Padding="{TemplateBinding Padding}" 
+                                    <Border x:Name="CellBorder"
+                                            Padding="{TemplateBinding Padding}" 
                                             BorderBrush="{TemplateBinding BorderBrush}" 
                                             BorderThickness="{TemplateBinding BorderThickness}" 
                                             Background="{TemplateBinding Background}" 
                                             SnapsToDevicePixels="True">
                                         <ContentPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="Center"/>
                                     </Border>
+                                    <ControlTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding RefId}" Value="FOOTER">
+                                            <Setter TargetName="CellBorder" Property="BorderThickness" Value="0"/>
+                                        </DataTrigger>
+                                    </ControlTemplate.Triggers>
                                 </ControlTemplate>
                             </Setter.Value>
                         </Setter>
                     </Style>
                 </DataGrid.Resources>
-
                 <DataGrid.RowStyle>
                     <Style TargetType="DataGridRow">
                         <Setter Property="Background" Value="White"/>
                         <Setter Property="Foreground" Value="Black"/>
                         <Setter Property="FontWeight" Value="Normal"/>
-
                         <Setter Property="Template">
                             <Setter.Value>
                                 <ControlTemplate TargetType="DataGridRow">
                                     <Border x:Name="DGR_Border"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
-                            Background="{TemplateBinding Background}"
-                            SnapsToDevicePixels="True">
-                                        <Grid>
-                                            <!-- Normal DataGrid Cells -->
-                                            <DataGridCellsPresenter x:Name="CellsPresenter"
-                                                    ItemsPanel="{TemplateBinding ItemsPanel}"
-                                                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
-
-                                            <!-- Custom Footer Panel -->
-                                            <Grid x:Name="FooterPanel" Visibility="Collapsed">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="1.5*"/>
-                                                    <!-- Time -->
-                                                    <ColumnDefinition Width="1.2*"/>
-                                                    <!-- Last Out Time -->
-                                                    <ColumnDefinition Width="*"/>
-                                                    <!-- PositionId -->
-                                                    <ColumnDefinition Width="0.6*"/>
-                                                    <!-- Type -->
-                                                    <ColumnDefinition Width="0.8*"/>
-                                                    <!-- Volume -->
-                                                    <ColumnDefinition Width="*"/>
-                                                    <!-- Symbol -->
-                                                    <ColumnDefinition Width="*"/>
-                                                    <!-- Price -->
-                                                    <ColumnDefinition Width="0.8*"/>
-                                                    <!-- Comm -->
-                                                    <ColumnDefinition Width="*"/>
-                                                    <!-- Profit -->
-                                                    <ColumnDefinition Width="2*"/>
-                                                    <!-- Comment -->
-                                                </Grid.ColumnDefinitions>
-
-                                                <!-- Footer Text: Total in Time column -->
-                                                <TextBlock Text="{Binding Comment}" 
-                                           Grid.Column="0"
-                                           VerticalAlignment="Center"
-                                           Margin="10,0,0,0"
-                                           FontWeight="Bold"
-                                           TextWrapping="Wrap"/>
-
-                                                <!-- Comm Column with Borders -->
-                                                <Border Grid.Column="7" 
-                                        BorderBrush="#E0E0E0" 
-                                        BorderThickness="1,0,1,0">
-                                                    <TextBlock Text="{Binding Fee}" 
-                                               HorizontalAlignment="Right"
-                                               VerticalAlignment="Center"
-                                               Margin="0,0,5,0"
-                                               FontWeight="Bold"/>
-                                                </Border>
-
-                                                <!-- Profit Column with Border -->
-                                                <Border Grid.Column="8" 
-                                        BorderBrush="#E0E0E0" 
-                                        BorderThickness="0,0,1,0">
-                                                    <TextBlock Text="{Binding Pnl}" 
-                                               HorizontalAlignment="Right"
-                                               VerticalAlignment="Center"
-                                               Margin="0,0,5,0"
-                                               FontWeight="Bold"/>
-                                                </Border>
-                                            </Grid>
-                                        </Grid>
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                            Background="{TemplateBinding Background}"
+                                            SnapsToDevicePixels="True">
+                                        <DataGridCellsPresenter x:Name="CellsPresenter"
+                                                ItemsPanel="{TemplateBinding ItemsPanel}"
+                                                SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
                                     </Border>
-
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="ItemsControl.AlternationIndex" Value="1">
                                             <Setter TargetName="DGR_Border" Property="Background" Value="#EEEEEE"/>
                                         </Trigger>
-
-                                        <!-- Your existing FOOTER trigger -->
                                         <DataTrigger Binding="{Binding RefId}" Value="FOOTER">
-                                            <Setter TargetName="CellsPresenter" Property="Visibility" Value="Collapsed"/>
-                                            <Setter TargetName="FooterPanel" Property="Visibility" Value="Visible"/>
                                             <Setter TargetName="DGR_Border" Property="Background" Value="#D3D3D3"/>
+                                            <Setter TargetName="DGR_Border" Property="BorderThickness" Value="0"/>
                                         </DataTrigger>
-
-                                        <!-- Your existing selection trigger -->
-                                        <Trigger Property="IsSelected" Value="True">
-                                            <Setter TargetName="DGR_Border" Property="Background" Value="#0078D7"/>
-                                            <Setter Property="Foreground" Value="White"/>
-                                        </Trigger>
-                                        
-                                        <!-- Show Footer Panel for FOOTER row -->
-                                        <DataTrigger Binding="{Binding RefId}" Value="FOOTER">
-                                            <Setter TargetName="CellsPresenter" Property="Visibility" Value="Collapsed"/>
-                                            <Setter TargetName="FooterPanel" Property="Visibility" Value="Visible"/>
-                                            <Setter TargetName="DGR_Border" Property="Background" Value="#D3D3D3"/>
-                                        </DataTrigger>
-
-                                        <!-- Selection state -->
                                         <Trigger Property="IsSelected" Value="True">
                                             <Setter TargetName="DGR_Border" Property="Background" Value="#0078D7"/>
                                             <Setter Property="Foreground" Value="White"/>
@@ -643,44 +659,150 @@
                     </Style>
                 </DataGrid.RowStyle>
 
-
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Time" Binding="{Binding UpdatedAt, Converter={StaticResource UtcToIstConverter}}" Width="1.2*"/>
-                    <DataGridTextColumn Header="Last Out Time" Binding="{Binding LastOutAt, Converter={StaticResource UtcToIstConverter}, TargetNullValue='--'}" Width="1.2*"/>
+
+                    <!-- TIME — footer shows summary -->
+                    <DataGridTemplateColumn Header="Time" Width="1.2*" SortMemberPath="UpdatedAt">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock>
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="{Binding UpdatedAt, Converter={StaticResource UtcToIstConverter}}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding RefId}" Value="FOOTER">
+                                                    <Setter Property="Text" Value="{Binding Comment}"/>
+                                                    <Setter Property="FontWeight" Value="Bold"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- LAST OUT TIME -->
+                    <DataGridTemplateColumn Header="Last Out Time" Width="1.2*" SortMemberPath="LastOutAt">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock>
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="{Binding LastOutAt, Converter={StaticResource UtcToIstConverter}, TargetNullValue='--'}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding RefId}" Value="FOOTER">
+                                                    <Setter Property="Text" Value=""/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- POSITION ID -->
                     <DataGridTemplateColumn Header="PositionId" Width="*" SortMemberPath="RefId">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock Text="{Binding RefId, Converter={StaticResource TruncateConverter}}" 
-       VerticalAlignment="Center" 
-       ToolTip="{Binding RefId}"/>
-
-                                    <Button Margin="5,0,0,0"
-    Click="CopyId_Click"
-    Tag="{Binding RefId}"
-    Background="Transparent"
-    BorderThickness="0"
-    Cursor="Hand"
-    ToolTip="Copy to Clipboard">
+                                    <TextBlock VerticalAlignment="Center" ToolTip="{Binding RefId}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Text" Value="{Binding RefId, Converter={StaticResource TruncateConverter}}"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding RefId}" Value="FOOTER">
+                                                        <Setter Property="Text" Value=""/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <Button Margin="5,0,0,0" Click="CopyId_Click" Tag="{Binding RefId}"
+                                            Background="Transparent" BorderThickness="0" Cursor="Hand" ToolTip="Copy to Clipboard">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                                <Style.Triggers>
+                                                    <Trigger Property="Tag" Value="FOOTER">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
                                         <Path Data="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
-      Fill="#555"
-      Stretch="Uniform"
-      Height="12" Width="12"/>
+                                              Fill="#555" Stretch="Uniform" Height="12" Width="12"/>
                                     </Button>
                                 </StackPanel>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn Header="Type" Binding="{Binding Side, Converter={StaticResource SideConverter}}"  Width="0.6*"/>
+
+                    <DataGridTextColumn Header="Type"   Binding="{Binding Side, Converter={StaticResource SideConverter}}" Width="0.6*"/>
                     <DataGridTextColumn Header="Volume" Binding="{Binding VolumeDisplay}" Width="0.8*"/>
-                    <DataGridTextColumn Header="Symbol" Binding="{Binding SymbolName}" Width="*" />
-                    <DataGridTextColumn Header="Price" Binding="{Binding AveragePrice}" Width="*"/>
-                    <DataGridTextColumn Header="Comm." Binding="{Binding UplineCommission}" Width="0.8*"/>
-                    <DataGridTextColumn Header="Profit" Binding="{Binding Pnl}" Width="*" />
+                    <DataGridTextColumn Header="Symbol" Binding="{Binding SymbolName}"    Width="*"/>
+                    <DataGridTextColumn Header="Price"  Binding="{Binding AveragePrice}"  Width="*"/>
+
+                    <!-- COMM — footer: bold total, no extra border -->
+                    <DataGridTemplateColumn Header="Comm." Width="0.8*" SortMemberPath="UplineCommission">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock HorizontalAlignment="Right" Margin="0,0,5,0">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text"       Value="{Binding UplineCommission}"/>
+                                            <Setter Property="FontWeight" Value="Normal"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding RefId}" Value="FOOTER">
+                                                    <Setter Property="Text"       Value="{Binding Fee}"/>
+                                                    <Setter Property="FontWeight" Value="Bold"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- PROFIT — footer: bold total, no extra border -->
+                    <DataGridTemplateColumn Header="Profit" Width="*" SortMemberPath="Pnl">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock HorizontalAlignment="Right" Margin="0,0,5,0">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text"       Value="{Binding Pnl}"/>
+                                            <Setter Property="FontWeight" Value="Normal"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding RefId}" Value="FOOTER">
+                                                    <Setter Property="FontWeight" Value="Bold"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- COMMENT — footer blank -->
                     <DataGridTemplateColumn Header="Comment" Width="2*">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Comment}" TextWrapping="NoWrap"/>
+                                <TextBlock>
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="{Binding Comment}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding RefId}" Value="FOOTER">
+                                                    <Setter Property="Text" Value=""/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
@@ -694,6 +816,5 @@
                        HorizontalAlignment="Center" VerticalAlignment="Center"
                        Visibility="Visible"/>
         </Grid>
-
     </Grid>
 </UserControl>

@@ -4,6 +4,8 @@ using ClientDesktop.Infrastructure.Helpers;
 using ClientDesktop.Models;
 using ClientDesktop.ViewModel;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -53,7 +55,6 @@ namespace ClientDesktop.View.Details
             var history = _historyViewModel.HistoryItems;
             var position = _historyViewModel.PositionHistoryItems;
 
-            // 🔒 Fill master lists
             AllHistoryItems.Clear();
             foreach (var item in history)
                 AllHistoryItems.Add(item);
@@ -85,16 +86,11 @@ namespace ClientDesktop.View.Details
             {
                 orderTypeFilter = new HashSet<string>
                 {
-                    "BuyLimit",
-                    "SellLimit",
-                    "BuyStop",
-                    "SellStop"
+                    "BuyLimit", "SellLimit", "BuyStop", "SellStop"
                 };
-
                 symbolNameFilter = new HashSet<string>
                 {
-                    "Credit",
-                    "Balance"
+                    "Credit", "Balance"
                 };
 
                 HistoryItems = new ObservableCollection<HistoryModel>(AllHistoryItems.Where(h =>
@@ -108,6 +104,7 @@ namespace ClientDesktop.View.Details
                     var istTime = CommonHelper.ConvertUtcToIst(h.CreatedOn);
                     return istTime >= start && istTime <= end;
                 }).OrderBy(s => s.CreatedOn));
+
                 GridDealsOrders.ItemsSource = HistoryItems;
             }
             else if (currentType == HistoryType.Orders)
@@ -141,7 +138,6 @@ namespace ClientDesktop.View.Details
         {
             if (currentType == HistoryType.Position)
             {
-                // Check if PositionHistoryItems is null or empty
                 if (PositionHistoryItems == null || !PositionHistoryItems.Any())
                 {
                     SetComboItems(FilterPosSymbol, new List<string> { "All" });
@@ -149,7 +145,7 @@ namespace ClientDesktop.View.Details
                 }
 
                 var symbols = PositionHistoryItems
-                    .Where(x => !string.IsNullOrEmpty(x.SymbolName))  // Filter out null/empty symbols
+                    .Where(x => !string.IsNullOrEmpty(x.SymbolName))
                     .Select(x => x.SymbolName)
                     .Distinct()
                     .OrderBy(x => x)
@@ -160,7 +156,6 @@ namespace ClientDesktop.View.Details
             }
             else
             {
-                // Check if HistoryItems is null or empty
                 if (HistoryItems == null || !HistoryItems.Any())
                 {
                     SetComboItems(FilterSymbol, new List<string> { "All" });
@@ -172,31 +167,19 @@ namespace ClientDesktop.View.Details
 
                 var symbols = HistoryItems
                     .Where(x => !string.IsNullOrEmpty(x.SymbolName))
-                    .Select(x => x.SymbolName)
-                    .Distinct()
-                    .OrderBy(x => x)
-                    .ToList();
+                    .Select(x => x.SymbolName).Distinct().OrderBy(x => x).ToList();
 
                 var executions = HistoryItems
                     .Where(x => !string.IsNullOrEmpty(x.OrderType))
-                    .Select(x => x.OrderType)
-                    .Distinct()
-                    .OrderBy(x => x)
-                    .ToList();
+                    .Select(x => x.OrderType).Distinct().OrderBy(x => x).ToList();
 
                 var types = HistoryItems
                     .Where(x => !string.IsNullOrEmpty(x.Side))
-                    .Select(x => x.Side)
-                    .Distinct()
-                    .OrderBy(x => x)
-                    .ToList();
+                    .Select(x => x.Side).Distinct().OrderBy(x => x).ToList();
 
                 var entries = HistoryItems
                     .Where(x => !string.IsNullOrEmpty(x.DealType))
-                    .Select(x => x.DealType)
-                    .Distinct()
-                    .OrderBy(x => x)
-                    .ToList();
+                    .Select(x => x.DealType).Distinct().OrderBy(x => x).ToList();
 
                 symbols.Insert(0, "All");
                 executions.Insert(0, "All");
@@ -214,7 +197,6 @@ namespace ClientDesktop.View.Details
         {
             combo.ItemsSource = null;
             combo.Items.Clear();
-
             combo.ItemsSource = items;
             combo.SelectedIndex = 0;
         }
@@ -232,7 +214,6 @@ namespace ClientDesktop.View.Details
             MenuDeals.IsChecked = false;
             MenuOrders.IsChecked = false;
             MenuPosition.IsChecked = false;
-
             item.IsChecked = true;
 
             HistoryItems.Clear();
@@ -264,8 +245,8 @@ namespace ClientDesktop.View.Details
                     break;
             }
 
-            ApplyGridFilters(); // Refresh data and Footer immediately
-            FillComboFilters(); // Refresh dropdowns
+            ApplyGridFilters();
+            FillComboFilters();
             UpdateUIState();
         }
 
@@ -303,7 +284,6 @@ namespace ClientDesktop.View.Details
                 else
                 {
                     NoDataLabel.Visibility = Visibility.Visible;
-
                     if (FilterSymbol != null) FilterSymbol.IsEnabled = false;
                     if (FilterExecution != null) FilterExecution.IsEnabled = false;
                     if (FilterType != null) FilterType.IsEnabled = false;
@@ -323,32 +303,17 @@ namespace ClientDesktop.View.Details
             if (PeriodCombo.SelectedItem is ComboBoxItem selectedItem)
             {
                 string period = selectedItem.Content.ToString();
-
                 EndDatePicker.SelectedDate = DateTime.Today.AddDays(1);
 
                 switch (period)
                 {
-                    case "Today":
-                        StartDatePicker.SelectedDate = DateTime.Today;
-                        break;
-                    case "Last 3 Days":
-                        StartDatePicker.SelectedDate = DateTime.Today.AddDays(-3);
-                        break;
-                    case "Last Week":
-                        StartDatePicker.SelectedDate = DateTime.Today.AddDays(-7);
-                        break;
-                    case "Last Month":
-                        StartDatePicker.SelectedDate = DateTime.Today.AddMonths(-1);
-                        break;
-                    case "Last 3 Months":
-                        StartDatePicker.SelectedDate = DateTime.Today.AddMonths(-3);
-                        break;
-                    case "Last 6 Months":
-                        StartDatePicker.SelectedDate = DateTime.Today.AddMonths(-6);
-                        break;
-                    case "All History":
-                        StartDatePicker.SelectedDate = new DateTime(2000, 1, 1);
-                        break;
+                    case "Today": StartDatePicker.SelectedDate = DateTime.Today; break;
+                    case "Last 3 Days": StartDatePicker.SelectedDate = DateTime.Today.AddDays(-3); break;
+                    case "Last Week": StartDatePicker.SelectedDate = DateTime.Today.AddDays(-7); break;
+                    case "Last Month": StartDatePicker.SelectedDate = DateTime.Today.AddMonths(-1); break;
+                    case "Last 3 Months": StartDatePicker.SelectedDate = DateTime.Today.AddMonths(-3); break;
+                    case "Last 6 Months": StartDatePicker.SelectedDate = DateTime.Today.AddMonths(-6); break;
+                    case "All History": StartDatePicker.SelectedDate = new DateTime(2000, 1, 1); break;
                 }
             }
         }
@@ -368,22 +333,14 @@ namespace ClientDesktop.View.Details
 
             if (currentType != HistoryType.Position)
             {
-                if (HistoryItems == null || !HistoryItems.Any())
-                    return;
+                if (HistoryItems == null || !HistoryItems.Any()) return;
 
                 IEnumerable<HistoryModel> filterHistoryList = HistoryItems;
 
-                if (selectedSymbol != "All")
-                    filterHistoryList = filterHistoryList.Where(x => x.SymbolName == selectedSymbol);
-
-                if (selectedExec != "All")
-                    filterHistoryList = filterHistoryList.Where(x => x.OrderType == selectedExec);
-
-                if (selectedType != "All")
-                    filterHistoryList = filterHistoryList.Where(x => x.Side == selectedType);
-
-                if (selectedEntry != "All")
-                    filterHistoryList = filterHistoryList.Where(x => x.DealType == selectedEntry);
+                if (selectedSymbol != "All") filterHistoryList = filterHistoryList.Where(x => x.SymbolName == selectedSymbol);
+                if (selectedExec != "All") filterHistoryList = filterHistoryList.Where(x => x.OrderType == selectedExec);
+                if (selectedType != "All") filterHistoryList = filterHistoryList.Where(x => x.Side == selectedType);
+                if (selectedEntry != "All") filterHistoryList = filterHistoryList.Where(x => x.DealType == selectedEntry);
 
                 var finalData = filterHistoryList.OrderBy(s => s.CreatedOn).ToList();
 
@@ -408,11 +365,11 @@ namespace ClientDesktop.View.Details
                     {
                         RefId = "FOOTER",
                         CreatedOn = DateTime.MaxValue,
-                        SymbolName = "ZZZZZZZZZZ",
-                        OrderType = "ZZZZZZZZZZ",
-                        Side = "ZZZZZZZZZZ",
-                        Volume = decimal.MaxValue,
-                        Price = decimal.MaxValue,
+                        SymbolName = "",
+                        OrderType = "",
+                        Side = "",
+                        Volume = 0,
+                        Price = 0,
                         UplineCommission = totalComm,
                         Pnl = totalProfit,
                         Comment = $"Profit: {totalProfit:N2}  Credit: {credit:N2}  Balance: {balance:F3}INR"
@@ -423,35 +380,34 @@ namespace ClientDesktop.View.Details
 
                 GridDealsOrders.ItemsSource = finalData;
                 NoDataLabel.Visibility = finalData.Any() ? Visibility.Collapsed : Visibility.Visible;
-
-
             }
             else
             {
-                if (PositionHistoryItems == null || !PositionHistoryItems.Any())
-                    return;
+                if (PositionHistoryItems == null || !PositionHistoryItems.Any()) return;
 
                 IEnumerable<PositionHistoryModel> filterPositionList = PositionHistoryItems;
                 if (selectedPosSymbol != "All")
                     filterPositionList = filterPositionList.Where(x => x.SymbolName == selectedPosSymbol);
 
                 var finalData = filterPositionList.OrderBy(s => s.UpdatedAt).ToList();
+
                 if (finalData.Any())
                 {
                     double totalProfit = finalData.Sum(x => x.Pnl);
+                    double totalComm = finalData.Sum(x => (double)x.AverageOutPrice);
 
-                    // 2. Create Footer Row
                     var footerRow = new PositionHistoryModel
                     {
                         RefId = "FOOTER",
                         UpdatedAt = DateTime.MaxValue,
-                        SymbolName = "ZZZZZZZZZZ",
-                        Side = "ZZZZZZZZZZ",
-                        TotalVolume = double.MaxValue,
-                        AveragePrice = double.MaxValue,
-                        CurrentPrice = double.MaxValue,
+                        SymbolName = "",
+                        Side = "",
+                        TotalVolume = 0,
+                        AveragePrice = 0,
+                        CurrentPrice = 0,
+                        AverageOutPrice = (double)totalComm,
                         Pnl = totalProfit,
-                        Comment = $"Profit: {totalProfit:N2}  Credit: {"credit":N2}  Balance: {"balance":F3}INR"
+                        Comment = $"Profit: {totalProfit:N2}"
                     };
 
                     finalData.Add(footerRow);
@@ -462,12 +418,100 @@ namespace ClientDesktop.View.Details
             }
         }
 
+        // Track sort direction manually because reassigning ItemsSource resets column.SortDirection
+        private readonly Dictionary<string, ListSortDirection> _dealsSortState = new Dictionary<string, ListSortDirection>();
+        private readonly Dictionary<string, ListSortDirection> _positionSortState = new Dictionary<string, ListSortDirection>();
+
+        // ─────────────────────────────────────────────────────────────────────
+        // SORTING — intercept DataGrid sort, do it manually so the footer row
+        // is always excluded from sorting and stays pinned at the bottom.
+        // ─────────────────────────────────────────────────────────────────────
+
+        private void GridDealsOrders_Sorting(object sender, DataGridSortingEventArgs e)
+        {
+            e.Handled = true;
+
+            var source = GridDealsOrders.ItemsSource as List<HistoryModel>;
+            if (source == null || source.Count == 0) return;
+
+            var footer = source.FirstOrDefault(x => x.RefId == "FOOTER");
+            var dataRows = source.Where(x => x.RefId != "FOOTER").ToList();
+
+            string propName = e.Column.SortMemberPath;
+            if (string.IsNullOrEmpty(propName)) propName = (e.Column.Header as string) ?? string.Empty;
+
+            // Read previous direction from our own dictionary (not from column, which gets reset on ItemsSource change)
+            if (_dealsSortState == null) return;
+            _dealsSortState.TryGetValue(propName, out var currentDir);
+            var newDir = (currentDir == ListSortDirection.Ascending)
+                         ? ListSortDirection.Descending
+                         : ListSortDirection.Ascending;
+
+            // Save new direction
+            _dealsSortState[propName] = newDir;
+
+            // Update sort arrows: clear all, set current column
+            foreach (var col in GridDealsOrders.Columns)
+                col.SortDirection = null;
+            e.Column.SortDirection = newDir;
+
+            var prop = typeof(HistoryModel).GetProperty(propName);
+            IEnumerable<HistoryModel> sorted = prop != null
+                ? (newDir == ListSortDirection.Ascending
+                    ? dataRows.OrderBy(r => prop.GetValue(r))
+                    : dataRows.OrderByDescending(r => prop.GetValue(r)))
+                : dataRows;
+
+            var result = sorted.ToList();
+            if (footer != null) result.Add(footer);
+
+            GridDealsOrders.ItemsSource = result;
+        }
+
+        private void GridPosition_Sorting(object sender, DataGridSortingEventArgs e)
+        {
+            e.Handled = true;
+
+            var source = GridPosition.ItemsSource as List<PositionHistoryModel>;
+            if (source == null || source.Count == 0) return;
+
+            var footer = source.FirstOrDefault(x => x.RefId == "FOOTER");
+            var dataRows = source.Where(x => x.RefId != "FOOTER").ToList();
+
+            string propName = e.Column.SortMemberPath;
+            if (string.IsNullOrEmpty(propName)) propName = (e.Column.Header as string) ?? string.Empty;
+
+            if (_positionSortState == null) return;
+            _positionSortState.TryGetValue(propName, out var currentDir);
+            var newDir = (currentDir == ListSortDirection.Ascending)
+                         ? ListSortDirection.Descending
+                         : ListSortDirection.Ascending;
+
+            _positionSortState[propName] = newDir;
+
+            foreach (var col in GridPosition.Columns)
+                col.SortDirection = null;
+            e.Column.SortDirection = newDir;
+
+            var prop = typeof(PositionHistoryModel).GetProperty(propName);
+            IEnumerable<PositionHistoryModel> sorted = prop != null
+                ? (newDir == ListSortDirection.Ascending
+                    ? dataRows.OrderBy(r => prop.GetValue(r))
+                    : dataRows.OrderByDescending(r => prop.GetValue(r)))
+                : dataRows;
+
+            var result = sorted.ToList();
+            if (footer != null) result.Add(footer);
+
+            GridPosition.ItemsSource = result;
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+
         private string GetComboValue(ComboBox filterSymbol)
         {
             if (filterSymbol != null && filterSymbol.SelectedItem != null)
-            {
                 return filterSymbol.SelectedItem.ToString();
-            }
             return "All";
         }
 
@@ -477,7 +521,6 @@ namespace ClientDesktop.View.Details
             {
                 string fullId = btn.Tag.ToString();
                 Clipboard.SetText(fullId);
-
             }
         }
 
@@ -508,7 +551,5 @@ namespace ClientDesktop.View.Details
                 _historyViewModel.ExportToPdf(data, currentType);
             }
         }
-
-
     }
 }

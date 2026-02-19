@@ -16,10 +16,10 @@ namespace ClientDesktop.Infrastructure.Services
         private readonly IRepository<List<HistoryModel>> _historyRepo;
         private readonly IRepository<List<PositionHistoryModel>> _positionHistoryRepo;
 
-        public HistoryService(IApiService apiService, SessionService sessionService)
+        public HistoryService(IApiService apiService, SessionService _sessionService)
         {
             _apiService = apiService;
-            _sessionService = sessionService;
+            _sessionService = _sessionService;
             _historyRepo = new FileRepository<List<HistoryModel>>();
             _positionHistoryRepo = new FileRepository<List<PositionHistoryModel>>();
         }
@@ -71,7 +71,7 @@ namespace ClientDesktop.Infrastructure.Services
         {
             try
             {
-                var dealer = SessionManager.ClientListData?.FirstOrDefault();
+                var dealer = _sessionService.ClientListData?.FirstOrDefault();
                 if (dealer == null)
                 {
                     FileLogger.ApplicationLog("HistoryService", "FetchHistoryFromApiAsync", "DealerId not found.");
@@ -80,7 +80,7 @@ namespace ClientDesktop.Infrastructure.Services
 
                 var payload = new
                 {
-                    clientID = SessionManager.UserId,
+                    clientID = _sessionService.UserId,
                     dealerID = dealer.DealerId,
                     fromDate = fromDate.ToString("yyyy-MM-dd"),
                     toDate = toDate.ToString("yyyy-MM-dd")
@@ -90,7 +90,7 @@ namespace ClientDesktop.Infrastructure.Services
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 using (var response = await _apiService
-                    .PostRawAsync(AppConfig.GetHistoryForClient.ToReplaceUrl(), content))
+                    .PostRawAsync(AppConfig.GetHistoryForClient.ToReplaceUrl(_sessionService.PrimaryDomain), content))
                 {
                     if (response == null || response.Content == null)
                     {
@@ -206,7 +206,7 @@ namespace ClientDesktop.Infrastructure.Services
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 using (var response = await _apiService
-                    .PostRawAsync(AppConfig.GetPositionHistoryForClient.ToReplaceUrl(), content)
+                    .PostRawAsync(AppConfig.GetPositionHistoryForClient.ToReplaceUrl(_sessionService.PrimaryDomain), content)
                     .ConfigureAwait(false))
                 {
                     if (response == null || response.Content == null)
