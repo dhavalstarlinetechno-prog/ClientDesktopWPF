@@ -60,6 +60,7 @@ namespace ClientDesktop.ViewModel
             {
                 _sessionService.SetServerList(existingUser.ServerListData);
                 _sessionService.SetSession(null, existingUser.UserId, existingUser.Username, existingUser.LicenseId, null, existingUser.Password);
+                MarketWatchVM.LoadLocalData();
             }
 
             SetRestrictedMode();

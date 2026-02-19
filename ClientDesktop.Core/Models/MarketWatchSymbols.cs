@@ -19,59 +19,6 @@ namespace ClientDesktop.Core.Models
         public bool IsUp { get; set; } // For the small arrow indicator
     }
 
-    public class MarketWatchSymbols : INotifyPropertyChanged
-    {
-        private decimal _bid, _ask, _ltp, _high, _low, _buyVolume, _sellVolume, _open, _previousClose;
-        private decimal _spread, _dcp, _dcv;
-        private long _updateTime;
-
-        [Browsable(false)]
-        public int SymbolId { get; set; }
-
-        [Browsable(false)]
-        public int symbolDigit { get; set; }
-
-        [DisplayName("Symbol")]
-        public string SymbolName { get; set; }
-
-        public decimal Bid { get => _bid; set { _bid = value; OnPropertyChanged(nameof(Bid)); } }
-        public decimal Ask { get => _ask; set { _ask = value; OnPropertyChanged(nameof(Ask)); } }
-        public decimal LTP { get => _ltp; set { _ltp = value; OnPropertyChanged(nameof(LTP)); } }
-        public decimal High { get => _high; set { _high = value; OnPropertyChanged(nameof(High)); } }
-        public decimal Low { get => _low; set { _low = value; OnPropertyChanged(nameof(Low)); } }
-        public decimal Open { get => _open; set { _open = value; OnPropertyChanged(nameof(Open)); } }
-
-        [DisplayName("Close")]
-        public decimal PreviousClose { get => _previousClose; set { _previousClose = value; OnPropertyChanged(nameof(PreviousClose)); } }
-
-        [DisplayName("Spread")]
-        public decimal Spread { get => _spread; set { _spread = value; OnPropertyChanged(nameof(Spread)); } }
-
-        [DisplayName("DCP")]
-        public decimal DailyChangePercent { get => _dcp; set { _dcp = value; OnPropertyChanged(nameof(DailyChangePercent)); } }
-
-        [DisplayName("DCV")]
-        public decimal DailyChangeValue { get => _dcv; set { _dcv = value; OnPropertyChanged(nameof(DailyChangeValue)); } }
-
-        [Browsable(false)]
-        public long UpdateTime { get => _updateTime; set { _updateTime = value; OnPropertyChanged(nameof(UpdateDateTime)); } }
-
-        [DisplayName("Time")]
-        public DateTime UpdateDateTime => UpdateTime > 0
-            ? DateTimeOffset.FromUnixTimeMilliseconds(UpdateTime).LocalDateTime
-            : DateTime.MinValue;
-
-        [Browsable(false)]
-        public decimal BuyVolume { get => _buyVolume; set { _buyVolume = value; OnPropertyChanged(nameof(BuyVolume)); } }
-
-        [Browsable(false)]
-        public decimal SellVolume { get => _sellVolume; set { _sellVolume = value; OnPropertyChanged(nameof(SellVolume)); } }
-
-        public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged(string name) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-    }
-
     public class MarketWatchApiResponse
     {
         public MarketWatchData data { get; set; }

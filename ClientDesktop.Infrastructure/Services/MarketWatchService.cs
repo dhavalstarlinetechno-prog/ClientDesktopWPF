@@ -12,6 +12,8 @@ namespace ClientDesktop.Infrastructure.Services
         private readonly SessionService _sessionService;
         private readonly IRepository<MarketWatchData> _repo;
 
+        public event Action<MarketWatchData> OnDataUpdated;
+
         public MarketWatchService(IApiService apiService, SessionService sessionService)
         {
             _apiService = apiService;
@@ -25,9 +27,9 @@ namespace ClientDesktop.Infrastructure.Services
             {
                 string folderName = AESHelper.ToBase64UrlSafe(_sessionService.LicenseId);
                 string fileName = AESHelper.ToBase64UrlSafe(_sessionService.UserId);
-                string relativePath = System.IO.Path.Combine(folderName, fileName);
+                string relativePath = Path.Combine(folderName, fileName);
 
-                var cachedData = _repo.Load(relativePath, "symbol");
+                var cachedData = _repo.Load(relativePath, "marketwatch");
 
                 if (!forceApiSync && cachedData != null)
                 {
@@ -37,16 +39,18 @@ namespace ClientDesktop.Infrastructure.Services
                 if (System.Net.NetworkInformation.NetworkInterface.GetIsNetworkAvailable())
                 {
                     string url = CommonHelper.ToReplaceUrl(AppConfig.MarketWatchInitDataUrl, _sessionService.PrimaryDomain);
-                    var apiResponse = await _apiService.GetAsync<MarketWatchApiResponse>(url);
+                    var apiData = await _apiService.GetAsync<MarketWatchApiResponse>(url);
 
-                    if (apiResponse != null && apiResponse.isSuccess && apiResponse.data != null)
+                    if (apiData != null && apiData.data != null)
                     {
-                        _repo.Save(relativePath, apiResponse.data, "symbol");
-                        return apiResponse.data;
-                    }
-                    else
-                    {
-                        FileLogger.Log("MarketWatchService", "API call failed or returned empty. Using Cache.");
+                        Task.Run(() => _repo.Save(relativePath, apiData.data, "marketwatch"));
+
+                        if (forceApiSync)
+                        {
+                            OnDataUpdated?.Invoke(apiData.data);
+                        }
+
+                        return apiData.data;
                     }
                 }
                 else
@@ -54,12 +58,12 @@ namespace ClientDesktop.Infrastructure.Services
                     FileLogger.Log("Network", "No Internet Connection. Loading Local Data.");
                 }
 
-                return cachedData;
+                return cachedData ?? new MarketWatchData();
             }
             catch (Exception ex)
             {
                 FileLogger.Log("MarketWatchService", $"Error: {ex.Message}");
-                return null;
+                return new MarketWatchData();
             }
         }
 
