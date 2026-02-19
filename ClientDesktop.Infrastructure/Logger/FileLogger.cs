@@ -32,7 +32,7 @@ namespace ClientDesktop.Infrastructure.Logger
             }
         }
 
-        public static void ApplicationLog(string FileName , string source, string message)
+        public static void ApplicationLog(string methodName, string message)
         {
             try
             {
@@ -43,7 +43,7 @@ namespace ClientDesktop.Infrastructure.Logger
 
                 string filePath = Path.Combine(ApplicationLogDirectory, "ApplicationLogs.log");
 
-                string logLine = $"{formateTime}\t{FileName}\t{source}\t{message}{Environment.NewLine}";
+                string logLine = $"{formateTime}\t{methodName}\t{message}{Environment.NewLine}";
                 File.AppendAllText(filePath, logLine);
 
             }
@@ -52,5 +52,31 @@ namespace ClientDesktop.Infrastructure.Logger
                 System.Diagnostics.Debug.WriteLine("Logging Failed: " + ex.Message);
             }
         }
+
+        public static void ApplicationLog(string methodName = "", Exception ex = null)
+        {
+            try
+            {
+                DateTime now = DateTime.Now;
+                string formattedTime = now.ToString("yyyy.MM.dd HH:mm:ss.fff");
+
+                if (!Directory.Exists(ApplicationLogDirectory))
+                    Directory.CreateDirectory(ApplicationLogDirectory);
+
+                string filePath = Path.Combine(ApplicationLogDirectory, "ApplicationLogs.log");
+
+                string exceptionDetails = ex == null
+                    ? "No Exception Data"
+                    : $"Message: {ex.Message} | StackTrace: {ex.StackTrace} | InnerException: {ex.InnerException?.Message}";
+
+                string logLine = $"{formattedTime}\t{methodName}\t{exceptionDetails}{Environment.NewLine}";
+                File.AppendAllText(filePath, logLine);
+            }
+            catch (Exception logEx)
+            {
+                System.Diagnostics.Debug.WriteLine("Logging Failed: " + logEx.Message);
+            }
+        }
+
     }
 }

@@ -36,7 +36,7 @@ namespace ClientDesktop.Infrastructure.Services
             return _positionHistoryRepo.Load(GetStoragePath(), "PositionHistory");
         }
 
-        #endregion
+        #endregion  
 
         #region Private Helpers (File & Path)
 
@@ -74,7 +74,7 @@ namespace ClientDesktop.Infrastructure.Services
                 var dealer = _sessionService.ClientListData?.FirstOrDefault();
                 if (dealer == null)
                 {
-                    FileLogger.ApplicationLog("HistoryService", "FetchHistoryFromApiAsync", "DealerId not found.");
+                    FileLogger.ApplicationLog( "FetchHistoryFromApiAsync", "DealerId not found.");
                     return TryLoadFromCache("DealerId missing");
                 }
 
@@ -94,7 +94,7 @@ namespace ClientDesktop.Infrastructure.Services
                 {
                     if (response == null || response.Content == null)
                     {
-                        FileLogger.ApplicationLog("HistoryService", "FetchHistoryFromApiAsync", "Null response from API.");
+                        FileLogger.ApplicationLog( "FetchHistoryFromApiAsync", "Null response from API.");
                         return TryLoadFromCache("Null response from API");
                     }
 
@@ -102,7 +102,7 @@ namespace ClientDesktop.Infrastructure.Services
 
                     if (!response.IsSuccessStatusCode)
                     {
-                        FileLogger.ApplicationLog("HistoryService", "FetchHistoryFromApiAsync",
+                        FileLogger.ApplicationLog( "FetchHistoryFromApiAsync",
                             $"API failed: {(int)response.StatusCode} - {response.ReasonPhrase}");
                         return TryLoadFromCache(response.ReasonPhrase);
                     }
@@ -111,7 +111,7 @@ namespace ClientDesktop.Infrastructure.Services
 
                     if (result == null || !result.IsSuccess || result.Data == null)
                     {
-                        FileLogger.ApplicationLog("HistoryService", "FetchHistoryFromApiAsync",
+                        FileLogger.ApplicationLog( "FetchHistoryFromApiAsync",
                             "Invalid response structure.");
                         return TryLoadFromCache("Invalid response structure");
                     }
@@ -122,7 +122,7 @@ namespace ClientDesktop.Infrastructure.Services
                     }
                     catch (Exception ex)
                     {
-                        FileLogger.ApplicationLog("HistoryService", "FetchHistoryFromApiAsync",
+                        FileLogger.ApplicationLog( "FetchHistoryFromApiAsync",
                             $"SaveStoredHistory failed: {ex.Message}");
                     }
 
@@ -136,7 +136,7 @@ namespace ClientDesktop.Infrastructure.Services
             }
             catch (Exception ex)
             {
-                FileLogger.ApplicationLog("HistoryService", "FetchHistoryFromApiAsync",
+                FileLogger.ApplicationLog("FetchHistoryFromApiAsync",
                     $"Exception: {ex.Message}");
 
                 return TryLoadFromCache(ex.Message);
@@ -152,7 +152,7 @@ namespace ClientDesktop.Infrastructure.Services
 
                 if (cached != null && cached.Any())
                 {
-                    FileLogger.ApplicationLog("HistoryService", "TryLoadFromCache",
+                    FileLogger.ApplicationLog( "TryLoadFromCache",
                         "Loaded history from local cache.");
 
                     return new HistoryFetchResult
@@ -164,7 +164,7 @@ namespace ClientDesktop.Infrastructure.Services
                     };
                 }
 
-                FileLogger.ApplicationLog("HistoryService", "TryLoadFromCache",
+                FileLogger.ApplicationLog( "TryLoadFromCache",
                     "No local history cache available.");
 
                 return new HistoryFetchResult
@@ -177,7 +177,7 @@ namespace ClientDesktop.Infrastructure.Services
             }
             catch (Exception ex)
             {
-                FileLogger.ApplicationLog("HistoryService", "TryLoadFromCache",
+                FileLogger.ApplicationLog( "TryLoadFromCache",
                     $"Cache load failed: {ex.Message}");
 
                 return new HistoryFetchResult
@@ -211,7 +211,7 @@ namespace ClientDesktop.Infrastructure.Services
                 {
                     if (response == null || response.Content == null)
                     {
-                        FileLogger.ApplicationLog("HistoryService", "FetchPositionHistoryFromApiAsync",
+                        FileLogger.ApplicationLog( "FetchPositionHistoryFromApiAsync",
                             "Null response from PositionHistory API.");
 
                         return TryLoadPositionHistoryFromCache("Null response from API");
@@ -222,7 +222,7 @@ namespace ClientDesktop.Infrastructure.Services
 
                     if (!response.IsSuccessStatusCode)
                     {
-                        FileLogger.ApplicationLog("HistoryService", "FetchPositionHistoryFromApiAsync",
+                        FileLogger.ApplicationLog( "FetchPositionHistoryFromApiAsync",
                             $"API failed: {(int)response.StatusCode} - {response.ReasonPhrase}");
 
                         return TryLoadPositionHistoryFromCache(response.ReasonPhrase);
@@ -232,7 +232,7 @@ namespace ClientDesktop.Infrastructure.Services
 
                     if (result == null || !result.IsSuccess || result.Data == null)
                     {
-                        FileLogger.ApplicationLog("HistoryService", "FetchPositionHistoryFromApiAsync",
+                        FileLogger.ApplicationLog( "FetchPositionHistoryFromApiAsync",
                             "Invalid response structure.");
 
                         return TryLoadPositionHistoryFromCache("Invalid response structure");
@@ -244,7 +244,7 @@ namespace ClientDesktop.Infrastructure.Services
                     }
                     catch (Exception ex)
                     {
-                        FileLogger.ApplicationLog("HistoryService", "FetchPositionHistoryFromApiAsync",
+                        FileLogger.ApplicationLog( "FetchPositionHistoryFromApiAsync",
                             $"SaveStoredPositionHistory failed: {ex.Message}");
                     }
 
@@ -258,7 +258,7 @@ namespace ClientDesktop.Infrastructure.Services
             }
             catch (Exception ex)
             {
-                FileLogger.ApplicationLog("HistoryService", "FetchPositionHistoryFromApiAsync",
+                FileLogger.ApplicationLog( "FetchPositionHistoryFromApiAsync",
                     $"Exception: {ex.Message}");
 
                 return TryLoadPositionHistoryFromCache(ex.Message);
@@ -273,7 +273,7 @@ namespace ClientDesktop.Infrastructure.Services
 
                 if (cached != null && cached.Any())
                 {
-                    FileLogger.ApplicationLog("HistoryService", "TryLoadPositionHistoryFromCache",
+                    FileLogger.ApplicationLog( "TryLoadPositionHistoryFromCache",
                         "Loaded position history from local cache.");
 
                     return new PositionHistoryFetchResult
@@ -285,7 +285,7 @@ namespace ClientDesktop.Infrastructure.Services
                     };
                 }
 
-                FileLogger.ApplicationLog("HistoryService", "TryLoadPositionHistoryFromCache",
+                FileLogger.ApplicationLog( "TryLoadPositionHistoryFromCache",
                     "No local position history cache available.");
 
                 return new PositionHistoryFetchResult
@@ -298,7 +298,7 @@ namespace ClientDesktop.Infrastructure.Services
             }
             catch (Exception ex)
             {
-                FileLogger.ApplicationLog("HistoryService", "TryLoadPositionHistoryFromCache",
+                FileLogger.ApplicationLog( "TryLoadPositionHistoryFromCache",
                     $"Cache load failed: {ex.Message}");
 
                 return new PositionHistoryFetchResult
@@ -312,5 +312,6 @@ namespace ClientDesktop.Infrastructure.Services
         }
 
         #endregion
+
     }
 }

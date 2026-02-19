@@ -75,7 +75,7 @@ namespace ClientDesktop.ViewModel
             }
             catch (Exception ex)
             {
-                FileLogger.ApplicationLog("HistoryViewModel", "LoadDataAsync", ex.Message);
+                FileLogger.ApplicationLog("LoadDataAsync", ex);
             }
             finally
             {
