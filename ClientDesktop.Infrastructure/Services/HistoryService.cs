@@ -16,10 +16,10 @@ namespace ClientDesktop.Infrastructure.Services
         private readonly IRepository<List<HistoryModel>> _historyRepo;
         private readonly IRepository<List<PositionHistoryModel>> _positionHistoryRepo;
 
-        public HistoryService(IApiService apiService, SessionService _sessionService)
+        public HistoryService(IApiService apiService, SessionService sessionService)
         {
             _apiService = apiService;
-            _sessionService = _sessionService;
+            _sessionService = sessionService;
             _historyRepo = new FileRepository<List<HistoryModel>>();
             _positionHistoryRepo = new FileRepository<List<PositionHistoryModel>>();
         }
