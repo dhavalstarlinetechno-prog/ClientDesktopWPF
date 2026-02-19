@@ -2,26 +2,20 @@
 using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Helpers;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using static System.Net.WebRequestMethods;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ClientDesktop.Infrastructure.Services
 {
     public class LedgerService
     {
         private readonly IApiService _apiService;
+        private readonly SessionService _sessionService;
         private readonly IRepository<List<Ledgermodel>> _symbolMode;
 
-        public LedgerService()
+        public LedgerService(IApiService apiService, SessionService sessionService)
         {
-            _apiService = new ApiService();
+            _apiService = apiService;
+            _sessionService = sessionService;
         }
 
         public async Task<(bool Success, string ErrorMessage, LedgerAuthData ResponseData)> VerifyUserPasswordAsync(string clientId, string password, string licenseId)
@@ -37,11 +31,11 @@ namespace ClientDesktop.Infrastructure.Services
                 };
 
                 // ✅ Resolve server URL
-                var serverDomain = SessionManager.ServerListData
+                var serverDomain = _sessionService.ServerListData
                     .FirstOrDefault(x => x.licenseId.ToString() == licenseId)
                     ?.primaryDomain;
 
-                var baseUrl = CommonHelper.ToReplaceUrl(AppConfig.LedgerAuthnticationURL);
+                var baseUrl = CommonHelper.ToReplaceUrl(AppConfig.LedgerAuthnticationURL, _sessionService.PrimaryDomain);
                 var fullUrl = baseUrl.Contains("http")
                     ? baseUrl
                     : $"{serverDomain}{baseUrl}";
@@ -85,8 +79,8 @@ namespace ClientDesktop.Infrastructure.Services
         {
             try
             {
-                string baseUrl = CommonHelper.ToReplaceUrl(AppConfig.LederUserURL);
-                string url = $"{baseUrl}{SessionManager.UserId}";
+                string baseUrl = CommonHelper.ToReplaceUrl(AppConfig.LederUserURL, _sessionService.PrimaryDomain);
+                string url = $"{baseUrl}{_sessionService.UserId}";
 
                 var response = await _apiService.GetAsync<LedgerUserResponse>(url);
 
@@ -123,14 +117,14 @@ namespace ClientDesktop.Infrastructure.Services
                 };
 
                 // Resolve server domain
-                var serverDomain = SessionManager.ServerListData
+                var serverDomain = _sessionService.ServerListData
                     .FirstOrDefault(w => w.licenseId.ToString() == licenseId)
                     ?.primaryDomain;
 
                 if (string.IsNullOrEmpty(serverDomain))
                     return (false, "Invalid server domain.", null);
 
-                var baseUrl = CommonHelper.ToReplaceUrl(AppConfig.GetLedgerListURL);
+                var baseUrl = CommonHelper.ToReplaceUrl(AppConfig.GetLedgerListURL, _sessionService.PrimaryDomain);
 
                 var fullUrl = baseUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase)
                     ? baseUrl

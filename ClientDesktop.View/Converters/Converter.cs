@@ -110,7 +110,7 @@ namespace ClientDesktop.View.Converters
         {
             if (value is DateTime utcDate)
             {
-                DateTime istTime = GMTTime.ConvertUtcToIst(utcDate);
+                DateTime istTime = CommonHelper.ConvertUtcToIst(utcDate);
                 return istTime.ToString("dd/MM/yy HH:mm:ss", CultureInfo.InvariantCulture);
             }
             return value;

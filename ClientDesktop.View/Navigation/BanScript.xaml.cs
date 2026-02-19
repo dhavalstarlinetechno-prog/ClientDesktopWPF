@@ -1,21 +1,7 @@
-﻿using ClientDesktop.Core.Models;
+﻿using ClientDesktop.Infrastructure.Helpers;
 using ClientDesktop.ViewModel;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace ClientDesktop.View.Navigation
 {
@@ -31,7 +17,11 @@ namespace ClientDesktop.View.Navigation
             string bandate = $"({currentDate.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)})";
             LblBanscripiptdate.Text = bandate;
             DgvBanScript.ColumnHeaderHeight = 25;
-            DataContext = new BanScriptViewModel();           
+
+            if (!System.ComponentModel.DesignerProperties.GetIsInDesignMode(this))
+            {
+                this.DataContext = AppServiceLocator.GetService<BanScriptViewModel>();
+            }
         }        
     }
 }

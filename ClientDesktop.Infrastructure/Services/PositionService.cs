@@ -9,12 +9,14 @@ namespace ClientDesktop.Infrastructure.Services
     public class PositionService
     {
         private readonly IApiService _apiService;
+        private readonly SessionService _sessionService;
         private readonly IRepository<List<Position>> _positionRepo;
         private readonly IRepository<List<OrderModel>> _orderRepo;
 
-        public PositionService()
+        public PositionService(IApiService apiService, SessionService sessionService)
         {
-            _apiService = new ApiService();
+            _apiService = apiService;
+            _sessionService = sessionService;
             _positionRepo = new FileRepository<List<Position>>();
             _orderRepo = new FileRepository<List<OrderModel>>();
         }
@@ -29,7 +31,7 @@ namespace ClientDesktop.Infrastructure.Services
             try
             {
                 // 2. Call API
-                string url = CommonHelper.ToReplaceUrl(AppConfig.GetPositionsForClient);
+                string url = CommonHelper.ToReplaceUrl(AppConfig.GetPositionsForClient, _sessionService.PrimaryDomain);
                 var apiResponse = await _apiService.GetAsync<RootPositionResponse>(url);
 
                 // 3. Check API Failure
@@ -70,7 +72,7 @@ namespace ClientDesktop.Infrastructure.Services
             try
             {
                 // 2. Call API
-                string url = CommonHelper.ToReplaceUrl(AppConfig.PositionOrderApiUrl);
+                string url = CommonHelper.ToReplaceUrl(AppConfig.PositionOrderApiUrl, _sessionService.PrimaryDomain);
                 var apiResponse = await _apiService.GetAsync<RootOrderResponse>(url);
 
                 // 3. Check API Failure
@@ -110,13 +112,13 @@ namespace ClientDesktop.Infrastructure.Services
         // Common Path Generator (Logic ek jagah)
         private string GetStoragePath()
         {
-            string domain = SessionManager.ServerListData
-                .FirstOrDefault(w => w.licenseId.ToString() == SessionManager.LicenseId)?
+            string domain = _sessionService.ServerListData
+                .FirstOrDefault(w => w.licenseId.ToString() == _sessionService.LicenseId)?
                 .serverDisplayName;
 
             return Path.Combine(
                 AESHelper.ToBase64UrlSafe(domain),
-                AESHelper.ToBase64UrlSafe(SessionManager.UserId)
+                AESHelper.ToBase64UrlSafe(_sessionService.UserId)
             );
         }
 

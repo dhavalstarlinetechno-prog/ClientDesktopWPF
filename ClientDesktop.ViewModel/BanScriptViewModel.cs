@@ -14,6 +14,7 @@ namespace ClientDesktop.ViewModel
 {
     public class BanScriptViewModel : INotifyPropertyChanged
     {
+        private readonly SessionService _sessionService;
         private readonly BanScriptService _banScriptService;
 
         public ObservableCollection<BanscriptGridRow> GridRows { get; set; }
@@ -32,9 +33,10 @@ namespace ClientDesktop.ViewModel
         }
         public bool IsNoDataVisible => IsDataLoaded && GridRows.Count == 0;
 
-        public BanScriptViewModel()
+        public BanScriptViewModel(SessionService sessionService, BanScriptService banScriptService)
         {
-            _banScriptService = new BanScriptService();
+            _sessionService = sessionService;
+            _banScriptService = banScriptService;
             GridRows = new ObservableCollection<BanscriptGridRow>();
             BanScipt_data();
         }

@@ -10,12 +10,14 @@ namespace ClientDesktop.Infrastructure.Services
         private readonly IRepository<List<LoginInfo>> _loginRepo;
         private readonly IRepository<List<ServerList>> _serverRepo;
         private readonly IApiService _apiService;
+        private readonly SessionService _sessionService;
 
-        public AuthService()
+        public AuthService(IApiService apiService, SessionService sessionService)
         {
             _loginRepo = new FileRepository<List<LoginInfo>>();
             _serverRepo = new FileRepository<List<ServerList>>();
-            _apiService = new ApiService();
+            _apiService = apiService;
+            _sessionService = sessionService;
         }
 
         #region Server Management
@@ -58,7 +60,7 @@ namespace ClientDesktop.Infrastructure.Services
                 { "licenseId", licenseId }
             };
 
-            string url = CommonHelper.ToReplaceUrl(AppConfig.AuthURL);
+            string url = CommonHelper.ToReplaceUrl(AppConfig.AuthURL, _sessionService.PrimaryDomain);
 
             var result = await _apiService.PostFormAsync<AuthResponse>(url, formData);
 
@@ -75,7 +77,7 @@ namespace ClientDesktop.Infrastructure.Services
         {
             try
             {
-                string url = CommonHelper.ToReplaceUrl(AppConfig.AuthURL);
+                string url = CommonHelper.ToReplaceUrl(AppConfig.AuthURL, _sessionService.PrimaryDomain);
                 return await _apiService.GetAsync<AuthResponseObj>(url);
             }
             catch
@@ -94,9 +96,9 @@ namespace ClientDesktop.Infrastructure.Services
 
             if (existingUser != null)
             {
-                existingUser.Username = SessionManager.Username;
-                existingUser.Expiration = SessionManager.Expiration;
-                existingUser.ServerListData = SessionManager.ServerListData;
+                existingUser.Username = _sessionService.Username;
+                existingUser.Expiration = _sessionService.Expiration;
+                existingUser.ServerListData = _sessionService.ServerListData;
                 existingUser.Password = isRemember ? pass : string.Empty;
                 existingUser.LastLogin = true;
             }
@@ -105,10 +107,10 @@ namespace ClientDesktop.Infrastructure.Services
                 list.Add(new LoginInfo
                 {
                     UserId = user,
-                    Username = SessionManager.Username,
+                    Username = _sessionService.Username,
                     LicenseId = licenseId,
-                    Expiration = SessionManager.Expiration,
-                    ServerListData = SessionManager.ServerListData,
+                    Expiration = _sessionService.Expiration,
+                    ServerListData = _sessionService.ServerListData,
                     Password = isRemember ? pass : string.Empty,
                     LastLogin = true
                 });

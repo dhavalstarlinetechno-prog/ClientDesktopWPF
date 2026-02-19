@@ -3,7 +3,7 @@ using ClientDesktop.Core.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using System.Windows;
 
-namespace ClientDesktop.Main.Login
+namespace ClientDesktop.Infrastructure.Services
 {
     public class DialogService : IDialogService
     {
@@ -17,14 +17,12 @@ namespace ClientDesktop.Main.Login
         public void ShowDialog<TViewModel>(string title, Action<TViewModel> onDialogClose = null)
             where TViewModel : ViewModelBase
         {
-            // 1. ViewModel create karo DI container se
             var viewModel = _serviceProvider.GetRequiredService<TViewModel>();
 
-            // 2. Generic Window create karo (ek hi window sabke liye!)
             var window = new Window
             {
                 Title = title,
-                Content = viewModel, // WPF DataTemplate se View dhund lega
+                Content = viewModel,
                 SizeToContent = SizeToContent.WidthAndHeight,
                 ResizeMode = ResizeMode.NoResize,
                 WindowStartupLocation = WindowStartupLocation.CenterScreen,
@@ -32,7 +30,6 @@ namespace ClientDesktop.Main.Login
                 Owner = Application.Current.MainWindow
             };
 
-            // 3. Logic handle karo
             if (viewModel is ICloseable closeableVm)
             {
                 closeableVm.CloseAction = () => window.Close();
@@ -40,7 +37,6 @@ namespace ClientDesktop.Main.Login
 
             window.ShowDialog();
 
-            // 4. Result wapas bhejo
             onDialogClose?.Invoke(viewModel);
         }
     }

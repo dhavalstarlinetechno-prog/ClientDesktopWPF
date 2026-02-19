@@ -14,11 +14,13 @@ namespace ClientDesktop.Infrastructure.Services
     public class BanScriptService
     {
         private readonly IApiService _apiService;
+        private readonly SessionService _sessionService;
         private readonly IRepository<List<BanScripts>> _banscriptRepo;
 
-        public BanScriptService()
+        public BanScriptService(IApiService apiService, SessionService sessionService)
         {
-            _apiService = new ApiService();
+            _apiService = apiService;
+            _sessionService = sessionService;
         }
         public async Task<BanScriptResponse> GetBanScript()
         {
@@ -26,7 +28,7 @@ namespace ClientDesktop.Infrastructure.Services
             {
                 DateTime currentDate = DateTime.Today;
                 string date = currentDate.ToString("yyyy-MM-dd");
-                string url = CommonHelper.ToReplaceUrl(AppConfig.GetBanscript + date);
+                string url = CommonHelper.ToReplaceUrl(AppConfig.GetBanscript + date, _sessionService.PrimaryDomain);
 
                 // Deserialize direct Model ma thase
                 var result = await _apiService.GetAsync<BanScriptResponse>(url);

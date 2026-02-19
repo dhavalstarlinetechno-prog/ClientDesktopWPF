@@ -1,6 +1,7 @@
 ﻿using ClientDesktop.Core.Models;
 using ClientDesktop.View.Disclaimer;
 using ClientDesktop.ViewModel;
+using Microsoft.Extensions.DependencyInjection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -22,11 +23,6 @@ namespace ClientDesktop.Main.Login
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
-            if (DataContext == null)
-            {
-                this.DataContext = new LoginPageViewModel();
-            }
-
             // Sync Password on Load
             if (DataContext is LoginPageViewModel vm)
             {

@@ -33,13 +33,13 @@ namespace ClientDesktop.View.Navigation
         {
             InitializeComponent();
             DataContext = this;
-            //SessionManager.OnLoginSuccess += () => Dispatcher.Invoke(() => LoadTree(true));
-            //SessionManager.OnLogout += () => Dispatcher.Invoke(() => LoadTree(false));
+            //_sessionService.OnLoginSuccess += () => Dispatcher.Invoke(() => LoadTree(true));
+            //_sessionService.OnLogout += () => Dispatcher.Invoke(() => LoadTree(false));
            
             
             LoadTree();
             string filePath = System.IO.Path.Combine(AppConfig.dataFolder,$"{AESHelper.ToBase64UrlSafe("LoginData")}.dat");
-            _loginInfos = CommonHelper.LoadLoginDataFromCache(filePath);
+            //_loginInfos = CommonHelper.LoadLoginDataFromCache(filePath);
         }
         
         private void LoadTree()
@@ -164,7 +164,7 @@ namespace ClientDesktop.View.Navigation
         //    foreach (var group in grouped)
         //    {
 
-        //        var server = SessionManager.ServerListData?
+        //        var server = _sessionService.ServerListData?
         //                    .FirstOrDefault(w => w.licenseId.ToString() == group.Key);
 
         //        string serverDisplayName = server?.serverDisplayName ?? "Unknown Server";
@@ -188,7 +188,7 @@ namespace ClientDesktop.View.Navigation
         //            };
 
 
-        //            if (login.UserId == SessionManager.UserId && login.LicenseId == SessionManager.LicenseId)
+        //            if (login.UserId == _sessionService.UserId && login.LicenseId == _sessionService.LicenseId)
         //            {
         //                userNode.Title += " (Active)";
 

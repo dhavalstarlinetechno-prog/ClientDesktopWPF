@@ -1,25 +1,22 @@
 ﻿using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Services;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks; // Async tasks ke liye
 using System.Windows;       // UI Dispatcher ke liye
-using System.Windows.Data;
 
 namespace ClientDesktop.ViewModel
 {
     public class LedgerViewModel : INotifyPropertyChanged
     {
+        private readonly SessionService _sessionService;
         private readonly LedgerService _ledgerService;
         private LedgerUserDetail _ledgerUser;
         public ObservableCollection<Ledgermodel> GridRows { get; set; }
-        public LedgerViewModel()
+        public LedgerViewModel(SessionService sessionService, LedgerService ledgerService)
         {
-            _ledgerService = new LedgerService();
+            _sessionService = sessionService;
+            _ledgerService = ledgerService;
             GridRows = new ObservableCollection<Ledgermodel>();       
         }
 
@@ -35,8 +32,8 @@ namespace ClientDesktop.ViewModel
 
         public async Task<bool> VerifyPasswordAsync(string password)
         {
-            string clientId = SessionManager.UserId;
-            string licenseId = SessionManager.LicenseId;
+            string clientId = _sessionService.UserId;
+            string licenseId = _sessionService.LicenseId;
 
             var result = await _ledgerService
                 .VerifyUserPasswordAsync(clientId, password, licenseId);

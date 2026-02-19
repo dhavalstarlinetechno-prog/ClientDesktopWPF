@@ -7,6 +7,7 @@
         xmlns:dock="https://github.com/Dirkster99/AvalonDock"
         xmlns:dockThemes="clr-namespace:AvalonDock.Themes;assembly=AvalonDock.Themes.VS2013"
         xmlns:details="clr-namespace:ClientDesktop.View.Details;assembly=ClientDesktop.View"
+        xmlns:mw="clr-namespace:ClientDesktop.View.MarketWatch;assembly=ClientDesktop.View"
         xmlns:navigation="clr-namespace:ClientDesktop.View.Navigation;assembly=ClientDesktop.View"
         WindowState="Maximized"
         mc:Ignorable="d"
@@ -154,7 +155,7 @@
                             <!-- Market Watch -->
                             <dock:LayoutAnchorablePane DockHeight="*">
                                 <dock:LayoutAnchorable x:Name="MarketWatchPane" Title="Market Watch" ContentId="MarketWatch" CanClose="False" CanAutoHide="False">
-                                    <Grid Background="White"/>
+                                    <mw:MarketWatchView DataContext="{Binding MarketWatchVM}" />
                                 </dock:LayoutAnchorable>
                             </dock:LayoutAnchorablePane>
 
@@ -172,7 +173,7 @@
                         <!-- Center: Charts -->
                         <dock:LayoutDocumentPane>
                             <dock:LayoutDocument Title="Chart" ContentId="Chart" CanClose="True">
-                                <Grid Background="Black"/>
+                                <Grid Background="White"/>
                             </dock:LayoutDocument>
                         </dock:LayoutDocumentPane>
                     </dock:LayoutPanel>

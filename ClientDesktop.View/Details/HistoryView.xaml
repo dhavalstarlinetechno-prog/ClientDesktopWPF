@@ -20,9 +20,9 @@
         
     </UserControl.Resources>
 
-    <UserControl.DataContext>
+    <d:UserControl.DataContext>
         <vm:HistoryViewModel />
-    </UserControl.DataContext>
+    </d:UserControl.DataContext>
 
     <Grid Background="White">
         <Grid.ContextMenu>

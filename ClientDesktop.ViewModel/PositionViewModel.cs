@@ -1,29 +1,26 @@
 ﻿using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Services;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks; 
-using System.Windows;      
-using System.Windows.Data;
+using System.Windows;
 
 namespace ClientDesktop.ViewModel
 {
     public class PositionViewModel : INotifyPropertyChanged
     {
+        private readonly SessionService _sessionService;
         private readonly PositionService _positionService;
         public ObservableCollection<PositionGridRow> GridRows { get; set; }
 
-        public PositionViewModel()
+        public PositionViewModel(SessionService sessionService, PositionService positionService)
         {
-            _positionService = new PositionService();
+            _sessionService = sessionService;
+            _positionService = positionService;
             GridRows = new ObservableCollection<PositionGridRow>();
 
-            SessionManager.OnLoginSuccess += HandleLogin;
-            //SessionManager.OnLogout += HandleLogout;
+            _sessionService.OnLoginSuccess += HandleLogin;
+            //_sessionService.OnLogout += HandleLogout;
         }
 
         private void HandleLogin()

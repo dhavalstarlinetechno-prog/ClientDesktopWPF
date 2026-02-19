@@ -1,4 +1,5 @@
 ﻿using ClientDesktop.Core.Interfaces;
+using ClientDesktop.Infrastructure.Helpers;
 using ClientDesktop.Infrastructure.Services;
 using ClientDesktop.Main.Login; 
 using ClientDesktop.ViewModel;  
@@ -16,6 +17,7 @@ namespace ClientDesktop.Main
             var services = new ServiceCollection();
             ConfigureServices(services);
             ServiceProvider = services.BuildServiceProvider();
+            AppServiceLocator.Current = ServiceProvider;
 
             var mainWindow = ServiceProvider.GetRequiredService<MainWindow>();
             mainWindow.Show();
@@ -31,17 +33,31 @@ namespace ClientDesktop.Main
         private void ConfigureServices(IServiceCollection services)
         {
             // 1. Core Services
+            services.AddSingleton<SessionService>();
             services.AddSingleton<AuthService>();
             services.AddSingleton<ClientService>();
+            services.AddSingleton<MarketWatchService>();
+            services.AddSingleton<PositionService>();
+            services.AddSingleton<HistoryService>();
+            services.AddSingleton<BanScriptService>();
+            services.AddSingleton<LedgerService>();
 
-            // 2. Dialog Service (Interface mapping)
+            // 2. Api Service
+            services.AddSingleton<IApiService, ApiService>();
+
+            // 3. Dialog Service (Interface mapping)
             services.AddSingleton<IDialogService, DialogService>();
 
-            // 3. ViewModels
+            // 4. ViewModels
             services.AddTransient<LoginPageViewModel>();
             services.AddSingleton<MainWindowViewModel>();
+            services.AddSingleton<MarketWatchViewModel>();
+            services.AddSingleton<HistoryViewModel>();
+            services.AddSingleton<PositionViewModel>();
+            services.AddTransient<BanScriptViewModel>();
+            services.AddTransient<LedgerViewModel>();
 
-            // 4. Views (Windows)
+            // 5. Views (Windows)
             services.AddSingleton<MainWindow>();
         }
     }

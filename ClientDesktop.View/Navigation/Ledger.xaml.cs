@@ -1,29 +1,18 @@
 ﻿using ClientDesktop.Infrastructure.Helpers;
 using ClientDesktop.Infrastructure.Services;
 using ClientDesktop.ViewModel;
-using System;
-using System.Collections.Generic;
+using System.ComponentModel;
 using System.Dynamic;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace ClientDesktop.View.Navigation
 {
     /// <summary>
     /// Interaction logic for Ledger.xaml
     /// </summary>
-    /// 
     public partial class Ledger : UserControl
     {
         #region Variables
@@ -31,6 +20,10 @@ namespace ClientDesktop.View.Navigation
         public static decimal LblAmount = decimal.Zero;
         public static string LblAmountFormatted;
         Label lblNoData = new Label();
+
+        // New: Private fields for DI
+        private readonly LedgerViewModel _viewModel;
+        private readonly SessionService _sessionService;
 
         #endregion Variables
 
@@ -41,9 +34,19 @@ namespace ClientDesktop.View.Navigation
             DgvLedgerRecord.RowHeight = 25;
             Dtpstartdate.SelectedDate = DateTime.Today;
             Dtpenddate.SelectedDate = DateTime.Today;
-            Btngo.IsEnabled = false;                    
+            Btngo.IsEnabled = false;
+
+            // FIX: Get ViewModel & SessionService from DI
+            if (!DesignerProperties.GetIsInDesignMode(this))
+            {
+                _sessionService = AppServiceLocator.GetService<SessionService>();
+                _viewModel = AppServiceLocator.GetService<LedgerViewModel>();
+
+                // Set DataContext once
+                this.DataContext = _viewModel;
+            }
         }
-        
+
         #endregion Constructor
 
         #region Events
@@ -51,28 +54,29 @@ namespace ClientDesktop.View.Navigation
         {
             if (!string.IsNullOrEmpty(TxtPassword.Password))
             {
-                Btngo.IsEnabled = true;               
+                Btngo.IsEnabled = true;
             }
             else
             {
-                Btngo.IsEnabled = false;                
+                Btngo.IsEnabled = false;
             }
         }
 
         private async void Btngo_Click(object sender, RoutedEventArgs e)
         {
             Btngo.IsEnabled = false;
-            var vm = new LedgerViewModel();
-            DataContext = vm;
 
-            bool isValid = await vm.VerifyPasswordAsync(TxtPassword.Password);
+            // OLD: var vm = new LedgerViewModel();
+            // NEW: Use injected _viewModel
+
+            bool isValid = await _viewModel.VerifyPasswordAsync(TxtPassword.Password);
             if (isValid)
             {
                 TxtNoData.Visibility = Visibility.Visible;
                 Mainpanel.Visibility = Visibility.Collapsed;
                 ChildPanel.Visibility = Visibility.Visible;
                 Lblprintamount.Visibility = Visibility.Visible;
-                Lblprintamount.Text = LblAmountFormatted.ToString();
+                Lblprintamount.Text = LblAmountFormatted?.ToString(); // Added null check
                 DgvLedgerRecord.ColumnHeaderHeight = 35;
                 DgvLedgerRecord.Columns.Clear();
                 DgvLedgerRecord.Items.Clear();
@@ -107,9 +111,9 @@ namespace ClientDesktop.View.Navigation
                     ElementStyle = new Style(typeof(TextBlock))
                     {
                         Setters =
-                    {
-                        new Setter(TextBlock.TextAlignmentProperty, TextAlignment.Right)
-                    }
+                        {
+                            new Setter(TextBlock.TextAlignmentProperty, TextAlignment.Right)
+                        }
                     }
                 });
 
@@ -118,7 +122,7 @@ namespace ClientDesktop.View.Navigation
                     Header = "Remarks",
                     Width = 240,
                     Binding = new Binding("Remarks")
-                });               
+                });
             }
             else
             {
@@ -131,7 +135,7 @@ namespace ClientDesktop.View.Navigation
             DgvLedgerRecord.Columns.Clear();
             DgvLedgerRecord.Items.Clear();
 
-            // Add Columns
+            // Add Columns (Ideally this duplication should be refactored, but keeping logic as requested)
             DgvLedgerRecord.Columns.Add(new DataGridTextColumn
             {
                 Header = "Sr",
@@ -173,17 +177,25 @@ namespace ClientDesktop.View.Navigation
                 Width = 240,
                 Binding = new Binding("Remarks")
             });
-            var viewmodels = new LedgerViewModel();
+
+            // OLD: var viewmodels = new LedgerViewModel();
+            // NEW: Use injected _viewModel
 
             if (Dtpstartdate.SelectedDate.HasValue && Dtpenddate.SelectedDate.HasValue)
             {
-                var (success, error, ledgerData) = await viewmodels.LoadLedgerListAsync(SessionManager.UserId, Dtpstartdate.SelectedDate.Value.Date, Dtpenddate.SelectedDate.Value.Date, SessionManager.LicenseId);
-                
+                // Logic preserved, using injected services
+                var (success, error, ledgerData) = await _viewModel.LoadLedgerListAsync(
+                    _sessionService.UserId,
+                    Dtpstartdate.SelectedDate.Value.Date,
+                    Dtpenddate.SelectedDate.Value.Date,
+                    _sessionService.LicenseId
+                );
+
                 if (!success || ledgerData == null)
                 {
                     TxtNoData.Visibility = Visibility.Visible;
                     return;
-                }               
+                }
 
                 bool hasTransactions = ledgerData.Transactions != null && ledgerData.Transactions.Count > 0;
 
@@ -206,9 +218,9 @@ namespace ClientDesktop.View.Navigation
                 {
                     foreach (var led in ledgerData.Transactions)
                     {
-                        DateTime istTime = GMTTime.ConvertUtcToIst(led.LedgerDate);
+                        DateTime istTime = CommonHelper.ConvertUtcToIst(led.LedgerDate);
                         string displayTime = istTime.ToString("dd/MM/yy HH:mm:ss", CultureInfo.InvariantCulture);
-                                               
+
                         dynamic record = new ExpandoObject();
                         record.Sr = sr.ToString();
                         record.Date = displayTime;
@@ -223,30 +235,31 @@ namespace ClientDesktop.View.Navigation
                 if (hasTransactions)
                 {
                     dynamic record = new ExpandoObject();
-                    record.Sr = "";  
-                    record.Date = "Closing Amount";  
+                    record.Sr = "";
+                    record.Date = "Closing Amount";
                     record.Type = "";
                     record.Amount = ledgerData.ClosingAmount;
                     record.Remarks = "";
                     DgvLedgerRecord.Items.Add(record);
                 }
-                TxtNoData.Visibility = hasTransactions? Visibility.Collapsed: Visibility.Visible;
+                TxtNoData.Visibility = hasTransactions ? Visibility.Collapsed : Visibility.Visible;
             }
         }
 
         private async void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
-            var viewmodels = new LedgerViewModel();
-            await viewmodels.LoadLedgerUserDetailAsync();
-            if (viewmodels.LedgerUser != null)
+            if (_viewModel == null) return;
+
+            // Using existing instance instead of creating new
+            await _viewModel.LoadLedgerUserDetailAsync();
+
+            if (_viewModel.LedgerUser != null)
             {
-                LblAmount = viewmodels.LedgerUser.Amount;
+                LblAmount = _viewModel.LedgerUser.Amount;
                 LblAmountFormatted = LblAmount.ToString("0.################");
             }
         }
-        
-        #endregion Events
 
-        
+        #endregion Events
     }
 }

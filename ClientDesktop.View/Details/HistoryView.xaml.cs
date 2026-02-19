@@ -3,12 +3,9 @@ using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Helpers;
 using ClientDesktop.Models;
 using ClientDesktop.ViewModel;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ClientDesktop.View.Details
 {
@@ -28,22 +25,27 @@ namespace ClientDesktop.View.Details
         public HistoryView()
         {
             InitializeComponent();
+
+            if (!System.ComponentModel.DesignerProperties.GetIsInDesignMode(this))
+            {
+                _historyViewModel = AppServiceLocator.GetService<HistoryViewModel>();
+
+                _historyViewModel.OnHistoryDataLoaded = () =>
+                {
+                    Dispatcher.Invoke(() => FillDataInList());
+                };
+            }
+
+            this.DataContext = _historyViewModel;
+
             AllHistoryItems = new ObservableCollection<HistoryModel>();
             HistoryItems = new ObservableCollection<HistoryModel>();
 
             AllPositionItems = new ObservableCollection<PositionHistoryModel>();
             PositionHistoryItems = new ObservableCollection<PositionHistoryModel>();
 
-            DataContext = this;
-
             StartDatePicker.SelectedDate = DateTime.Today;
             EndDatePicker.SelectedDate = DateTime.Today.AddDays(1);
-
-            _historyViewModel = new HistoryViewModel();
-            _historyViewModel.OnHistoryDataLoaded = () =>
-            {
-                FillDataInList();
-            };
         }
 
         private void FillDataInList()
@@ -103,7 +105,7 @@ namespace ClientDesktop.View.Details
                     if (symbolNameFilter.Contains(h.SymbolName))
                         return false;
 
-                    var istTime = GMTTime.ConvertUtcToIst(h.CreatedOn);
+                    var istTime = CommonHelper.ConvertUtcToIst(h.CreatedOn);
                     return istTime >= start && istTime <= end;
                 }).OrderBy(s => s.CreatedOn));
                 GridDealsOrders.ItemsSource = HistoryItems;
@@ -121,7 +123,7 @@ namespace ClientDesktop.View.Details
                     if (symbolNameFilter.Contains(h.SymbolName))
                         return false;
 
-                    var istTime = GMTTime.ConvertUtcToIst(h.CreatedOn);
+                    var istTime = CommonHelper.ConvertUtcToIst(h.CreatedOn);
                     return istTime >= start && istTime <= end;
                 }).OrderBy(s => s.CreatedOn));
 
@@ -129,8 +131,8 @@ namespace ClientDesktop.View.Details
             }
             else
             {
-                PositionHistoryItems = new ObservableCollection<PositionHistoryModel>(AllPositionItems.Where(h => h.LastOutAt == null || GMTTime.ConvertUtcToIst(h.UpdatedAt) >= start.Value.Date &&
-                  GMTTime.ConvertUtcToIst(h.UpdatedAt) <= end.Date.AddDays(1).AddTicks(-1)).OrderBy(s => s.UpdatedAt));
+                PositionHistoryItems = new ObservableCollection<PositionHistoryModel>(AllPositionItems.Where(h => h.LastOutAt == null || CommonHelper.ConvertUtcToIst(h.UpdatedAt) >= start.Value.Date &&
+                  CommonHelper.ConvertUtcToIst(h.UpdatedAt) <= end.Date.AddDays(1).AddTicks(-1)).OrderBy(s => s.UpdatedAt));
                 GridPosition.ItemsSource = PositionHistoryItems;
             }
         }
@@ -395,8 +397,8 @@ namespace ClientDesktop.View.Details
 
                     var billEntry = AllHistoryItems
                         .Where(x => x.OrderType == "Bill" &&
-                                    GMTTime.ConvertUtcToIst(x.CreatedOn) >= start &&
-                                    GMTTime.ConvertUtcToIst(x.CreatedOn) <= end)
+                                    CommonHelper.ConvertUtcToIst(x.CreatedOn) >= start &&
+                                    CommonHelper.ConvertUtcToIst(x.CreatedOn) <= end)
                         .FirstOrDefault();
 
                     decimal credit = billEntry?.UplineCommission ?? 0;
@@ -405,8 +407,8 @@ namespace ClientDesktop.View.Details
                     var footerRow = new HistoryModel
                     {
                         RefId = "FOOTER",
-                        CreatedOn = DateTime.MaxValue,      
-                        SymbolName = "ZZZZZZZZZZ",          
+                        CreatedOn = DateTime.MaxValue,
+                        SymbolName = "ZZZZZZZZZZ",
                         OrderType = "ZZZZZZZZZZ",
                         Side = "ZZZZZZZZZZ",
                         Volume = decimal.MaxValue,
@@ -442,8 +444,8 @@ namespace ClientDesktop.View.Details
                     var footerRow = new PositionHistoryModel
                     {
                         RefId = "FOOTER",
-                        UpdatedAt = DateTime.MaxValue,      
-                        SymbolName = "ZZZZZZZZZZ",          
+                        UpdatedAt = DateTime.MaxValue,
+                        SymbolName = "ZZZZZZZZZZ",
                         Side = "ZZZZZZZZZZ",
                         TotalVolume = double.MaxValue,
                         AveragePrice = double.MaxValue,

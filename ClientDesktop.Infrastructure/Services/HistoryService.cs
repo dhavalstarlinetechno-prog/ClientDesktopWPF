@@ -12,12 +12,14 @@ namespace ClientDesktop.Infrastructure.Services
     public class HistoryService
     {
         private readonly IApiService _apiService;
+        private readonly SessionService _sessionService;
         private readonly IRepository<List<HistoryModel>> _historyRepo;
         private readonly IRepository<List<PositionHistoryModel>> _positionHistoryRepo;
 
-        public HistoryService()
+        public HistoryService(IApiService apiService, SessionService sessionService)
         {
-            _apiService = new ApiService();
+            _apiService = apiService;
+            _sessionService = sessionService;
             _historyRepo = new FileRepository<List<HistoryModel>>();
             _positionHistoryRepo = new FileRepository<List<PositionHistoryModel>>();
         }
@@ -40,13 +42,13 @@ namespace ClientDesktop.Infrastructure.Services
 
         private string GetStoragePath()
         {
-            string domain = SessionManager.ServerListData
-                .FirstOrDefault(w => w.licenseId.ToString() == SessionManager.LicenseId)?
+            string domain = _sessionService.ServerListData
+                .FirstOrDefault(w => w.licenseId.ToString() == _sessionService.LicenseId)?
                 .serverDisplayName;
 
             return Path.Combine(
                 AESHelper.ToBase64UrlSafe(domain),
-                AESHelper.ToBase64UrlSafe(SessionManager.UserId)
+                AESHelper.ToBase64UrlSafe(_sessionService.UserId)
             );
         }
 
@@ -195,7 +197,7 @@ namespace ClientDesktop.Infrastructure.Services
             {
                 var payload = new
                 {
-                    clientID = SessionManager.UserId,
+                    clientID = _sessionService.UserId,
                     fromDate = fromDate.ToString("yyyy-MM-dd"),
                     toDate = toDate.ToString("yyyy-MM-dd")
                 };

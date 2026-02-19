@@ -1,5 +1,6 @@
 ﻿using ClientDesktop.Core.Base;
 using ClientDesktop.Core.Interfaces;
+using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Logger;
 using ClientDesktop.Infrastructure.Services;
 using System.Windows;
@@ -9,6 +10,7 @@ namespace ClientDesktop.ViewModel
 {
     public class MainWindowViewModel : ViewModelBase
     {
+        private readonly SessionService _sessionService;
         private readonly AuthService _authService;
         private readonly ClientService _clientService;
         private readonly IDialogService _dialogService;
@@ -22,19 +24,26 @@ namespace ClientDesktop.ViewModel
         private bool _isLoggedIn;
         public bool IsLoggedIn { get => _isLoggedIn; set => SetProperty(ref _isLoggedIn, value); }
 
+        public MarketWatchViewModel MarketWatchVM { get; }
+
         public Func<bool>? OpenDisclaimerAction { get; set; }
 
         public ICommand DisconnectCommand { get; }
         public ICommand ShowLoginCommand { get; }
 
         public MainWindowViewModel(
+            SessionService sessionService,
             AuthService authService,
             ClientService clientService,
-            IDialogService dialogService)
+            IDialogService dialogService,
+            MarketWatchViewModel marketWatchVM)
         {
+            _sessionService = sessionService;
             _authService = authService;
             _clientService = clientService;
             _dialogService = dialogService;
+
+            MarketWatchVM = marketWatchVM;
 
             DisconnectCommand = new RelayCommand(_ => Disconnect());
             ShowLoginCommand = new RelayCommand(_ => ShowLoginWindow());
@@ -49,8 +58,8 @@ namespace ClientDesktop.ViewModel
 
             if (existingUser != null)
             {
-                SessionManager.SetServerList(existingUser.ServerListData);
-                SessionManager.SetSession(null, existingUser.UserId, existingUser.Username, existingUser.LicenseId, null, existingUser.Password);
+                _sessionService.SetServerList(existingUser.ServerListData);
+                _sessionService.SetSession(null, existingUser.UserId, existingUser.Username, existingUser.LicenseId, null, existingUser.Password);
             }
 
             SetRestrictedMode();
@@ -96,7 +105,7 @@ namespace ClientDesktop.ViewModel
                 {
                     var data = result.Data;
                     DateTime? exp = DateTime.TryParse(data.expiration, out var dt) ? dt : null;
-                    SessionManager.SetSession(data.token, user.UserId, data.name, user.LicenseId, exp, user.Password);
+                    _sessionService.SetSession(data.token, user.UserId, data.name, user.LicenseId, exp, user.Password);
 
                     var profileResult = await _authService.GetUserProfileAsync();
                     if (profileResult != null && profileResult.isSuccess && profileResult.data != null)
@@ -105,14 +114,14 @@ namespace ClientDesktop.ViewModel
                         {
                             UserSubId = profileResult.data.sub,
                             UserIss = profileResult.data.iss,
-                            LicenseId = SessionManager.LicenseId,
+                            LicenseId = _sessionService.LicenseId,
                             Intime = profileResult.data.intime,
                             Role = profileResult.data.role,
                             IpAddress = profileResult.data.ip,
                             Device = "Windows"
                         };
-                        SessionManager.socketLoginInfos = socketInfo;
-                        SessionManager.IsPasswordReadOnly = profileResult.data.isreadonlypassword;
+                        _sessionService.socketLoginInfos = socketInfo;
+                        _sessionService.IsPasswordReadOnly = profileResult.data.isreadonlypassword;
                     }
                     return true;
                 }
@@ -120,12 +129,12 @@ namespace ClientDesktop.ViewModel
             catch { }
             return false;
         }
- 
+
         public void ShowLoginWindow()
         {
             _dialogService.ShowDialog<LoginPageViewModel>("Login", (vm) =>
             {
-                if (!string.IsNullOrEmpty(SessionManager.Token))
+                if (_sessionService.IsLoggedIn)
                 {
                     _ = PerformPostLoginSetup();
                 }
@@ -138,14 +147,14 @@ namespace ClientDesktop.ViewModel
 
             if (disclaimerAcknowledged)
             {
-                if (!string.IsNullOrEmpty(SessionManager.Token))
+                if (_sessionService.IsLoggedIn)
                 {
                     try
                     {
                         var specificData = await _clientService.GetSpecificClientListAsync();
                         var result1 = await _clientService.GetClientListAsync(specificData.Clients);
-                        SessionManager.IsClientDataLoaded = true;
-                        SessionManager.SetClientList(result1.Clients);
+                        _sessionService.IsClientDataLoaded = true;
+                        _sessionService.SetClientList(result1.Clients);
                     }
                     catch (Exception ex)
                     {
@@ -157,7 +166,7 @@ namespace ClientDesktop.ViewModel
             }
             else
             {
-                SessionManager.ClearSession();
+                _sessionService.ClearSession();
                 ShowLoginWindow();
             }
         }
@@ -173,9 +182,9 @@ namespace ClientDesktop.ViewModel
 
         private void InitializeAfterLogin()
         {
-            UserId = SessionManager.UserId;
+            UserId = _sessionService.UserId;
             IsLoggedIn = true;
-            Title = SessionManager.ServerListData?.FirstOrDefault(q => q?.licenseId.ToString() == SessionManager.LicenseId)?.serverDisplayName ?? "Home";
+            Title = _sessionService.ServerListData?.FirstOrDefault(q => q?.licenseId.ToString() == _sessionService.LicenseId)?.serverDisplayName ?? "Home";
             FileLogger.Log("System", "Login Successful.");
         }
 
@@ -188,7 +197,7 @@ namespace ClientDesktop.ViewModel
 
         private void Disconnect()
         {
-            SessionManager.ClearSession();
+            _sessionService.ClearSession();
             SetRestrictedMode();
             FileLogger.Log("System", "User Disconnected.");
             ShowLoginWindow();

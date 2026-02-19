@@ -10,6 +10,7 @@ namespace ClientDesktop.ViewModel
 {
     public class LoginPageViewModel : ViewModelBase, ICloseable
     {
+        private readonly SessionService _sessionService;
         private readonly AuthService _authService;
         private const int Threshold = 3;
 
@@ -65,9 +66,11 @@ namespace ClientDesktop.ViewModel
         public ICommand LoginCommand { get; }
         public ICommand CancelCommand { get; }
 
-        public LoginPageViewModel()
+        public LoginPageViewModel(SessionService sessionService, AuthService authService)
         {
-            _authService = new AuthService();
+            _sessionService = sessionService;
+            _authService = authService;
+
             LoginCommand = new RelayCommand(async _ => await LoginAsync());
             CancelCommand = new RelayCommand(_ => CloseAction?.Invoke());
 
@@ -80,15 +83,15 @@ namespace ClientDesktop.ViewModel
             {
                 var serverList = await _authService.GetServerListAsync();
                 AllServers = serverList ?? new List<ServerList>();
-                SessionManager.SetServerList(AllServers);
+                _sessionService.SetServerList(AllServers);
 
                 FilteredServers.Clear();
 
-                string cLic = SessionManager.LastSelectedLogin.LicenseId;
-                string cUser = SessionManager.LastSelectedLogin.UserId;
+                string cLic = _sessionService.LastSelectedLogin.LicenseId;
+                string cUser = _sessionService.LastSelectedLogin.UserId;
 
-                if (string.IsNullOrEmpty(cLic)) cLic = SessionManager.LicenseId;
-                if (string.IsNullOrEmpty(cUser)) cUser = SessionManager.UserId;
+                if (string.IsNullOrEmpty(cLic)) cLic = _sessionService.LicenseId;
+                if (string.IsNullOrEmpty(cUser)) cUser = _sessionService.UserId;
 
                 if (!string.IsNullOrEmpty(cLic))
                 {
@@ -192,7 +195,7 @@ namespace ClientDesktop.ViewModel
 
                 string licenseId = SelectedServer?.licenseId.ToString() ?? "";
 
-                SessionManager.SetSession(string.Empty, Username, Username, licenseId, null, Password);
+                _sessionService.SetSession(string.Empty, Username, Username, licenseId, null, Password);
 
                 var result = await _authService.LoginAsync(Username, Password, licenseId, IsRememberMe);
 
@@ -200,7 +203,7 @@ namespace ClientDesktop.ViewModel
                 {
                     var d = result.Data;
                     DateTime? exp = DateTime.TryParse(d.expiration, out var dt) ? dt : null;
-                    SessionManager.SetSession(d.token, Username, d.name ?? Username, licenseId, exp, Password);
+                    _sessionService.SetSession(d.token, Username, d.name ?? Username, licenseId, exp, Password);
 
                     var profileResult = await _authService.GetUserProfileAsync();
                     if (profileResult != null && profileResult.isSuccess && profileResult.data != null)
@@ -209,14 +212,14 @@ namespace ClientDesktop.ViewModel
                         {
                             UserSubId = profileResult.data.sub,
                             UserIss = profileResult.data.iss,
-                            LicenseId = SessionManager.LicenseId,
+                            LicenseId = _sessionService.LicenseId,
                             Intime = profileResult.data.intime,
                             Role = profileResult.data.role,
                             IpAddress = profileResult.data.ip,
                             Device = "Windows"
                         };
-                        SessionManager.socketLoginInfos = socketInfo;
-                        SessionManager.IsPasswordReadOnly = profileResult.data.isreadonlypassword;
+                        _sessionService.socketLoginInfos = socketInfo;
+                        _sessionService.IsPasswordReadOnly = profileResult.data.isreadonlypassword;
                     }
 
                     FileLogger.Log("Network", $"User '{Username}' Authorized Successfully.");

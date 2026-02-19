@@ -1,4 +1,5 @@
-﻿using ClientDesktop.ViewModel;
+﻿using ClientDesktop.Infrastructure.Helpers;
+using ClientDesktop.ViewModel;
 using System.ComponentModel;
 using System.Windows.Controls;
 
@@ -9,6 +10,11 @@ namespace ClientDesktop.View.Details
         public PositionView()
         {
             InitializeComponent();
+
+            if (!DesignerProperties.GetIsInDesignMode(this))
+            {
+                this.DataContext = AppServiceLocator.GetService<PositionViewModel>();
+            }
         }
 
         private void DataGrid_Sorting(object sender, DataGridSortingEventArgs e)

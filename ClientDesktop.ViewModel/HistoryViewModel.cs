@@ -25,13 +25,15 @@ namespace ClientDesktop.ViewModel
 
         public bool IsLoading { get; private set; }
 
+        private readonly SessionService _sessionService;
         private readonly HistoryService _historyService;
         public Action OnHistoryDataLoaded { get; set; }
-        public HistoryViewModel()
+        public HistoryViewModel(SessionService sessionService, HistoryService historyService)
         {
-            _historyService = new HistoryService();
+            _sessionService = sessionService;
+            _historyService = historyService;
 
-            SessionManager.OnLoginSuccess += HandleLogin;
+            _sessionService.OnLoginSuccess += HandleLogin;
         }
 
         private void HandleLogin()

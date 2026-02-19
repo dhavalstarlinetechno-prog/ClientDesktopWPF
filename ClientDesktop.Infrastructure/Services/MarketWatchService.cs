@@ -9,11 +9,13 @@ namespace ClientDesktop.Infrastructure.Services
     public class MarketWatchService
     {
         private readonly IApiService _apiService;
+        private readonly SessionService _sessionService;
         private readonly IRepository<MarketWatchData> _repo;
 
-        public MarketWatchService()
+        public MarketWatchService(IApiService apiService, SessionService sessionService)
         {
-            _apiService = new ApiService();
+            _apiService = apiService;
+            _sessionService = sessionService;
             _repo = new FileRepository<MarketWatchData>();
         }
 
@@ -21,8 +23,8 @@ namespace ClientDesktop.Infrastructure.Services
         {
             try
             {
-                string folderName = AESHelper.ToBase64UrlSafe(SessionManager.LicenseId);
-                string fileName = AESHelper.ToBase64UrlSafe(SessionManager.UserId);
+                string folderName = AESHelper.ToBase64UrlSafe(_sessionService.LicenseId);
+                string fileName = AESHelper.ToBase64UrlSafe(_sessionService.UserId);
                 string relativePath = System.IO.Path.Combine(folderName, fileName);
 
                 var cachedData = _repo.Load(relativePath, "symbol");
@@ -34,7 +36,7 @@ namespace ClientDesktop.Infrastructure.Services
 
                 if (System.Net.NetworkInformation.NetworkInterface.GetIsNetworkAvailable())
                 {
-                    string url = CommonHelper.ToReplaceUrl(AppConfig.MarketWatchInitDataUrl);
+                    string url = CommonHelper.ToReplaceUrl(AppConfig.MarketWatchInitDataUrl, _sessionService.PrimaryDomain);
                     var apiResponse = await _apiService.GetAsync<MarketWatchApiResponse>(url);
 
                     if (apiResponse != null && apiResponse.isSuccess && apiResponse.data != null)
@@ -65,7 +67,7 @@ namespace ClientDesktop.Infrastructure.Services
         {
             try
             {
-                string url = CommonHelper.ToReplaceUrl(AppConfig.MarketWatchSaveClientProfileUrl);
+                string url = CommonHelper.ToReplaceUrl(AppConfig.MarketWatchSaveClientProfileUrl, _sessionService.PrimaryDomain);
                 return await _apiService.PostAsync<HideSymbolResponse>(url, payload);
             }
             catch (Exception ex)
@@ -79,7 +81,7 @@ namespace ClientDesktop.Infrastructure.Services
         {
             try
             {
-                string url = CommonHelper.ToReplaceUrl(AppConfig.MarketWatchHideApiUrl);
+                string url = CommonHelper.ToReplaceUrl(AppConfig.MarketWatchHideApiUrl, _sessionService.PrimaryDomain);
                 var payload = new { symbolId = symbolIds };
                 return await _apiService.PutAsync<HideSymbolResponse>(url, payload);
             }

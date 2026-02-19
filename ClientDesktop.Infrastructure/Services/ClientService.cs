@@ -8,18 +8,20 @@ namespace ClientDesktop.Infrastructure.Services
     public class ClientService
     {
         private readonly IApiService _apiService;
+        private readonly SessionService _sessionService;
         private readonly IRepository<List<ClientDetails>> _clientRepo;
 
-        public ClientService()
+        public ClientService(IApiService apiService, SessionService sessionService)
         {
-            _apiService = new ApiService();
+            _apiService = apiService;
+            _sessionService = sessionService;
             _clientRepo = new FileRepository<List<ClientDetails>>();
         }
 
         public async Task<(bool Success, string ErrorMessage, List<ClientDetails> Clients, bool IsViewLocked)> GetClientListAsync(ClientDetails clientDetails)
         {
-            string folderName = AESHelper.ToBase64UrlSafe(SessionManager.LicenseId);
-            string fileName = AESHelper.ToBase64UrlSafe(SessionManager.UserId);
+            string folderName = AESHelper.ToBase64UrlSafe(_sessionService.LicenseId);
+            string fileName = AESHelper.ToBase64UrlSafe(_sessionService.UserId);
             string relativePath = System.IO.Path.Combine(folderName, fileName);
 
             var cachedData = new List<ClientDetails>();
@@ -33,7 +35,7 @@ namespace ClientDesktop.Infrastructure.Services
 
             try
             {
-                string url = CommonHelper.ToReplaceUrl(AppConfig.MasterClientListURL);
+                string url = CommonHelper.ToReplaceUrl(AppConfig.MasterClientListURL, _sessionService.PrimaryDomain);
                 var responseData = await _apiService.GetAsync<ClientDetailsRootModel>(url);
 
                 if (responseData == null || !responseData.isSuccess)
@@ -75,7 +77,7 @@ namespace ClientDesktop.Infrastructure.Services
         {
             try
             {
-                string url = $"{CommonHelper.ToReplaceUrl(AppConfig.ClientListURL)}/{SessionManager.UserId}";
+                string url = $"{CommonHelper.ToReplaceUrl(AppConfig.ClientListURL, _sessionService.PrimaryDomain)}/{_sessionService.UserId}";
                 var responseData = await _apiService.GetAsync<ClientDetailsRootModel>(url);
 
                 if (responseData == null || responseData.data == null)

@@ -2,6 +2,23 @@
 
 namespace ClientDesktop.Core.Models
 {
+    public class MarketItem
+    {
+        public string SymbolName { get; set; }
+        public double Bid { get; set; }
+        public double Ask { get; set; }
+        public double Ltp { get; set; }
+        public double High { get; set; }
+        public double Low { get; set; }
+        public double Open { get; set; }
+        public double Close { get; set; }
+        public double Spread { get; set; }
+        public string Dcp { get; set; }
+        public double Dcv { get; set; }
+        public string Time { get; set; }
+        public bool IsUp { get; set; } // For the small arrow indicator
+    }
+
     public class MarketWatchSymbols : INotifyPropertyChanged
     {
         private decimal _bid, _ask, _ltp, _high, _low, _buyVolume, _sellVolume, _open, _previousClose;

@@ -9,7 +9,6 @@
 
   <ItemGroup>
     <Folder Include="Chart\" />
-    <Folder Include="MarketWatch\" />
   </ItemGroup>
 
   <ItemGroup>

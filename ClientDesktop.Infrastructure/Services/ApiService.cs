@@ -8,19 +8,21 @@ namespace ClientDesktop.Infrastructure.Services
     public class ApiService : IApiService
     {
         private readonly HttpClient _http;
+        private readonly SessionService _sessionService;
 
-        public ApiService()
+        public ApiService(SessionService sessionService)
         {
             _http = new HttpClient();
             _http.Timeout = TimeSpan.FromSeconds(30);
+            _sessionService = sessionService;
         }
 
         private void AddAuthHeader()
         {
             _http.DefaultRequestHeaders.Authorization = null;
-            if (!string.IsNullOrEmpty(SessionManager.Token))
+            if (_sessionService.IsLoggedIn)
             {
-                _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", SessionManager.Token);
+                _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _sessionService.Token);
             }
         }
 

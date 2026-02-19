@@ -18,9 +18,9 @@
         </Style>
     </UserControl.Resources>
 
-    <UserControl.DataContext>
+    <d:UserControl.DataContext>
         <vm:PositionViewModel />
-    </UserControl.DataContext>
+    </d:UserControl.DataContext>
 
     <Grid Background="White">
         <DataGrid ItemsSource="{Binding GridRows}"
