@@ -27,6 +27,8 @@ namespace ClientDesktop.ViewModel
 
         private readonly SessionService _sessionService;
         private readonly HistoryService _historyService;
+        public double ClientCrdeit { get; set; }
+        public double ClientBalance { get; set; }
         public Action OnHistoryDataLoaded { get; set; }
         public HistoryViewModel(SessionService sessionService, HistoryService historyService)
         {
@@ -39,6 +41,8 @@ namespace ClientDesktop.ViewModel
         private void HandleLogin()
         {
             LoadDataAsync();
+            ClientCrdeit = _sessionService.ClientListData.FirstOrDefault()?.CreditAmount ?? 0;
+            ClientBalance = _sessionService.ClientListData.FirstOrDefault()?.Balance ?? 0;
         }
 
         public async Task LoadDataAsync()
@@ -97,6 +101,7 @@ namespace ClientDesktop.ViewModel
 
         public List<HistoryModel> GetHistoryData() => _historyService.GetStoredHistory();
 
+        
         public List<PositionHistoryModel> GetPositionHistoryData() => _historyService.GetStoredPositionHistory();
 
         #region Export Data to excel and PDF

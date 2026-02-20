@@ -343,10 +343,11 @@ namespace ClientDesktop.View.Details
                 if (selectedEntry != "All") filterHistoryList = filterHistoryList.Where(x => x.DealType == selectedEntry);
 
                 var finalData = filterHistoryList.OrderBy(s => s.CreatedOn).ToList();
-
+                decimal credit, balance;
                 if (finalData.Any())
                 {
                     decimal totalProfit = finalData.Where(x => x.OrderType != "Bill").Sum(x => x.Pnl);
+                    totalProfit = totalProfit > 0 ? totalProfit : 0;
                     decimal totalComm = finalData.Where(x => x.OrderType != "Bill").Sum(x => x.UplineCommission);
 
                     var start = StartDatePicker.SelectedDate.Value;
@@ -358,8 +359,8 @@ namespace ClientDesktop.View.Details
                                     CommonHelper.ConvertUtcToIst(x.CreatedOn) <= end)
                         .FirstOrDefault();
 
-                    decimal credit = billEntry?.UplineCommission ?? 0;
-                    decimal balance = billEntry?.Pnl ?? 0;
+                    credit = billEntry?.UplineCommission ?? 0;
+                    balance = billEntry?.Pnl ?? 0;
 
                     var footerRow = new HistoryModel
                     {
@@ -372,7 +373,7 @@ namespace ClientDesktop.View.Details
                         Price = 0,
                         UplineCommission = totalComm,
                         Pnl = totalProfit,
-                        Comment = $"Profit: {totalProfit:N2}  Credit: {credit:N2}  Balance: {balance:F3}INR"
+                        Comment = $"Profit: {totalProfit:N2}  Credit: {_historyViewModel.ClientCrdeit:N2}  Balance: {_historyViewModel.ClientBalance:F3} INR"
                     };
 
                     finalData.Add(footerRow);
@@ -390,7 +391,7 @@ namespace ClientDesktop.View.Details
                     filterPositionList = filterPositionList.Where(x => x.SymbolName == selectedPosSymbol);
 
                 var finalData = filterPositionList.OrderBy(s => s.UpdatedAt).ToList();
-
+                
                 if (finalData.Any())
                 {
                     double totalProfit = finalData.Sum(x => x.Pnl);
@@ -407,7 +408,7 @@ namespace ClientDesktop.View.Details
                         CurrentPrice = 0,
                         AverageOutPrice = (double)totalComm,
                         Pnl = totalProfit,
-                        Comment = $"Profit: {totalProfit:N2}"
+                        Comment = $"Profit: {totalProfit:N2}  Credit: {_historyViewModel.ClientCrdeit:N2}  Balance: {_historyViewModel.ClientBalance:F3} INR"
                     };
 
                     finalData.Add(footerRow);
