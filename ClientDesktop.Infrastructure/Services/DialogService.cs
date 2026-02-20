@@ -14,13 +14,7 @@ namespace ClientDesktop.Infrastructure.Services
             _serviceProvider = serviceProvider;
         }
 
-        public void ShowDialog<TViewModel>(string title, Action<TViewModel> onDialogClose = null)
-            where TViewModel : ViewModelBase
-        {
-            ShowDialog(title, null, onDialogClose);
-        }
-
-        public void ShowDialog<TViewModel>(string title, Action<TViewModel> configureViewModel, Action<TViewModel> onDialogClose)
+        public void ShowDialog<TViewModel>(string title, Action<TViewModel> onDialogClose = null, Action<TViewModel> configureViewModel = null)
             where TViewModel : ViewModelBase
         {
             var viewModel = _serviceProvider.GetRequiredService<TViewModel>();

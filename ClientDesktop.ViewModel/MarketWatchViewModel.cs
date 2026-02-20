@@ -5,6 +5,7 @@ using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Logger;
 using ClientDesktop.Infrastructure.Services;
 using DocumentFormat.OpenXml.Drawing.Charts;
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows;
@@ -83,8 +84,8 @@ namespace ClientDesktop.ViewModel
         public ICommand HideSymbolCommand { get; }
         public ICommand HideAllCommand { get; }
         public ICommand ShowAllCommand { get; }
-        public ICommand SaveProfileCommand { get; }       
-        public ICommand ShowSpecification {  get; }
+        public ICommand SaveProfileCommand { get; }
+        public ICommand ShowSpecification { get; }
 
         public MarketWatchViewModel(MarketWatchService marketWatchService, SessionService sessionService, IDialogService dialogService)
         {
@@ -93,6 +94,7 @@ namespace ClientDesktop.ViewModel
             _dialogService = dialogService;
 
             MarketWatchSymbolsCollection = new ObservableCollection<MarketWatchSymbols>();
+            HiddenSymbolsCollection = new ObservableCollection<MarketWatchSymbols>();
             FontSizes = new ObservableCollection<int>();
 
             for (int i = 10; i <= 30; i += 2) FontSizes.Add(i);
@@ -102,15 +104,15 @@ namespace ClientDesktop.ViewModel
             _marketView.Filter = FilterMarketItems;
 
             // Initialize Commands
+            ShowSpecification = new RelayCommand(ShowSpecificationView);
             HideSymbolCommand = new RelayCommand(async (param) => await HideSymbolAsync(param));
-            HideAllCommand = new RelayCommand(_ => MarketWatchSymbolsCollection.Clear());
-            // ShowAllCommand logic can be implemented to reload or show hidden items
+            HideAllCommand = new RelayCommand(async (_) => await HideAllSymbolsAsync());
+            ShowAllCommand = new RelayCommand(async (_) => await ShowAllSymbolsAsync());
             SaveProfileCommand = new RelayCommand(async _ => await SaveClientWatchProfileAsync());
-            
-            ShowSpecification = new RelayCommand(SpecificationView);
 
-             // set up timer to update current time every second
-             DispatcherTimer timer = new DispatcherTimer();
+
+            // set up timer to update current time every second
+            DispatcherTimer timer = new DispatcherTimer();
             timer.Interval = TimeSpan.FromSeconds(1);
             timer.Tick += (s, e) =>
             {
@@ -123,7 +125,7 @@ namespace ClientDesktop.ViewModel
             _marketWatchService.OnDataUpdated += UpdateMarketData;
         }
 
-        
+
 
         public void LoadLocalData()
         {
@@ -143,8 +145,8 @@ namespace ClientDesktop.ViewModel
         private void UpdateMarketData(MarketWatchData marketWatchData)
         {
             if (marketWatchData == null) return;
-            
-           SelectedFontSize = !marketWatchData.fontSize.Equals(0) ? marketWatchData.fontSize : 10;
+
+            SelectedFontSize = !marketWatchData.fontSize.Equals(0) ? marketWatchData.fontSize : 10;
 
             ApplyColumnVisibility(marketWatchData.displayColumnNames as string);
 
@@ -177,93 +179,19 @@ namespace ClientDesktop.ViewModel
             if (fields.Contains("dailychangevalue")) ShowDcv = true;
         }
 
-        private async Task HideSymbolAsync(object parameter)
+        private void ShowSpecificationView(object parameter)
         {
             var item = parameter as MarketWatchSymbols ?? SelectedMarketItem;
 
-            // Agar empty row hai ya item null hai to aage mat badho
-            if (item == null || string.IsNullOrWhiteSpace(item.SymbolName)) return;
-
-            await ProcessHideOperationAsync(new List<int> { item.SymbolId });
-        }
-
-        private async Task HideAllSymbolsAsync()
-        {
-            // Sirf valid symbols nikalo (empty row ko ignore karne ke liye)
-            var visibleSymbols = MarketWatchSymbolsCollection
-                .Where(s => !string.IsNullOrWhiteSpace(s.SymbolName))
-                .ToList();
-
-            if (visibleSymbols.Count == 0)
-            {
-                // CommonMessages.NoSymbolHide aapke Config me hona chahiye
-                FileLogger.Log("MarketWatch", "No symbols to hide.");
-                return;
-            }
-
-            var ids = visibleSymbols.Select(s => s.SymbolId).ToList();
-            await ProcessHideOperationAsync(ids);
-        }
-
-        // Yeh raha tumhara Common Function
-        private async Task ProcessHideOperationAsync(List<int> symbolIds)
-        {
-            if (symbolIds == null || symbolIds.Count == 0) return;
-
-            try
-            {
-                // Service class ka method call
-                var response = await _marketWatchService.HideSymbolsAsync(symbolIds);
-
-                // API response structure tumhare HideSymbolResponse model pe depend karega
-                // WinForms me tumne response.data.symbolId use kiya tha, wahi pattern lagate hain
-                if (response != null && response.data != null && response.data.symbolId != null)
-                {
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        var symbolsToRemove = MarketWatchSymbolsCollection
-                            .Where(s => response.data.symbolId.Contains(s.SymbolId))
-                            .ToList();
-
-                        foreach (var symbol in symbolsToRemove)
-                        {
-                            // HiddenSymbolsCollection kal wale step me banayi thi humne
-                            if (!HiddenSymbolsCollection.Contains(symbol))
-                            {
-                                HiddenSymbolsCollection.Add(symbol);
-                            }
-                            MarketWatchSymbolsCollection.Remove(symbol);
-                        }
-
-                        // NOTE: Yaha par "EnsureEmptyRow()" call aayega jab hum wo feature add karenge
-                    });
-
-                    if (!string.IsNullOrEmpty(response.successMessage))
-                    {
-                        FileLogger.Log("MarketWatch", response.successMessage);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                FileLogger.ApplicationLog("ProcessHideOperationAsync", ex);
-            }
-        }
-
-        private void SpecificationView(object parameter)
-        {
-            var item = parameter as MarketWatchSymbols ?? SelectedMarketItem;
-            
             if (item != null && MarketWatchSymbolsCollection.Contains(item))
-            {         
+            {
                 _dialogService.ShowDialog<SymbolSpecificationViewModel>(
                     "Symbol Specification",
-                    vm =>
+                    configureViewModel: vm =>
                     {
                         vm.SymbolName = item.SymbolName;
                         vm.SymbolId = item.SymbolId;
-                    },
-                    null 
+                    }
                 );
             }
         }
@@ -332,6 +260,118 @@ namespace ClientDesktop.ViewModel
                 FileLogger.ApplicationLog("SaveClientWatchProfileAsync", ex);
             }
         }
+
+        #region Hide & Show Symbols Feature
+
+        private async Task HideSymbolAsync(object parameter)
+        {
+            var item = parameter as MarketWatchSymbols ?? SelectedMarketItem;
+            if (item == null || string.IsNullOrWhiteSpace(item.SymbolName)) return;
+            await ProcessHideOperationAsync(new List<int> { item.SymbolId }, "Hide");
+        }
+
+        private async Task HideAllSymbolsAsync()
+        {
+            var visibleSymbols = MarketWatchSymbolsCollection
+                .Where(s => !string.IsNullOrWhiteSpace(s.SymbolName))
+                .ToList();
+
+            if (visibleSymbols.Count == 0)
+            {
+                FileLogger.Log("MarketWatch", CommonMessages.NoSymbolHide);
+                return;
+            }
+
+            var ids = visibleSymbols.Select(s => s.SymbolId).ToList();
+            await ProcessHideOperationAsync(ids, "Hide All");
+        }
+
+        private async Task ProcessHideOperationAsync(List<int> symbolIds, string operationName)
+        {
+            if (symbolIds == null || symbolIds.Count == 0) return;
+
+            try
+            {
+                var response = await _marketWatchService.HideSymbolsAsync(symbolIds);
+
+                if (response != null && response.data != null && response.data.symbolId != null)
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        var symbolsToRemove = MarketWatchSymbolsCollection
+                            .Where(s => response.data.symbolId.Contains(s.SymbolId))
+                            .ToList();
+
+                        foreach (var symbol in symbolsToRemove)
+                        {
+                            if (!HiddenSymbolsCollection.Contains(symbol))
+                            {
+                                HiddenSymbolsCollection.Add(symbol);
+                            }
+                            MarketWatchSymbolsCollection.Remove(symbol);
+                        }
+                    });
+
+                    if (!string.IsNullOrEmpty(response.successMessage))
+                    {
+                        FileLogger.Log("MarketWatch", response.successMessage);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog($"ProcessHideOperationAsync - {operationName}", ex);
+            }
+        }
+
+        private async Task ShowAllSymbolsAsync()
+        {
+            try
+            {
+                if (HiddenSymbolsCollection.Count == 0)
+                {
+                    FileLogger.Log("MarketWatch", CommonMessages.NoHiddenSymbolShow);
+                    return;
+                }
+
+                int restoredCount = 0;
+                var symbolsToRestore = HiddenSymbolsCollection.ToList();
+
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    foreach (var symbol in symbolsToRestore)
+                    {
+                        var existing = MarketWatchSymbolsCollection.FirstOrDefault(x =>
+                            x.SymbolName == symbol.SymbolName);
+
+                        if (existing == null)
+                        {
+                            int insertIndex = MarketWatchSymbolsCollection.Count > 0 ? MarketWatchSymbolsCollection.Count - 1 : 0;
+
+                            var lastItem = MarketWatchSymbolsCollection.LastOrDefault();
+                            if (lastItem != null && !string.IsNullOrWhiteSpace(lastItem.SymbolName))
+                            {
+                                insertIndex = MarketWatchSymbolsCollection.Count;
+                            }
+
+                            MarketWatchSymbolsCollection.Insert(insertIndex, symbol);
+                            restoredCount++;
+                        }
+                    }
+
+                    HiddenSymbolsCollection.Clear();
+                });
+
+                FileLogger.Log("MarketWatch", $"{restoredCount} {CommonMessages.HiddenSymbolRestored}");
+                await Task.CompletedTask;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog("ShowAllSymbolsAsync", ex);
+            }
+        }
+
+        #endregion
 
         #region Helpers
         private MarketWatchSymbols CreateMarketItem(MarketWatchApiSymbol apiSymbol)

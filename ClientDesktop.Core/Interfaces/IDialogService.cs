@@ -4,10 +4,7 @@ namespace ClientDesktop.Core.Interfaces
 {
     public interface IDialogService
     {
-        void ShowDialog<TViewModel>(string title, Action<TViewModel> onDialogClose = null)
-            where TViewModel : ViewModelBase;
-
-        void ShowDialog<TViewModel>(string title, Action<TViewModel> configureViewModel, Action<TViewModel> onDialogClose) 
+        void ShowDialog<TViewModel>(string title, Action<TViewModel> onDialogClose = null, Action<TViewModel> configureViewModel = null)
             where TViewModel : ViewModelBase;
     }
 }
