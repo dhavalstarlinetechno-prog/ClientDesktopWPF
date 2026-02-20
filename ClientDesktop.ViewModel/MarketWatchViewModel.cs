@@ -1,8 +1,10 @@
 ﻿using ClientDesktop.Core.Base;
 using ClientDesktop.Core.Config;
+using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Logger;
 using ClientDesktop.Infrastructure.Services;
+using DocumentFormat.OpenXml.Drawing.Charts;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows;
@@ -10,12 +12,14 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Threading;
 
+
 namespace ClientDesktop.ViewModel
 {
     public class MarketWatchViewModel : ViewModelBase
     {
         private readonly MarketWatchService _marketWatchService;
         private readonly SessionService _sessionService;
+        private readonly IDialogService _dialogService;
 
         private string _currentTime;
         private string _searchText;
@@ -79,12 +83,14 @@ namespace ClientDesktop.ViewModel
         public ICommand HideSymbolCommand { get; }
         public ICommand HideAllCommand { get; }
         public ICommand ShowAllCommand { get; }
-        public ICommand SaveProfileCommand { get; }
+        public ICommand SaveProfileCommand { get; }       
+        public ICommand ShowSpecification {  get; }
 
-        public MarketWatchViewModel(MarketWatchService marketWatchService, SessionService sessionService)
+        public MarketWatchViewModel(MarketWatchService marketWatchService, SessionService sessionService, IDialogService dialogService)
         {
             _marketWatchService = marketWatchService;
             _sessionService = sessionService;
+            _dialogService = dialogService;
 
             MarketWatchSymbolsCollection = new ObservableCollection<MarketWatchSymbols>();
             FontSizes = new ObservableCollection<int>();
@@ -100,9 +106,11 @@ namespace ClientDesktop.ViewModel
             HideAllCommand = new RelayCommand(_ => MarketWatchSymbolsCollection.Clear());
             // ShowAllCommand logic can be implemented to reload or show hidden items
             SaveProfileCommand = new RelayCommand(async _ => await SaveClientWatchProfileAsync());
+            
+            ShowSpecification = new RelayCommand(SpecificationView);
 
-            // set up timer to update current time every second
-            DispatcherTimer timer = new DispatcherTimer();
+             // set up timer to update current time every second
+             DispatcherTimer timer = new DispatcherTimer();
             timer.Interval = TimeSpan.FromSeconds(1);
             timer.Tick += (s, e) =>
             {
@@ -114,6 +122,8 @@ namespace ClientDesktop.ViewModel
             _sessionService.OnLoginSuccess += () => LoadData(forceSync: true);
             _marketWatchService.OnDataUpdated += UpdateMarketData;
         }
+
+        
 
         public void LoadLocalData()
         {
@@ -237,6 +247,24 @@ namespace ClientDesktop.ViewModel
             catch (Exception ex)
             {
                 FileLogger.ApplicationLog("ProcessHideOperationAsync", ex);
+            }
+        }
+
+        private void SpecificationView(object parameter)
+        {
+            var item = parameter as MarketWatchSymbols ?? SelectedMarketItem;
+            
+            if (item != null && MarketWatchSymbolsCollection.Contains(item))
+            {         
+                _dialogService.ShowDialog<SymbolSpecificationViewModel>(
+                    "Symbol Specification",
+                    vm =>
+                    {
+                        vm.SymbolName = item.SymbolName;
+                        vm.SymbolId = item.SymbolId;
+                    },
+                    null 
+                );
             }
         }
 

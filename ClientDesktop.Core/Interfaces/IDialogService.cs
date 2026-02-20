@@ -6,5 +6,8 @@ namespace ClientDesktop.Core.Interfaces
     {
         void ShowDialog<TViewModel>(string title, Action<TViewModel> onDialogClose = null)
             where TViewModel : ViewModelBase;
+
+        void ShowDialog<TViewModel>(string title, Action<TViewModel> configureViewModel, Action<TViewModel> onDialogClose) 
+            where TViewModel : ViewModelBase;
     }
 }

@@ -56,7 +56,7 @@ namespace ClientDesktop.Main
             services.AddSingleton<PositionViewModel>();
             services.AddTransient<BanScriptViewModel>();
             services.AddTransient<LedgerViewModel>();
-
+            services.AddTransient<SymbolSpecificationViewModel>();
             // 5. Views (Windows)
             services.AddSingleton<MainWindow>();
         }
