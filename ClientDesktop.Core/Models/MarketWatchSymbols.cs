@@ -2,7 +2,7 @@
 
 namespace ClientDesktop.Core.Models
 {
-    public class MarketItem
+    public class MarketWatchSymbols
     {
         public int SymbolId { get; set; }
         public int SymbolDigit { get; set; }

@@ -22,8 +22,9 @@ namespace ClientDesktop.ViewModel
         private int _selectedFontSize;
         private ICollectionView _marketView;
         public ICollectionView MarketView => _marketView;
-        private MarketItem _selectedMarketItem;
-        public ObservableCollection<MarketItem> MarketItems { get; set; }
+        private MarketWatchSymbols _selectedMarketItem;
+        public ObservableCollection<MarketWatchSymbols> MarketWatchSymbolsCollection { get; set; }
+        public ObservableCollection<MarketWatchSymbols> HiddenSymbolsCollection { get; set; }
         public ObservableCollection<int> FontSizes { get; set; }
 
         // --- Column Visibility Properties ---
@@ -68,7 +69,7 @@ namespace ClientDesktop.ViewModel
         }
 
 
-        public MarketItem SelectedMarketItem
+        public MarketWatchSymbols SelectedMarketItem
         {
             get => _selectedMarketItem;
             set => SetProperty(ref _selectedMarketItem, value);
@@ -85,18 +86,18 @@ namespace ClientDesktop.ViewModel
             _marketWatchService = marketWatchService;
             _sessionService = sessionService;
 
-            MarketItems = new ObservableCollection<MarketItem>();
+            MarketWatchSymbolsCollection = new ObservableCollection<MarketWatchSymbols>();
             FontSizes = new ObservableCollection<int>();
 
             for (int i = 10; i <= 30; i += 2) FontSizes.Add(i);
 
             // Setup Filtering
-            _marketView = CollectionViewSource.GetDefaultView(MarketItems);
+            _marketView = CollectionViewSource.GetDefaultView(MarketWatchSymbolsCollection);
             _marketView.Filter = FilterMarketItems;
 
             // Initialize Commands
-            HideSymbolCommand = new RelayCommand(HideSymbol);
-            HideAllCommand = new RelayCommand(_ => MarketItems.Clear());
+            HideSymbolCommand = new RelayCommand(async (param) => await HideSymbolAsync(param));
+            HideAllCommand = new RelayCommand(_ => MarketWatchSymbolsCollection.Clear());
             // ShowAllCommand logic can be implemented to reload or show hidden items
             SaveProfileCommand = new RelayCommand(async _ => await SaveClientWatchProfileAsync());
 
@@ -144,10 +145,10 @@ namespace ClientDesktop.ViewModel
                                            .OrderBy(x => x.displayPosition)
                                            .Select(CreateMarketItem).ToList();
 
-                MarketItems.Clear();
+                MarketWatchSymbolsCollection.Clear();
                 foreach (var item in viewModels)
                 {
-                    MarketItems.Add(item);
+                    MarketWatchSymbolsCollection.Add(item);
                 }
             }
         }
@@ -166,12 +167,76 @@ namespace ClientDesktop.ViewModel
             if (fields.Contains("dailychangevalue")) ShowDcv = true;
         }
 
-        private void HideSymbol(object parameter)
+        private async Task HideSymbolAsync(object parameter)
         {
-            var item = parameter as MarketItem ?? SelectedMarketItem;
-            if (item != null && MarketItems.Contains(item))
+            var item = parameter as MarketWatchSymbols ?? SelectedMarketItem;
+
+            // Agar empty row hai ya item null hai to aage mat badho
+            if (item == null || string.IsNullOrWhiteSpace(item.SymbolName)) return;
+
+            await ProcessHideOperationAsync(new List<int> { item.SymbolId });
+        }
+
+        private async Task HideAllSymbolsAsync()
+        {
+            // Sirf valid symbols nikalo (empty row ko ignore karne ke liye)
+            var visibleSymbols = MarketWatchSymbolsCollection
+                .Where(s => !string.IsNullOrWhiteSpace(s.SymbolName))
+                .ToList();
+
+            if (visibleSymbols.Count == 0)
             {
-                MarketItems.Remove(item);
+                // CommonMessages.NoSymbolHide aapke Config me hona chahiye
+                FileLogger.Log("MarketWatch", "No symbols to hide.");
+                return;
+            }
+
+            var ids = visibleSymbols.Select(s => s.SymbolId).ToList();
+            await ProcessHideOperationAsync(ids);
+        }
+
+        // Yeh raha tumhara Common Function
+        private async Task ProcessHideOperationAsync(List<int> symbolIds)
+        {
+            if (symbolIds == null || symbolIds.Count == 0) return;
+
+            try
+            {
+                // Service class ka method call
+                var response = await _marketWatchService.HideSymbolsAsync(symbolIds);
+
+                // API response structure tumhare HideSymbolResponse model pe depend karega
+                // WinForms me tumne response.data.symbolId use kiya tha, wahi pattern lagate hain
+                if (response != null && response.data != null && response.data.symbolId != null)
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        var symbolsToRemove = MarketWatchSymbolsCollection
+                            .Where(s => response.data.symbolId.Contains(s.SymbolId))
+                            .ToList();
+
+                        foreach (var symbol in symbolsToRemove)
+                        {
+                            // HiddenSymbolsCollection kal wale step me banayi thi humne
+                            if (!HiddenSymbolsCollection.Contains(symbol))
+                            {
+                                HiddenSymbolsCollection.Add(symbol);
+                            }
+                            MarketWatchSymbolsCollection.Remove(symbol);
+                        }
+
+                        // NOTE: Yaha par "EnsureEmptyRow()" call aayega jab hum wo feature add karenge
+                    });
+
+                    if (!string.IsNullOrEmpty(response.successMessage))
+                    {
+                        FileLogger.Log("MarketWatch", response.successMessage);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog("ProcessHideOperationAsync", ex);
             }
         }
 
@@ -179,7 +244,7 @@ namespace ClientDesktop.ViewModel
         {
             try
             {
-                if (MarketItems == null || MarketItems.Count == 0)
+                if (MarketWatchSymbolsCollection == null || MarketWatchSymbolsCollection.Count == 0)
                 {
                     FileLogger.Log("MarketWatch", CommonMessages.NoSymbolSave);
                     return;
@@ -202,7 +267,7 @@ namespace ClientDesktop.ViewModel
                 var symbolsConfig = new List<object>();
                 int position = 1;
 
-                foreach (var row in MarketItems)
+                foreach (var row in MarketWatchSymbolsCollection)
                 {
                     if (string.IsNullOrWhiteSpace(row.SymbolName)) continue;
 
@@ -241,7 +306,7 @@ namespace ClientDesktop.ViewModel
         }
 
         #region Helpers
-        private MarketItem CreateMarketItem(MarketWatchApiSymbol apiSymbol)
+        private MarketWatchSymbols CreateMarketItem(MarketWatchApiSymbol apiSymbol)
         {
             var book = apiSymbol.symbolBook;
             decimal bid = book?.bid ?? 0;
@@ -250,7 +315,7 @@ namespace ClientDesktop.ViewModel
             decimal ltp = book?.ltp ?? 0;
             long updateTime = book?.updateTime ?? 0;
 
-            return new MarketItem
+            return new MarketWatchSymbols
             {
                 SymbolId = apiSymbol.symbolId,
                 SymbolDigit = apiSymbol.symbolDigits,
@@ -285,8 +350,8 @@ namespace ClientDesktop.ViewModel
         private bool FilterMarketItems(object item)
         {
             if (string.IsNullOrWhiteSpace(SearchText)) return true;
-            var marketItem = item as MarketItem;
-            return marketItem != null && marketItem.SymbolName.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) >= 0;
+            var marketWatchSymbols = item as MarketWatchSymbols;
+            return marketWatchSymbols != null && marketWatchSymbols.SymbolName.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private decimal GetSpread(decimal ask, decimal bid, int symbolDigit)

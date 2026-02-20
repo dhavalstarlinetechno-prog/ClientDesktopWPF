@@ -74,20 +74,20 @@ namespace ClientDesktop.View.MarketWatch
             }
             if (dep is DataGridRow targetRow)
             {
-                var targetItem = targetRow.DataContext as MarketItem;
+                var targetItem = targetRow.DataContext as MarketWatchSymbols;
                 var viewModel = this.DataContext as MarketWatchViewModel;
-                if (viewModel != null && targetItem != null && _draggedItem is MarketItem sourceItem)
+                if (viewModel != null && targetItem != null && _draggedItem is MarketWatchSymbols sourceItem)
                 {
                     if (ReferenceEquals(sourceItem, targetItem)) return;
                     if (viewModel.MarketView.SortDescriptions.Count > 0)
                     {
                         viewModel.MarketView.SortDescriptions.Clear();
                     }
-                    int oldIndex = viewModel.MarketItems.IndexOf(sourceItem);
-                    int newIndex = viewModel.MarketItems.IndexOf(targetItem);
+                    int oldIndex = viewModel.MarketWatchSymbolsCollection.IndexOf(sourceItem);
+                    int newIndex = viewModel.MarketWatchSymbolsCollection.IndexOf(targetItem);
                     if (oldIndex != -1 && newIndex != -1 && oldIndex != newIndex)
                     {
-                        viewModel.MarketItems.Move(oldIndex, newIndex);
+                        viewModel.MarketWatchSymbolsCollection.Move(oldIndex, newIndex);
                     }
                 }
             }
