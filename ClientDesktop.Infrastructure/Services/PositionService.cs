@@ -26,7 +26,7 @@ namespace ClientDesktop.Infrastructure.Services
         public async Task<(bool Success, string ErrorMessage, List<Position> Positions)> GetPositionsAsync()
         {
             // 1. Load Local
-            var cachedPositions = LoadStoredPositions();
+            var cachedPositions = await Task.Run(() => LoadStoredPositions());
 
             try
             {
@@ -67,7 +67,7 @@ namespace ClientDesktop.Infrastructure.Services
         public async Task<(bool Success, string ErrorMessage, List<OrderModel> Orders)> GetOrdersAsync()
         {
             // 1. Load Local
-            var cachedOrders = LoadStoredOrders();
+            var cachedOrders = await Task.Run(() => LoadStoredOrders());
 
             try
             {

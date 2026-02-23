@@ -19,17 +19,17 @@ namespace ClientDesktop.ViewModel
         {
             Journals = new ObservableCollection<JournalLogModel>();
 
-            // Allow accessing collection from cross-threads (optional but good for WPF)
+            // Thread safety for cross-thread collection updates
             BindingOperations.EnableCollectionSynchronization(Journals, _lock);
 
-            // 1. Load purana logs from file
-            LoadExistingLogs();
+            // 1. Load logs completely in the BACKGROUND without freezing the UI!
+            Task.Run(() => LoadExistingLogsAsync());
 
-            // 2. Listen for naye logs (Live Updates)
+            // 2. Listen for new logs
             FileLogger.OnLogReceived += HandleNewLog;
         }
 
-        private void LoadExistingLogs()
+        private void LoadExistingLogsAsync()
         {
             try
             {
@@ -39,11 +39,39 @@ namespace ClientDesktop.ViewModel
 
                 if (File.Exists(fullPath))
                 {
+                    // Read all lines in the background thread
                     var lines = File.ReadAllLines(fullPath);
+
+                    // Prepare a temporary list first so we don't spam the UI with updates
+                    var tempList = new List<JournalLogModel>();
+
                     foreach (var line in lines)
                     {
-                        ParseAndAddLine(line);
+                        if (string.IsNullOrWhiteSpace(line)) continue;
+
+                        var parts = line.Split('\t');
+                        if (parts.Length >= 3)
+                        {
+                            tempList.Add(new JournalLogModel
+                            {
+                                Time = parts[0],
+                                Source = parts[1],
+                                Message = parts[2]
+                            });
+                        }
                     }
+
+                    // Reverse to put newest on top
+                    tempList.Reverse();
+
+                    // Now safely update the ObservableCollection on the UI Dispatcher ONLY ONCE
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        foreach (var log in tempList)
+                        {
+                            Journals.Add(log);
+                        }
+                    });
                 }
             }
             catch (Exception ex)

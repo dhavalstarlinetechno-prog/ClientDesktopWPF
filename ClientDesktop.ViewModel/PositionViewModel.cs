@@ -11,7 +11,12 @@ namespace ClientDesktop.ViewModel
     {
         private readonly SessionService _sessionService;
         private readonly PositionService _positionService;
-        public ObservableCollection<PositionGridRow> GridRows { get; set; }
+        private ObservableCollection<PositionGridRow> _gridRows;
+        public ObservableCollection<PositionGridRow> GridRows
+        {
+            get { return _gridRows; }
+            set { _gridRows = value; OnPropertyChanged(); }
+        }
 
         public PositionViewModel(SessionService sessionService, PositionService positionService)
         {
@@ -40,78 +45,80 @@ namespace ClientDesktop.ViewModel
                 var posResult = await positionTask;
                 var ordResult = await orderTask;
 
+                // 1. DONT use Dispatcher here yet. Build list in background.
+                var tempRows = new ObservableCollection<PositionGridRow>();
+
+                var positionsList = posResult.Positions ?? new List<Position>();
+                var ordersList = ordResult.Orders ?? new List<OrderModel>();
+
+                // --- A. ADD POSITIONS ---
+                foreach (var pos in positionsList)
+                {
+                    string displaySide = pos.Side;
+                    if (string.Equals(pos.Side, "Bid", StringComparison.OrdinalIgnoreCase)) displaySide = "Sell";
+                    else if (string.Equals(pos.Side, "Ask", StringComparison.OrdinalIgnoreCase)) displaySide = "Buy";
+
+                    tempRows.Add(new PositionGridRow
+                    {
+                        Id = pos.Id,
+                        SymbolName = pos.SymbolName,
+                        Time = pos.LastInAt,
+                        Side = displaySide,
+                        OrderType = "Market",
+                        Volume = pos.TotalVolume,
+                        AveragePrice = pos.AveragePrice,
+                        CurrentPrice = pos.CurrentPrice,
+                        Pnl = pos.Pnl,
+                        Type = RowType.Position
+                    });
+                }
+
+                // --- B. ADD FOOTER (Summary) ---
+                decimal totalPnl = positionsList.Sum(p => p.Pnl ?? 0);
+                double balance = 50000.00;
+                double credit = 1000.00;
+                double equity = balance + credit + (double)totalPnl;
+                double margin = 2000.00;
+                double freeMargin = equity - margin;
+
+                string footerText = $"Balance: {balance:N2}   Eq: {equity:N2}   Credit: {credit:N2}   Margin: {margin:N2}   Free: {freeMargin:N2}";
+
+                tempRows.Add(new PositionGridRow
+                {
+                    SymbolName = footerText,
+                    Type = RowType.Footer,
+                    Pnl = totalPnl,
+                    Volume = null,
+                    AveragePrice = null,
+                    CurrentPrice = null
+                });
+
+                // --- C. ADD ORDERS ---
+                foreach (var ord in ordersList)
+                {
+                    string displaySide = ord.Side;
+                    if (string.Equals(ord.Side, "Bid", StringComparison.OrdinalIgnoreCase)) displaySide = "Sell";
+                    else if (string.Equals(ord.Side, "Ask", StringComparison.OrdinalIgnoreCase)) displaySide = "Buy";
+
+                    tempRows.Add(new PositionGridRow
+                    {
+                        Id = ord.OrderId,
+                        SymbolName = ord.SymbolName,
+                        Time = ord.UpdatedAt,
+                        Side = displaySide,
+                        OrderType = ord.OrderType,
+                        Volume = ord.Volume,
+                        AveragePrice = ord.Price,
+                        CurrentPrice = ord.CurrentPrice,
+                        Pnl = null,
+                        Type = RowType.Order
+                    });
+                }
+
+                // 2. ONLY NOW, pass the completely built list to the UI thread
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-                    GridRows.Clear();
-
-                    var positionsList = posResult.Positions ?? new List<Position>();
-                    var ordersList = ordResult.Orders ?? new List<OrderModel>();
-
-                    // --- A. ADD POSITIONS ---
-                    foreach (var pos in positionsList)
-                    {
-                        // Mapping: Bid/Ask -> Sell/Buy
-                        string displaySide = pos.Side;
-                        if (string.Equals(pos.Side, "Bid", StringComparison.OrdinalIgnoreCase)) displaySide = "Sell";
-                        else if (string.Equals(pos.Side, "Ask", StringComparison.OrdinalIgnoreCase)) displaySide = "Buy";
-
-                        GridRows.Add(new PositionGridRow
-                        {
-                            Id = pos.Id,
-                            SymbolName = pos.SymbolName,
-                            Time = pos.LastInAt,
-                            Side = displaySide,
-                            OrderType = "Market",
-                            Volume = pos.TotalVolume,
-                            AveragePrice = pos.AveragePrice,
-                            CurrentPrice = pos.CurrentPrice,
-                            Pnl = pos.Pnl, // P/L Real Data
-                            Type = RowType.Position
-                        });
-                    }
-
-                    // --- B. ADD FOOTER (Summary) ---
-                    decimal totalPnl = positionsList.Sum(p => p.Pnl ?? 0);
-
-                    double balance = 50000.00;
-                    double credit = 1000.00;
-                    double equity = balance + credit + (double)totalPnl;
-                    double margin = 2000.00;
-                    double freeMargin = equity - margin;
-
-                    string footerText = $"Balance: {balance:N2}   Eq: {equity:N2}   Credit: {credit:N2}   Margin: {margin:N2}   Free: {freeMargin:N2}";
-
-                    GridRows.Add(new PositionGridRow
-                    {
-                        SymbolName = footerText,
-                        Type = RowType.Footer,
-                        Pnl = totalPnl, // Total Floating P/L
-                        Volume = null,
-                        AveragePrice = null,
-                        CurrentPrice = null
-                    });
-
-                    // --- C. ADD ORDERS ---
-                    foreach (var ord in ordersList)
-                    {
-                        string displaySide = ord.Side;
-                        if (string.Equals(ord.Side, "Bid", StringComparison.OrdinalIgnoreCase)) displaySide = "Sell";
-                        else if (string.Equals(ord.Side, "Ask", StringComparison.OrdinalIgnoreCase)) displaySide = "Buy";
-
-                        GridRows.Add(new PositionGridRow
-                        {
-                            Id = ord.OrderId,
-                            SymbolName = ord.SymbolName,
-                            Time = ord.UpdatedAt,
-                            Side = displaySide,
-                            OrderType = ord.OrderType,
-                            Volume = ord.Volume,
-                            AveragePrice = ord.Price, // Order Price
-                            CurrentPrice = ord.CurrentPrice,
-                            Pnl = null, // Orders me P/L nahi hota
-                            Type = RowType.Order
-                        });
-                    }
+                    GridRows = tempRows;
                 });
             }
             catch (Exception ex)
