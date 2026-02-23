@@ -57,19 +57,42 @@ namespace ClientDesktop.Main
             ToggleAnchorable("Navigator");
         }
 
+        private void Window_StateChanged(object sender, System.EventArgs e)
+        {
+            if (this.WindowState == WindowState.Maximized)
+            {
+                BtnMaximize.Content = "❐";
+
+                RootGrid.Margin = new Thickness(8);
+            }
+            else
+            {
+                BtnMaximize.Content = "☐";
+
+                RootGrid.Margin = new Thickness(0);
+            }
+        }
+
+        // ==========================================
+        // BUTTON CLICKS
+        // ==========================================
         private void Minimize_Click(object sender, RoutedEventArgs e)
         {
-            WindowState = WindowState.Minimized;
+            this.WindowState = WindowState.Minimized;
         }
 
         private void Maximize_Click(object sender, RoutedEventArgs e)
         {
-            WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+            // Just toggle the state. The 'Window_StateChanged' method above will handle the icons and margins!
+            if (this.WindowState == WindowState.Maximized)
+                this.WindowState = WindowState.Normal;
+            else
+                this.WindowState = WindowState.Maximized;
         }
 
         private void Close_Click(object sender, RoutedEventArgs e)
         {
-            Close();
+            this.Close();
         }
         private void ToggleToolbox_Executed(object sender, ExecutedRoutedEventArgs e)
         {
