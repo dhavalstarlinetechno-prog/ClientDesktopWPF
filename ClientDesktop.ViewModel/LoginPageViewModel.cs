@@ -71,7 +71,7 @@ namespace ClientDesktop.ViewModel
             _sessionService = sessionService;
             _authService = authService;
 
-            LoginCommand = new RelayCommand(async _ => await LoginAsync());
+            LoginCommand = new AsyncRelayCommand(async _ => await LoginAsync());
             CancelCommand = new RelayCommand(_ => CloseAction?.Invoke());
 
             _ = LoadServerListAsync();

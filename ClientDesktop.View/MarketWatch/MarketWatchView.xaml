@@ -8,11 +8,6 @@
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="1100">
 
-    <!-- Design Time DataContext -->
-    <d:UserControl.DataContext>
-        <vm:MarketWatchViewModel/>
-    </d:UserControl.DataContext>
-
     <UserControl.Resources>
         <local:BindingProxy x:Key="Proxy" Data="{Binding}"/>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
@@ -24,6 +19,9 @@
             <Style.Triggers>
                 <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected}" Value="True">
                     <Setter Property="Foreground" Value="White"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding SymbolName}" Value="">
+                    <Setter Property="Visibility" Value="Hidden"/>
                 </DataTrigger>
             </Style.Triggers>
         </Style>
@@ -49,7 +47,7 @@
         <ContextMenu x:Key="RowContextMenu">
             <MenuItem Header="Specification"
                       Command="{Binding Data.ShowSpecification, Source={StaticResource Proxy}}"
-                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"> 
+                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
                 <MenuItem.Icon>
                     <Path Data="M3,3H21V5H3V3M3,7H21V9H3V7M3,11H21V13H3V11M3,15H21V17H3V15Z" Fill="#666" Stretch="Uniform" Width="12"/>
                 </MenuItem.Icon>
@@ -103,6 +101,72 @@
                 <MenuItem Header="Time" IsCheckable="True" IsChecked="{Binding Data.ShowTime, Source={StaticResource Proxy}}"/>
             </MenuItem>
         </ContextMenu>
+
+        <ControlTemplate x:Key="EmptyRowControlTemplate" TargetType="DataGridRow">
+            <Border Background="White" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="30"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Path Grid.Column="0" Data="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" 
+                          Fill="#007ACC" Stretch="Uniform" Width="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                    <Grid Grid.Column="1" Margin="2,0,5,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Grid Grid.Column="0">
+                            <TextBox x:Name="AddBox" BorderThickness="0" Background="Transparent" 
+                                     VerticalAlignment="Center" Padding="2,0" FontWeight="SemiBold"
+                                     Text="{Binding Data.NewSymbolSearchText, Source={StaticResource Proxy}, UpdateSourceTrigger=PropertyChanged}"
+                                     PreviewKeyDown="AddBox_PreviewKeyDown"
+                                     GotFocus="AddBox_GotFocus"/>
+
+                            <TextBlock Text="Click to add..." Foreground="Gray" IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,0,0">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Text, ElementName=AddBox}" Value="">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+
+                            <Popup PlacementTarget="{Binding ElementName=AddBox}" 
+                                   IsOpen="{Binding Data.IsSuggestionOpen, Source={StaticResource Proxy}, Mode=TwoWay}"
+                                   StaysOpen="False" MaxHeight="150">
+                                <Border Background="White" BorderBrush="#CCCCCC" BorderThickness="1" CornerRadius="2">
+                                    <ListBox x:Name="SuggestionListBox" 
+                                             ItemsSource="{Binding Data.SuggestedSymbols, Source={StaticResource Proxy}}"
+                                             BorderThickness="0" Background="Transparent" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                             PreviewKeyDown="SuggestionListBox_PreviewKeyDown">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <Button Content="{Binding SymbolName}" 
+                                                        Command="{Binding Data.AddSymbolCommand, Source={StaticResource Proxy}}"
+                                                        CommandParameter="{Binding}"
+                                                        Background="Transparent" BorderThickness="0" 
+                                                        HorizontalContentAlignment="Left" Cursor="Hand" Width="150" Padding="5,2"/>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </Border>
+                            </Popup>
+                        </Grid>
+
+                        <TextBlock Grid.Column="1" Text="{Binding Data.SymbolCountText, Source={StaticResource Proxy}}" 
+                                   Foreground="Gray" FontSize="11" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                    </Grid>
+                </Grid>
+            </Border>
+        </ControlTemplate>
     </UserControl.Resources>
 
     <Grid Background="White">
@@ -187,6 +251,7 @@
                   PreviewMouseLeftButtonDown="DataGrid_PreviewMouseLeftButtonDown"
                   Drop="DataGrid_Drop"
                   MouseMove="DataGrid_MouseMove"
+                  Sorting="MarketGrid_Sorting"
                   ScrollViewer.HorizontalScrollBarVisibility="Auto"
                   ScrollViewer.VerticalScrollBarVisibility="Auto">
 
@@ -198,17 +263,21 @@
                             <Setter Property="Background" Value="#0078D7"/>
                             <Setter Property="Foreground" Value="White"/>
                         </Trigger>
+
+                        <DataTrigger Binding="{Binding SymbolName}" Value="">
+                            <Setter Property="Focusable" Value="False"/>
+                            <Setter Property="Template" Value="{StaticResource EmptyRowControlTemplate}"/>
+                        </DataTrigger>
                     </Style.Triggers>
                 </Style>
             </DataGrid.RowStyle>
 
             <DataGrid.Columns>
-                <!-- Drag Handle -->
                 <DataGridTemplateColumn Width="30" CanUserResize="False" CanUserSort="False">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <Grid VerticalAlignment="Center" HorizontalAlignment="Center" Cursor="SizeAll" Background="Transparent">
-                                <Path Data="M0,0 H12 M0,4 H12 M0,8 H12" StrokeThickness="1" VerticalAlignment="Top" Margin="0,2,0,0">
+                            <Grid VerticalAlignment="Center" HorizontalAlignment="Center" Background="Transparent" Cursor="SizeAll">
+                                <Path Data="M0,0 H12 M0,4 H12 M0,8 H12" Stroke="#777" StrokeThickness="1" VerticalAlignment="Top" Margin="0,2,0,0">
                                     <Path.Style>
                                         <Style TargetType="Path">
                                             <Setter Property="Stroke" Value="#777"/>
@@ -220,47 +289,15 @@
                                         </Style>
                                     </Path.Style>
                                 </Path>
-                                <Path Data="M0,0 L4,4 L8,0" VerticalAlignment="Bottom" Margin="0,11,0,0">
-                                    <Path.Style>
-                                        <Style TargetType="Path">
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsUp}" Value="True">
-                                                    <Setter Property="Data" Value="M0,4 L4,0 L8,4"/>
-                                                    <Setter Property="Fill" Value="#007ACC"/>
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding IsUp}" Value="False">
-                                                    <Setter Property="Data" Value="M0,0 L4,4 L8,0"/>
-                                                    <Setter Property="Fill" Value="#FF3B30"/>
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected}" Value="True">
-                                                    <Setter Property="Fill" Value="White"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Path.Style>
-                                </Path>
                             </Grid>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
 
-                <!-- Symbol Width is Star -->
-                <DataGridTemplateColumn Header="Symbol" Width="*" MinWidth="100" 
-                                        SortMemberPath="SymbolName" CanUserSort="True">
+                <DataGridTemplateColumn Header="Symbol" Width="*" MinWidth="100" SortMemberPath="SymbolName" CanUserSort="True">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding SymbolName}" VerticalAlignment="Center" Margin="5,0,0,0" FontWeight="SemiBold">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Foreground" Value="Black"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected}" Value="True">
-                                                <Setter Property="Foreground" Value="White"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
+                            <TextBlock Text="{Binding SymbolName}" VerticalAlignment="Center" Margin="5,0,0,0" FontWeight="SemiBold"/>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>

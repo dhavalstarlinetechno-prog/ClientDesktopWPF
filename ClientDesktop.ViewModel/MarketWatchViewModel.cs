@@ -4,8 +4,6 @@ using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Logger;
 using ClientDesktop.Infrastructure.Services;
-using DocumentFormat.OpenXml.Drawing.Charts;
-using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows;
@@ -30,6 +28,7 @@ namespace ClientDesktop.ViewModel
         private MarketWatchSymbols _selectedMarketItem;
         public ObservableCollection<MarketWatchSymbols> MarketWatchSymbolsCollection { get; set; }
         public ObservableCollection<MarketWatchSymbols> HiddenSymbolsCollection { get; set; }
+        public ObservableCollection<MarketWatchSymbols> SuggestedSymbols { get; set; }
         public ObservableCollection<int> FontSizes { get; set; }
 
         // --- Column Visibility Properties ---
@@ -73,6 +72,30 @@ namespace ClientDesktop.ViewModel
             set { _selectedFontSize = value; OnPropertyChanged(); }
         }
 
+        private string _newSymbolSearchText;
+        public string NewSymbolSearchText
+        {
+            get => _newSymbolSearchText;
+            set
+            {
+                SetProperty(ref _newSymbolSearchText, value);
+                SearchHiddenSymbols(value);
+            }
+        }
+
+        private string _symbolCountText;
+        public string SymbolCountText
+        {
+            get => _symbolCountText;
+            set => SetProperty(ref _symbolCountText, value);
+        }
+
+        private bool _isSuggestionOpen;
+        public bool IsSuggestionOpen
+        {
+            get => _isSuggestionOpen;
+            set => SetProperty(ref _isSuggestionOpen, value);
+        }
 
         public MarketWatchSymbols SelectedMarketItem
         {
@@ -86,6 +109,7 @@ namespace ClientDesktop.ViewModel
         public ICommand ShowAllCommand { get; }
         public ICommand SaveProfileCommand { get; }
         public ICommand ShowSpecification { get; }
+        public ICommand AddSymbolCommand { get; }
 
         public MarketWatchViewModel(MarketWatchService marketWatchService, SessionService sessionService, IDialogService dialogService)
         {
@@ -96,6 +120,7 @@ namespace ClientDesktop.ViewModel
             MarketWatchSymbolsCollection = new ObservableCollection<MarketWatchSymbols>();
             HiddenSymbolsCollection = new ObservableCollection<MarketWatchSymbols>();
             FontSizes = new ObservableCollection<int>();
+            SuggestedSymbols = new ObservableCollection<MarketWatchSymbols>();
 
             for (int i = 10; i <= 30; i += 2) FontSizes.Add(i);
 
@@ -105,11 +130,11 @@ namespace ClientDesktop.ViewModel
 
             // Initialize Commands
             ShowSpecification = new RelayCommand(ShowSpecificationView);
-            HideSymbolCommand = new RelayCommand(async (param) => await HideSymbolAsync(param));
-            HideAllCommand = new RelayCommand(async (_) => await HideAllSymbolsAsync());
-            ShowAllCommand = new RelayCommand(async (_) => await ShowAllSymbolsAsync());
-            SaveProfileCommand = new RelayCommand(async _ => await SaveClientWatchProfileAsync());
-
+            HideSymbolCommand = new AsyncRelayCommand(async (param) => await HideSymbolAsync(param));
+            HideAllCommand = new AsyncRelayCommand(async (_) => await HideAllSymbolsAsync());
+            ShowAllCommand = new AsyncRelayCommand(async (_) => await ShowAllSymbolsAsync());
+            SaveProfileCommand = new AsyncRelayCommand(async (_) => await SaveClientWatchProfileAsync());
+            AddSymbolCommand = new AsyncRelayCommand(async (param) => await AddSymbolAsync(param as MarketWatchSymbols));
 
             // set up timer to update current time every second
             DispatcherTimer timer = new DispatcherTimer();
@@ -146,27 +171,45 @@ namespace ClientDesktop.ViewModel
         {
             if (marketWatchData == null) return;
 
-            SelectedFontSize = !marketWatchData.fontSize.Equals(0) ? marketWatchData.fontSize : 10;
-
+            SelectedFontSize = !marketWatchData.fontSize.Equals(0) ? marketWatchData.fontSize : 12;
             ApplyColumnVisibility(marketWatchData.displayColumnNames as string);
 
             if (marketWatchData.symbols != null)
             {
-                var viewModels = marketWatchData.symbols
-                                           .Where(x => !x.symbolHide && x.symbolStatus)
-                                           .OrderBy(x => x.displayPosition)
-                                           .Select(CreateMarketItem).ToList();
-
-                MarketWatchSymbolsCollection.Clear();
-                foreach (var item in viewModels)
+                Application.Current.Dispatcher.Invoke(() =>
                 {
-                    MarketWatchSymbolsCollection.Add(item);
-                }
+                    MarketWatchSymbolsCollection.Clear();
+
+                    var validSymbols = marketWatchData.symbols
+                                        .Where(s => s.symbolStatus)
+                                        .OrderBy(s => s.displayPosition)
+                                        .ToList();
+
+                    foreach (var apiSymbol in validSymbols)
+                    {
+                        var symbolModel = CreateMarketItem(apiSymbol);
+
+                        if (!apiSymbol.symbolHide)
+                        {
+                            MarketWatchSymbolsCollection.Add(symbolModel);
+                        }
+                        else
+                        {
+                            if (!HiddenSymbolsCollection.Any(r => r.SymbolName == symbolModel.SymbolName))
+                            {
+                                HiddenSymbolsCollection.Add(symbolModel);
+                            }
+                        }
+                    }
+                    EnsureEmptyRow();
+                });
             }
         }
 
         private void ApplyColumnVisibility(string apiFields)
         {
+            if (string.IsNullOrEmpty(apiFields)) return;
+
             var fields = new HashSet<string>(apiFields.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(f => f.Trim().ToLowerInvariant()));
 
             if (fields.Contains("ltp")) ShowLtp = true;
@@ -310,6 +353,7 @@ namespace ClientDesktop.ViewModel
                             }
                             MarketWatchSymbolsCollection.Remove(symbol);
                         }
+                        EnsureEmptyRow();
                     });
 
                     if (!string.IsNullOrEmpty(response.successMessage))
@@ -346,20 +390,13 @@ namespace ClientDesktop.ViewModel
 
                         if (existing == null)
                         {
-                            int insertIndex = MarketWatchSymbolsCollection.Count > 0 ? MarketWatchSymbolsCollection.Count - 1 : 0;
-
-                            var lastItem = MarketWatchSymbolsCollection.LastOrDefault();
-                            if (lastItem != null && !string.IsNullOrWhiteSpace(lastItem.SymbolName))
-                            {
-                                insertIndex = MarketWatchSymbolsCollection.Count;
-                            }
-
-                            MarketWatchSymbolsCollection.Insert(insertIndex, symbol);
+                            MarketWatchSymbolsCollection.Add(symbol);
                             restoredCount++;
                         }
                     }
 
                     HiddenSymbolsCollection.Clear();
+                    EnsureEmptyRow();
                 });
 
                 FileLogger.Log("MarketWatch", $"{restoredCount} {CommonMessages.HiddenSymbolRestored}");
@@ -372,6 +409,52 @@ namespace ClientDesktop.ViewModel
         }
 
         #endregion
+
+        private void SearchHiddenSymbols(string searchText)
+        {
+            IsSuggestionOpen = false;
+
+            if (string.IsNullOrWhiteSpace(searchText) || searchText.Trim().Length < 2)
+            {
+                SuggestedSymbols.Clear();
+                return;
+            }
+
+            var matches = HiddenSymbolsCollection
+                .Where(s => s.SymbolName.StartsWith(searchText.Trim(), StringComparison.OrdinalIgnoreCase))
+                .Take(10)
+                .ToList();
+
+            SuggestedSymbols.Clear();
+            foreach (var match in matches)
+            {
+                SuggestedSymbols.Add(match);
+            }
+
+            if (SuggestedSymbols.Count > 0)
+            {
+                IsSuggestionOpen = true;
+            }
+        }
+
+        private async Task AddSymbolAsync(MarketWatchSymbols symbol)
+        {
+            if (symbol == null) return;
+
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                HiddenSymbolsCollection.Remove(symbol);
+                MarketWatchSymbolsCollection.Add(symbol);
+                SelectedMarketItem = symbol;
+
+                NewSymbolSearchText = string.Empty;
+                IsSuggestionOpen = false;
+                SuggestedSymbols.Clear();
+                EnsureEmptyRow();
+            });
+
+            await Task.CompletedTask;
+        }
 
         #region Helpers
         private MarketWatchSymbols CreateMarketItem(MarketWatchApiSymbol apiSymbol)
@@ -403,6 +486,32 @@ namespace ClientDesktop.ViewModel
             };
         }
 
+        public void EnsureEmptyRow()
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                if (MarketWatchSymbolsCollection == null) return;
+
+                var emptyRows = MarketWatchSymbolsCollection.Where(x => string.IsNullOrWhiteSpace(x.SymbolName)).ToList();
+                foreach (var row in emptyRows)
+                {
+                    MarketWatchSymbolsCollection.Remove(row);
+                }
+
+                MarketWatchSymbolsCollection.Add(new MarketWatchSymbols { SymbolName = "" });
+                UpdateSymbolCount();
+            });
+        }
+
+        private void UpdateSymbolCount()
+        {
+            int visibleCount = MarketWatchSymbolsCollection.Count(s => !string.IsNullOrWhiteSpace(s.SymbolName));
+            int hiddenCount = HiddenSymbolsCollection.Count;
+            int totalCount = visibleCount + hiddenCount;
+
+            SymbolCountText = $"{visibleCount} / {totalCount}";
+        }
+
         private string ConvertToTime(long timestamp)
         {
             if (timestamp <= 0) return "--:--:--";
@@ -419,6 +528,10 @@ namespace ClientDesktop.ViewModel
         {
             if (string.IsNullOrWhiteSpace(SearchText)) return true;
             var marketWatchSymbols = item as MarketWatchSymbols;
+
+            if (marketWatchSymbols == null || string.IsNullOrWhiteSpace(marketWatchSymbols.SymbolName))
+                return true;
+
             return marketWatchSymbols != null && marketWatchSymbols.SymbolName.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
