@@ -46,7 +46,7 @@
                     <ControlTemplate TargetType="TreeViewItem">
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="20"/>
+                                <ColumnDefinition Width="16"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
@@ -61,7 +61,7 @@
 
                             <Border x:Name="Bd"
                                 Grid.Column="1"
-                                Padding="4">
+                                Padding="2,2,2,2">
                                 <ContentPresenter ContentSource="Header"/>
                             </Border>
 
@@ -78,8 +78,10 @@
                                 <Setter TargetName="ItemsHost" Property="Visibility" Value="Collapsed"/>
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#EAEAEA"/>
+                                <Setter TargetName="Bd" Property="Background" Value="CornflowerBlue"/>
+                                <Setter Property="Foreground" Value="White"/>
                             </Trigger>
+                            
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -90,19 +92,19 @@
 
     <!-- Main content -->
     <Grid Margin="10">
-        <TreeView x:Name="NavigationTree" ItemsSource="{Binding NavigationItems}" BorderThickness="0" SelectedItemChanged="NavigationTree_SelectedItemChanged" PreviewMouseLeftButtonDown="NavigationTree_PreviewMouseLeftButtonDown">
+        <TreeView x:Name="NavigationTree" ItemsSource="{Binding NavigationItems}" BorderThickness="0" PreviewMouseLeftButtonDown="NavigationTree_PreviewMouseLeftButtonDown">
             <TreeView.ItemTemplate>
                 <HierarchicalDataTemplate ItemsSource="{Binding Children}">
                     <StackPanel Orientation="Horizontal" Margin="0,2">
 
                         <!-- ICON -->
-                        <Border Width="22"
-                             Height="22"
-                             CornerRadius="3"
+                        <Border Width="16"
+                             Height="16"
+                             CornerRadius="2"
                              Background="{Binding IconColor, FallbackValue=Transparent}"
-                             Margin="0,0,8,0">
+                             Margin="0,0,6,0">
 
-                            <Viewbox Margin="3">
+                            <Viewbox Margin="2">
                                 <Path Data="{Binding IconData}"
                                    Fill="White"
                                    Stretch="Uniform"/>
@@ -113,8 +115,10 @@
                         <!-- TEXT -->
                         <TextBlock Text="{Binding Title}"
                                 VerticalAlignment="Center"
-                                FontSize="13"
-                                FontFamily="Segoe UI"/>
+                                FontSize="12"
+                                FontWeight="Normal"                               
+                                Foreground="{Binding RelativeSource={RelativeSource AncestorType=TreeViewItem}, Path=Foreground}"   
+                                FontFamily="Microsoft Sans Serif"/>
                     </StackPanel>
                 </HierarchicalDataTemplate>
             </TreeView.ItemTemplate>
