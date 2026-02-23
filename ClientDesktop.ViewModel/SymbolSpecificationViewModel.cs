@@ -1,4 +1,7 @@
 ﻿using ClientDesktop.Core.Base;
+using ClientDesktop.Core.Models;
+using ClientDesktop.Infrastructure.Services;
+using DocumentFormat.OpenXml.Drawing.Charts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +13,8 @@ namespace ClientDesktop.ViewModel
 {
     public class SymbolSpecificationViewModel : ViewModelBase
     {
+        private readonly SessionService _sessionService;
+        private readonly SymbolSpecificationService _symbolSpecificationService;       
         public Action CloseAction { get; set; }
        
         public ICommand CloseCommand { get; }
@@ -18,11 +23,7 @@ namespace ClientDesktop.ViewModel
         public int SymbolId
         {
             get => _symbolId;
-            set
-            {
-                SetProperty(ref _symbolId, value);               
-                LoadSymbolData();
-            }
+            set => SetProperty(ref _symbolId, value);
         }
 
         private string _symbolName;
@@ -32,17 +33,31 @@ namespace ClientDesktop.ViewModel
             set => SetProperty(ref _symbolName, value);
         }
 
-        public SymbolSpecificationViewModel()
+        private SymbolModel _symbolData;
+        public SymbolModel SymbolData
         {
-          
+            get => _symbolData;
+            set => SetProperty(ref _symbolData, value);
+        }
+
+        public SymbolSpecificationViewModel(SessionService sessionService, SymbolSpecificationService symbolSpecificationService)
+        {
+            _sessionService = sessionService;
+            _symbolSpecificationService = symbolSpecificationService;
             CloseCommand = new RelayCommand(_ => CloseAction?.Invoke());
         }
 
-        private void LoadSymbolData()
+        public async Task LoadSymbolData()
         {
-            
-            Console.WriteLine($"Loading specification for Symbol ID: {_symbolId}, Name: {_symbolName}");
-        }
+            if (SymbolId <= 0)
+                return;
 
+            var response = await _symbolSpecificationService.GetSymbolAsync(SymbolId);
+
+            if (response == null)
+                return;
+
+            SymbolData = response;
+        }
     }
 }

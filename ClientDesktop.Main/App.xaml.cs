@@ -41,6 +41,7 @@ namespace ClientDesktop.Main
             services.AddSingleton<HistoryService>();
             services.AddSingleton<BanScriptService>();
             services.AddSingleton<LedgerService>();
+            services.AddSingleton<SymbolSpecificationService>();
 
             // 2. Api Service
             services.AddSingleton<IApiService, ApiService>();
@@ -56,7 +57,7 @@ namespace ClientDesktop.Main
             services.AddSingleton<PositionViewModel>();
             services.AddTransient<BanScriptViewModel>();
             services.AddTransient<LedgerViewModel>();
-            services.AddTransient<SymbolSpecificationViewModel>();
+            services.AddTransient<SymbolSpecificationViewModel>();           
             // 5. Views (Windows)
             services.AddSingleton<MainWindow>();
         }

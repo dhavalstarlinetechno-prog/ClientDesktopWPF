@@ -3,7 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:ClientDesktop.Main"
              xmlns:vm="clr-namespace:ClientDesktop.ViewModel;assembly=ClientDesktop.ViewModel"
-             xmlns:view="clr-namespace:ClientDesktop.Main.Login">
+             xmlns:view="clr-namespace:ClientDesktop.Main.Login"
+             xmlns:spec="clr-namespace:ClientDesktop.View.Specification;assembly=ClientDesktop.View">
 
     <Application.Resources>
         <ResourceDictionary>
@@ -15,6 +16,10 @@
 
             <DataTemplate DataType="{x:Type vm:LoginPageViewModel}">
                 <view:LoginPage />
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type vm:SymbolSpecificationViewModel}">
+                <spec:SymbolSpecificationView />
             </DataTemplate>
 
         </ResourceDictionary>

@@ -1,4 +1,6 @@
-﻿namespace ClientDesktop.Core.Models
+﻿using Newtonsoft.Json;
+
+namespace ClientDesktop.Core.Models
 {
     public class SessionModel
     {
@@ -43,5 +45,12 @@
         public bool MarginOnlimit { get; set; }
         public string RouteType { get; set; }
         public List<SessionModel> Sessions { get; set; }
+    }
+
+    public class ApiResponse<T>
+    {
+        public bool Status { get; set; }
+        public string Message { get; set; }
+        public T Data { get; set; }
     }
 }
