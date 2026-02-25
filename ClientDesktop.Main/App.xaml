@@ -4,7 +4,8 @@
              xmlns:local="clr-namespace:ClientDesktop.Main"
              xmlns:vm="clr-namespace:ClientDesktop.ViewModel;assembly=ClientDesktop.ViewModel"
              xmlns:view="clr-namespace:ClientDesktop.Main.Login"
-             xmlns:spec="clr-namespace:ClientDesktop.View.Specification;assembly=ClientDesktop.View">
+             xmlns:spec="clr-namespace:ClientDesktop.View.Specification;assembly=ClientDesktop.View"
+             xmlns:trade="clr-namespace:ClientDesktop.View.TradeOrder;assembly=ClientDesktop.View">
 
     <Application.Resources>
         <ResourceDictionary>
@@ -20,6 +21,10 @@
 
             <DataTemplate DataType="{x:Type vm:SymbolSpecificationViewModel}">
                 <spec:SymbolSpecificationView />
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type vm:TradeViewModel}">
+                <trade:OrderWindow />
             </DataTemplate>
 
         </ResourceDictionary>

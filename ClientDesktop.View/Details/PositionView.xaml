@@ -34,6 +34,12 @@
                   Sorting="DataGrid_Sorting"
                   SelectionUnit="FullRow">
 
+            <DataGrid.InputBindings>
+                <MouseBinding Gesture="LeftDoubleClick"
+                      Command="{Binding DoubleClickCommand}"
+                      CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+            </DataGrid.InputBindings>
+            
             <DataGrid.RowStyle>
                 <Style TargetType="DataGridRow">
 

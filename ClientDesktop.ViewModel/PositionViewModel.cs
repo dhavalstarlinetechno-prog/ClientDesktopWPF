@@ -1,9 +1,13 @@
-﻿using ClientDesktop.Core.Models;
+﻿using ClientDesktop.Core.Base;
+using ClientDesktop.Core.Enums;
+using ClientDesktop.Core.Interfaces;
+using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Services;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Input;
 
 namespace ClientDesktop.ViewModel
 {
@@ -12,19 +16,24 @@ namespace ClientDesktop.ViewModel
         private readonly SessionService _sessionService;
         private readonly PositionService _positionService;
         private ObservableCollection<PositionGridRow> _gridRows;
+        private readonly IDialogService _dialogService;
+        public ICommand DoubleClickCommand { get; }
         public ObservableCollection<PositionGridRow> GridRows
         {
             get { return _gridRows; }
             set { _gridRows = value; OnPropertyChanged(); }
         }
 
-        public PositionViewModel(SessionService sessionService, PositionService positionService)
+        public PositionViewModel(SessionService sessionService, PositionService positionService, IDialogService dialogService)
         {
             _sessionService = sessionService;
             _positionService = positionService;
+            _dialogService = dialogService;
             GridRows = new ObservableCollection<PositionGridRow>();
 
             _sessionService.OnLoginSuccess += HandleLogin;
+            DoubleClickCommand = new RelayCommand(row => PositionGridDoubleClick((PositionGridRow?)row));
+
             //_sessionService.OnLogout += HandleLogout;
         }
 
@@ -127,7 +136,25 @@ namespace ClientDesktop.ViewModel
             }
         }
 
-        // Custom Sorting (Positions Only)
+        private void PositionGridDoubleClick(PositionGridRow selectedRow)
+        {
+            if (selectedRow == null || selectedRow.Type == RowType.Footer)
+                return;
+
+            _dialogService.ShowDialog<TradeViewModel>(
+                    "Trade Order",
+                    configureViewModel: vm =>
+                    {
+                        vm.positionGridRow = selectedRow;
+                        vm.CurrentWindowMode = selectedRow.Type == RowType.Position ? TradeWindowMode.FromPosition : TradeWindowMode.FromOrder;
+                        vm.CurrentOrderType = selectedRow.IsPosition ? TradeOrderType.Market :
+                              selectedRow.OrderType?.Contains("Stop", StringComparison.OrdinalIgnoreCase) == true ? TradeOrderType.StopLimit :
+                              selectedRow.OrderType?.Contains("Limit", StringComparison.OrdinalIgnoreCase) == true ? TradeOrderType.Limit :
+                              TradeOrderType.Market;
+                    }
+                );
+        }
+
         public void SortData(string sortBy, ListSortDirection direction)
         {
             var positions = GridRows.Where(r => r.Type == RowType.Position).ToList();

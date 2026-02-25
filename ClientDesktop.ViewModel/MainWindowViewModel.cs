@@ -1,4 +1,5 @@
 ﻿using ClientDesktop.Core.Base;
+using ClientDesktop.Core.Enums;
 using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Logger;
@@ -31,6 +32,7 @@ namespace ClientDesktop.ViewModel
         public ICommand DisconnectCommand { get; }
         public ICommand ShowLoginCommand { get; }
 
+        public ICommand OpenNewOrderCommand => new RelayCommand(param => OpenNewOrderWindow());
         public MainWindowViewModel(
             SessionService sessionService,
             AuthService authService,
@@ -199,6 +201,21 @@ namespace ClientDesktop.ViewModel
             Title = string.Empty;
             IsLoggedIn = false;
             UserId = string.Empty;
+        }
+
+        private void OpenNewOrderWindow()
+        {
+            _dialogService.ShowDialog<TradeViewModel>(
+                "New Trade Order",
+                configureViewModel: vm =>
+                {
+                    vm.CurrentOrderType = TradeOrderType.Market;
+                    vm.CurrentWindowMode = TradeWindowMode.FromTradeButton;
+                    vm.positionGridRow = null;
+
+                    _ = vm.LoadSymbolListAsync();
+                }
+            );
         }
 
         private void Disconnect()

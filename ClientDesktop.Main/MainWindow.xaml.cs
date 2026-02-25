@@ -192,11 +192,5 @@ namespace ClientDesktop.Main
             }
         }
 
-        private void NewOrder_Click(object sender, RoutedEventArgs e)
-        {
-            var orderWin = new OrderWindow();
-            orderWin.Owner = this;
-            orderWin.Show();
-        }
     }
 }

@@ -63,6 +63,7 @@ namespace ClientDesktop.Main
             services.AddSingleton<HistoryService>();
             services.AddSingleton<BanScriptService>();
             services.AddSingleton<LedgerService>();
+            services.AddSingleton<TradeService>();
             services.AddSingleton<SymbolSpecificationService>();
             services.AddSingleton<InvoiceService>();
 
@@ -85,6 +86,7 @@ namespace ClientDesktop.Main
             services.AddTransient<LedgerViewModel>();
             services.AddTransient<SymbolSpecificationViewModel>();
             services.AddTransient<InvoiceViewModel>();
+            services.AddTransient<TradeViewModel>();
 
             // Views (Windows)
             services.AddSingleton<MainWindow>();

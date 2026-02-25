@@ -1,11 +1,11 @@
-﻿<Window x:Class="ClientDesktop.View.TradeOrder.OrderWindow"
+﻿<UserControl x:Class="ClientDesktop.View.TradeOrder.OrderWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Order" Height="410" Width="800"
-        Background="White" ResizeMode="NoResize" WindowStartupLocation="CenterScreen"
-        Loaded="Window_Loaded">
+        Height="354" Width="800"
+        Background="White">
 
-    <Window.Resources>
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
         <!-- Standard Label Style -->
         <Style x:Key="LabelStyle" TargetType="TextBlock">
             <Setter Property="Foreground" Value="#444"/>
@@ -36,7 +36,7 @@
             <Setter Property="Height" Value="26"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
-    </Window.Resources>
+    </UserControl.Resources>
 
     <!-- Main Layout Grid -->
     <Grid Margin="15">
@@ -68,19 +68,19 @@
                     </Grid.RowDefinitions>
 
                     <TextBlock Text="User Name :" Grid.Row="0" Style="{StaticResource LabelStyle}"/>
-                    <TextBlock x:Name="lblUsername" Text="Demo" Grid.Row="0" Grid.Column="1" Style="{StaticResource ValueStyle}"/>
+                    <TextBlock x:Name="lblUsername" Text="{Binding UserName}" Grid.Row="0" Grid.Column="1" Style="{StaticResource ValueStyle}"/>
 
                     <TextBlock Text="Balance :" Grid.Row="1" Style="{StaticResource LabelStyle}"/>
-                    <TextBlock x:Name="lblBalance" Text="579.60" Grid.Row="1" Grid.Column="1" Style="{StaticResource ValueStyle}"/>
+                    <TextBlock x:Name="lblBalance" Text="{Binding Balance}" Grid.Row="1" Grid.Column="1" Style="{StaticResource ValueStyle}"/>
 
                     <TextBlock Text="Credit :" Grid.Row="2" Style="{StaticResource LabelStyle}"/>
-                    <TextBlock x:Name="lblCredit" Text="500 100.00" Grid.Row="2" Grid.Column="1" Style="{StaticResource ValueStyle}"/>
+                    <TextBlock x:Name="lblCredit" Text="{Binding Credit}" Grid.Row="2" Grid.Column="1" Style="{StaticResource ValueStyle}"/>
 
                     <TextBlock Text="Occupied Margin :" Grid.Row="3" Style="{StaticResource LabelStyle}"/>
-                    <TextBlock x:Name="lblOcupiedMargin" Text="328 921.17" Grid.Row="3" Grid.Column="1" Style="{StaticResource ValueStyle}"/>
+                    <TextBlock x:Name="lblOcupiedMargin" Text="{Binding OccupiedMargin}" Grid.Row="3" Grid.Column="1" Style="{StaticResource ValueStyle}"/>
 
                     <TextBlock Text="Free Margin :" Grid.Row="4" Style="{StaticResource LabelStyle}"/>
-                    <TextBlock x:Name="lblFreeMargin" Text="171 284.79" Grid.Row="4" Grid.Column="1" Style="{StaticResource ValueStyle}"/>
+                    <TextBlock x:Name="lblFreeMargin" Text="{Binding FreeMargin}" Grid.Row="4" Grid.Column="1" Style="{StaticResource ValueStyle}"/>
                 </Grid>
             </GroupBox>
 
@@ -152,14 +152,18 @@
 
                 <!-- Row 0: Symbol -->
                 <TextBlock Text="Symbol :" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0" FontWeight="SemiBold"/>
-                <ComboBox x:Name="Cmbsymbol" Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="4" SelectedIndex="0">
-                    <ComboBoxItem Content="Select"/>
-                    <ComboBoxItem Content="XAUUSD-M" IsSelected="True"/>
+                <ComboBox x:Name="Cmbsymbol" Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="4" 
+                          Style="{StaticResource EditableComboBoxStyle}"
+                          ItemsSource="{Binding AvailableSymbols}"
+                          Text="{Binding SelectedSymbol, UpdateSourceTrigger=PropertyChanged}"
+                          SelectedItem="{Binding SelectedSymbol, UpdateSourceTrigger=PropertyChanged}"
+                          IsEditable="{Binding IsSymbolEditable}"
+                          IsEnabled="{Binding IsSymbolEditable}">
                 </ComboBox>
 
                 <!-- Row 1: Order Type Buttons -->
                 <Border Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="4" 
-                        BorderBrush="#2196F3" BorderThickness="1" CornerRadius="3" Height="30" Margin="0,0,0,10">
+        BorderBrush="#2196F3" BorderThickness="1" CornerRadius="3" Height="30" Margin="0,5,0,5">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -168,18 +172,59 @@
                         </Grid.ColumnDefinitions>
 
                         <Button x:Name="BtnLimit" Grid.Column="0" Content="Limit" 
-                                Click="BtnLimit_Click"
-                                Background="White" Foreground="#2196F3" BorderThickness="0"/>
+                Command="{Binding ChangeOrderTypeCommand}" CommandParameter="Limit">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="White"/>
+                                    <Setter Property="Foreground" Value="#2196F3"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsLimitActive}" Value="True">
+                                            <Setter Property="Background" Value="#2196F3"/>
+                                            <Setter Property="Foreground" Value="White"/>
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
 
-                        <!-- Middle Button with Borders -->
                         <Button x:Name="BtnMarket" Grid.Column="1" Content="Market" 
-                                Click="BtnMarket_Click"
-                                Background="#2196F3" Foreground="White" FontWeight="Bold" 
-                                BorderThickness="1,0,1,0" BorderBrush="#2196F3"/>
+                Command="{Binding ChangeOrderTypeCommand}" CommandParameter="Market">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="White"/>
+                                    <Setter Property="Foreground" Value="#2196F3"/>
+                                    <Setter Property="BorderThickness" Value="1,0,1,0"/>
+                                    <Setter Property="BorderBrush" Value="#2196F3"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsMarketActive}" Value="True">
+                                            <Setter Property="Background" Value="#2196F3"/>
+                                            <Setter Property="Foreground" Value="White"/>
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
 
                         <Button x:Name="BtnStopLimit" Grid.Column="2" Content="Stop Limit" 
-                                Click="BtnStopLimit_Click"
-                                Background="White" Foreground="#2196F3" BorderThickness="0" Margin="0,1,0,-1"/>
+                Command="{Binding ChangeOrderTypeCommand}" CommandParameter="StopLimit">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="White"/>
+                                    <Setter Property="Foreground" Value="#2196F3"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsStopLimitActive}" Value="True">
+                                            <Setter Property="Background" Value="#2196F3"/>
+                                            <Setter Property="Foreground" Value="White"/>
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
                     </Grid>
                 </Border>
 
@@ -188,19 +233,19 @@
                 <TextBox x:Name="Quantitytextbox" Grid.Row="2" Grid.Column="1" Text="0.1"/>
 
                 <TextBlock Text="Expiry :" Grid.Row="2" Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
-                <ComboBox x:Name="Cmbexpiry" Grid.Row="2" Grid.Column="4" SelectedIndex="0" 
-                          SelectionChanged="Cmbexpiry_SelectionChanged">
+                <ComboBox x:Name="Cmbexpiry" Grid.Row="2" Grid.Column="4" SelectedIndex="0" Style="{StaticResource CustomComboBoxStyle}"
+          Visibility="{Binding IsExpiryVisible, Converter={StaticResource BoolToVis}}">
                     <ComboBoxItem Content="GTC"/>
                     <ComboBoxItem Content="Today"/>
                     <ComboBoxItem Content="Specific Date"/>
                 </ComboBox>
 
                 <!-- Row 3: Rate & Specific Date -->
-                <TextBlock x:Name="lblRateLabel" Text="Rate :" Grid.Row="3" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
+                <TextBlock x:Name="lblRateLabel" Text="{Binding RateLabelText}" Grid.Row="3" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
                 <TextBox x:Name="txtLimitRate" Grid.Row="3" Grid.Column="1" Text="5056.18" Background="#F5F5F5"/>
 
                 <!-- DatePicker: Hidden by default -->
-                <DatePicker x:Name="ExpirydatemonthPicker" Grid.Row="3" Grid.Column="4" 
+                <DatePicker x:Name="ExpirydatemonthPicker" Grid.Row="3" Grid.Column="4" Style="{StaticResource CustomDatePickerStyle}"
                             VerticalAlignment="Center" Visibility="Collapsed"/>
 
                 <!-- Row 4: Comment -->
@@ -241,7 +286,7 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <Button x:Name="btnSellOrder" Grid.Column="0" Content="SELL" Background="#DC3545" Foreground="White" FontSize="14" FontWeight="Bold" BorderThickness="0" Margin="0,-8,0,8">
+                        <Button x:Name="btnSellOrder" Grid.Column="0" Content="{Binding SellButtonText}" Background="#DC3545" Foreground="White" FontSize="14" FontWeight="Bold" BorderThickness="0" Margin="0,-8,0,8">
                             <Button.Resources>
                                 <Style TargetType="Border">
                                     <Setter Property="CornerRadius" Value="4"/>
@@ -249,7 +294,7 @@
                             </Button.Resources>
                         </Button>
 
-                        <Button x:Name="btnBuyOrder" Grid.Column="2" Content="BUY" Background="#2196F3" Foreground="White" FontSize="14" FontWeight="Bold" BorderThickness="0" Margin="0,-8,0,8">
+                        <Button x:Name="btnBuyOrder" Grid.Column="2" Content="{Binding BuyButtonText}" Background="#2196F3" Foreground="White" FontSize="14" FontWeight="Bold" BorderThickness="0" Margin="0,-8,0,8">
                             <Button.Resources>
                                 <Style TargetType="Border">
                                     <Setter Property="CornerRadius" Value="4"/>
@@ -294,4 +339,4 @@
 
         </StackPanel>
     </Grid>
-</Window>
+</UserControl>

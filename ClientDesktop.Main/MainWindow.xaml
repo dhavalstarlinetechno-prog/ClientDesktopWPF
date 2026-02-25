@@ -48,7 +48,7 @@
             </Grid.ColumnDefinitions>
 
             <Menu Grid.Column="0" Background="Transparent" VerticalAlignment="Center" Padding="5,0,0,0" WindowChrome.IsHitTestVisibleInChrome="True">
-                <MenuItem Header="New Order" FontWeight="Bold" Click="NewOrder_Click"/>
+                <MenuItem Header="New Order" FontWeight="Bold" Command="{Binding OpenNewOrderCommand}"/>
 
                 <MenuItem Header="Window">
                     <MenuItem Header="Market Watch" InputGestureText="Ctrl+M" Command="{x:Static local:MainWindow.ToggleMarketWatchCommand}">
