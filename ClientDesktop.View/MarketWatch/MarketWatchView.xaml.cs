@@ -1,11 +1,13 @@
-﻿using ClientDesktop.Core.Models;
-using ClientDesktop.ViewModel;
+﻿using System;
 using System.ComponentModel;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using ClientDesktop.Core.Models;
+using ClientDesktop.ViewModel;
 
 namespace ClientDesktop.View.MarketWatch
 {
@@ -14,15 +16,57 @@ namespace ClientDesktop.View.MarketWatch
     /// </summary>
     public partial class MarketWatchView : UserControl
     {
+        #region Fields
+
         private Point _startPoint;
         private object _draggedItem;
         private bool _isDragging = false;
 
+        #endregion
+
+        #region Constructor
+
+        /// <summary>
+        /// Initializes a new instance of the MarketWatchView class.
+        /// </summary>
         public MarketWatchView()
         {
             InitializeComponent();
         }
 
+        #endregion
+
+        #region DataGrid Events
+
+        /// <summary>
+        /// Handles the loading row event to update symbol visibility tracking.
+        /// </summary>
+        private void MarketGrid_LoadingRow(object sender, DataGridRowEventArgs e)
+        {
+            if (e.Row.DataContext is MarketWatchSymbols symbol)
+            {
+                (this.DataContext as MarketWatchViewModel)?.SetSymbolVisibility(symbol.SymbolName, true);
+            }
+        }
+
+        /// <summary>
+        /// Handles the unloading row event to remove symbol visibility tracking.
+        /// </summary>
+        private void MarketGrid_UnloadingRow(object sender, DataGridRowEventArgs e)
+        {
+            if (e.Row.DataContext is MarketWatchSymbols symbol)
+            {
+                (this.DataContext as MarketWatchViewModel)?.SetSymbolVisibility(symbol.SymbolName, false);
+            }
+        }
+
+        #endregion
+
+        #region Drag & Drop Events
+
+        /// <summary>
+        /// Initiates the drag operation when the drag handle is clicked.
+        /// </summary>
         private void DataGrid_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             _isDragging = false;
@@ -50,6 +94,9 @@ namespace ClientDesktop.View.MarketWatch
             }
         }
 
+        /// <summary>
+        /// Handles mouse movement to execute the drag and drop operation.
+        /// </summary>
         private void DataGrid_MouseMove(object sender, MouseEventArgs e)
         {
             if (!_isDragging || e.LeftButton == MouseButtonState.Released)
@@ -58,8 +105,10 @@ namespace ClientDesktop.View.MarketWatch
                 _draggedItem = null;
                 return;
             }
+
             Point mousePos = e.GetPosition(null);
             Vector diff = _startPoint - mousePos;
+
             if (Math.Abs(diff.X) > SystemParameters.MinimumHorizontalDragDistance ||
                 Math.Abs(diff.Y) > SystemParameters.MinimumVerticalDragDistance)
             {
@@ -72,9 +121,13 @@ namespace ClientDesktop.View.MarketWatch
             }
         }
 
+        /// <summary>
+        /// Processes the dropped item to reorder the market watch list.
+        /// </summary>
         private void DataGrid_Drop(object sender, DragEventArgs e)
         {
             if (_draggedItem == null) return;
+
             DependencyObject dep = (DependencyObject)e.OriginalSource;
 
             while (dep != null && !(dep is DataGridRow))
@@ -114,12 +167,18 @@ namespace ClientDesktop.View.MarketWatch
                     }
                 }
             }
+
             _draggedItem = null;
             _isDragging = false;
         }
 
-        #region Search Box Keyboard Handlers
+        #endregion
 
+        #region Search Box & Suggestion Events
+
+        /// <summary>
+        /// Opens the suggestion popup when the search box receives focus.
+        /// </summary>
         private void AddBox_GotFocus(object sender, RoutedEventArgs e)
         {
             var vm = this.DataContext as MarketWatchViewModel;
@@ -129,10 +188,14 @@ namespace ClientDesktop.View.MarketWatch
             }
         }
 
+        /// <summary>
+        /// Handles keyboard interactions within the symbol search box.
+        /// </summary>
         private void AddBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             var txt = sender as TextBox;
             var vm = this.DataContext as MarketWatchViewModel;
+
             if (txt == null || vm == null) return;
 
             if (e.Key == Key.Tab || e.Key == Key.Enter)
@@ -168,6 +231,9 @@ namespace ClientDesktop.View.MarketWatch
             }
         }
 
+        /// <summary>
+        /// Handles keyboard interactions within the suggestion list.
+        /// </summary>
         private void SuggestionListBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Tab || e.Key == Key.Enter)
@@ -189,8 +255,11 @@ namespace ClientDesktop.View.MarketWatch
 
         #endregion
 
-        #region Custom DataGrid Sorting (To keep empty row at bottom)
+        #region Custom DataGrid Sorting
 
+        /// <summary>
+        /// Applies custom sorting logic to ensure the empty row remains at the bottom.
+        /// </summary>
         private void MarketGrid_Sorting(object sender, DataGridSortingEventArgs e)
         {
             var viewModel = this.DataContext as MarketWatchViewModel;
@@ -213,10 +282,15 @@ namespace ClientDesktop.View.MarketWatch
         #endregion
     }
 
+    #region Helper Classes
+
+    /// <summary>
+    /// Custom comparer to keep the empty row at the bottom during sorting.
+    /// </summary>
     public class EmptyRowStickyComparer : System.Collections.IComparer
     {
-        private string _propertyName;
-        private ListSortDirection _direction;
+        private readonly string _propertyName;
+        private readonly ListSortDirection _direction;
 
         public EmptyRowStickyComparer(string propertyName, ListSortDirection direction)
         {
@@ -233,13 +307,14 @@ namespace ClientDesktop.View.MarketWatch
             bool isYEmpty = string.IsNullOrWhiteSpace(itemY?.SymbolName);
 
             if (isXEmpty && isYEmpty) return 0;
-            if (isXEmpty) return 1;  
-            if (isYEmpty) return -1; 
+            if (isXEmpty) return 1;
+            if (isYEmpty) return -1;
 
             var propX = itemX?.GetType().GetProperty(_propertyName)?.GetValue(itemX, null);
             var propY = itemY?.GetType().GetProperty(_propertyName)?.GetValue(itemY, null);
 
             int result = 0;
+
             if (propX is IComparable compX && propY is IComparable compY)
             {
                 result = compX.CompareTo(compY);
@@ -251,7 +326,9 @@ namespace ClientDesktop.View.MarketWatch
         }
     }
 
-    // Proxy helper to allow DataGridColumns to bind to ViewModel properties
+    /// <summary>
+    /// Proxy class to facilitate data binding within DataGrid columns.
+    /// </summary>
     public class BindingProxy : Freezable
     {
         protected override Freezable CreateInstanceCore()
@@ -268,4 +345,6 @@ namespace ClientDesktop.View.MarketWatch
         public static readonly DependencyProperty DataProperty =
             DependencyProperty.Register("Data", typeof(object), typeof(BindingProxy), new PropertyMetadata(null));
     }
+
+    #endregion
 }

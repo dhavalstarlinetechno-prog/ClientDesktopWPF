@@ -2,6 +2,7 @@
 using ClientDesktop.Core.Config;
 using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
+using ClientDesktop.Infrastructure.Helpers;
 using ClientDesktop.Infrastructure.Logger;
 using ClientDesktop.Infrastructure.Services;
 using System.Collections.ObjectModel;
@@ -11,43 +12,50 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Threading;
 
-
 namespace ClientDesktop.ViewModel
 {
     public class MarketWatchViewModel : ViewModelBase
     {
+        #region Fields
+
         private readonly MarketWatchService _marketWatchService;
         private readonly SessionService _sessionService;
         private readonly IDialogService _dialogService;
+        private readonly LiveTickService _liveTickService;
 
+        private readonly SemaphoreSlim _syncLock = new SemaphoreSlim(1, 1);
+        private readonly HashSet<string> _nativeVisibleSymbols = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private readonly HashSet<string> _currentlySubscribed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        private int _debounceId = 0;
         private string _currentTime;
         private string _searchText;
         private int _selectedFontSize;
+        private string _newSymbolSearchText;
+        private string _symbolCountText;
+        private bool _isSuggestionOpen;
         private ICollectionView _marketView;
-        public ICollectionView MarketView => _marketView;
         private MarketWatchSymbols _selectedMarketItem;
+
+        private bool _showLtp = false;
+        private bool _showHighLow = false;
+        private bool _showOpen = false;
+        private bool _showClose = false;
+        private bool _showSpread = false;
+        private bool _showDcp = false;
+        private bool _showDcv = false;
+        private bool _showTime = true;
+
+        #endregion
+
+        #region Properties
+
         public ObservableCollection<MarketWatchSymbols> MarketWatchSymbolsCollection { get; set; }
         public ObservableCollection<MarketWatchSymbols> HiddenSymbolsCollection { get; set; }
         public ObservableCollection<MarketWatchSymbols> SuggestedSymbols { get; set; }
         public ObservableCollection<int> FontSizes { get; set; }
 
-        // --- Column Visibility Properties ---
-        private bool _showLtp = false;
-        public bool ShowLtp { get => _showLtp; set => SetProperty(ref _showLtp, value); }
-        private bool _showHighLow = false;
-        public bool ShowHighLow { get => _showHighLow; set => SetProperty(ref _showHighLow, value); }
-        private bool _showOpen = false;
-        public bool ShowOpen { get => _showOpen; set => SetProperty(ref _showOpen, value); }
-        private bool _showClose = false;
-        public bool ShowClose { get => _showClose; set => SetProperty(ref _showClose, value); }
-        private bool _showSpread = false;
-        public bool ShowSpread { get => _showSpread; set => SetProperty(ref _showSpread, value); }
-        private bool _showDcp = false;
-        public bool ShowDcp { get => _showDcp; set => SetProperty(ref _showDcp, value); }
-        private bool _showDcv = false;
-        public bool ShowDcv { get => _showDcv; set => SetProperty(ref _showDcv, value); }
-        private bool _showTime = true;
-        public bool ShowTime { get => _showTime; set => SetProperty(ref _showTime, value); }
+        public ICollectionView MarketView => _marketView;
 
         public string CurrentTime
         {
@@ -72,7 +80,6 @@ namespace ClientDesktop.ViewModel
             set { _selectedFontSize = value; OnPropertyChanged(); }
         }
 
-        private string _newSymbolSearchText;
         public string NewSymbolSearchText
         {
             get => _newSymbolSearchText;
@@ -83,14 +90,12 @@ namespace ClientDesktop.ViewModel
             }
         }
 
-        private string _symbolCountText;
         public string SymbolCountText
         {
             get => _symbolCountText;
             set => SetProperty(ref _symbolCountText, value);
         }
 
-        private bool _isSuggestionOpen;
         public bool IsSuggestionOpen
         {
             get => _isSuggestionOpen;
@@ -103,7 +108,19 @@ namespace ClientDesktop.ViewModel
             set => SetProperty(ref _selectedMarketItem, value);
         }
 
-        // --- Commands ---
+        public bool ShowLtp { get => _showLtp; set => SetProperty(ref _showLtp, value); }
+        public bool ShowHighLow { get => _showHighLow; set => SetProperty(ref _showHighLow, value); }
+        public bool ShowOpen { get => _showOpen; set => SetProperty(ref _showOpen, value); }
+        public bool ShowClose { get => _showClose; set => SetProperty(ref _showClose, value); }
+        public bool ShowSpread { get => _showSpread; set => SetProperty(ref _showSpread, value); }
+        public bool ShowDcp { get => _showDcp; set => SetProperty(ref _showDcp, value); }
+        public bool ShowDcv { get => _showDcv; set => SetProperty(ref _showDcv, value); }
+        public bool ShowTime { get => _showTime; set => SetProperty(ref _showTime, value); }
+
+        #endregion
+
+        #region Commands
+
         public ICommand HideSymbolCommand { get; }
         public ICommand HideAllCommand { get; }
         public ICommand ShowAllCommand { get; }
@@ -111,11 +128,22 @@ namespace ClientDesktop.ViewModel
         public ICommand ShowSpecification { get; }
         public ICommand AddSymbolCommand { get; }
 
-        public MarketWatchViewModel(MarketWatchService marketWatchService, SessionService sessionService, IDialogService dialogService)
+        #endregion
+
+        #region Constructor
+
+        /// <summary>
+        /// Initializes a new instance of the MarketWatchViewModel class.
+        /// </summary>
+        public MarketWatchViewModel(MarketWatchService marketWatchService, SessionService sessionService, IDialogService dialogService, LiveTickService liveTickService)
         {
             _marketWatchService = marketWatchService;
             _sessionService = sessionService;
             _dialogService = dialogService;
+
+            _liveTickService = liveTickService;
+            _liveTickService.OnTickReceived += HandleLiveTick;
+            _liveTickService.OnReconnected += HandleLiveReconnected;
 
             MarketWatchSymbolsCollection = new ObservableCollection<MarketWatchSymbols>();
             HiddenSymbolsCollection = new ObservableCollection<MarketWatchSymbols>();
@@ -124,11 +152,9 @@ namespace ClientDesktop.ViewModel
 
             for (int i = 10; i <= 30; i += 2) FontSizes.Add(i);
 
-            // Setup Filtering
             _marketView = CollectionViewSource.GetDefaultView(MarketWatchSymbolsCollection);
             _marketView.Filter = FilterMarketItems;
 
-            // Initialize Commands
             ShowSpecification = new RelayCommand(ShowSpecificationView);
             HideSymbolCommand = new AsyncRelayCommand(async (param) => await HideSymbolAsync(param));
             HideAllCommand = new AsyncRelayCommand(async (_) => await HideAllSymbolsAsync());
@@ -136,7 +162,6 @@ namespace ClientDesktop.ViewModel
             SaveProfileCommand = new AsyncRelayCommand(async (_) => await SaveClientWatchProfileAsync());
             AddSymbolCommand = new AsyncRelayCommand(async (param) => await AddSymbolAsync(param as MarketWatchSymbols));
 
-            // set up timer to update current time every second
             DispatcherTimer timer = new DispatcherTimer();
             timer.Interval = TimeSpan.FromSeconds(1);
             timer.Tick += (s, e) =>
@@ -146,17 +171,208 @@ namespace ClientDesktop.ViewModel
             timer.Start();
             CurrentTime = DateTime.Now.ToString("HH:mm:ss");
 
-            _sessionService.OnLoginSuccess += () => LoadData(forceSync: true);
+            _sessionService.OnLoginSuccess += async () =>
+            {
+                LoadData(forceSync: true);
+
+                string url = CommonHelper.ToReplaceUrl(AppConfig.MarketWatchSignalRUrl, _sessionService.PrimaryDomain, "sglr");
+
+                if (!string.IsNullOrEmpty(url))
+                {
+                    await _liveTickService.InitializeAndStartAsync(url);
+                }
+            };
+
             _marketWatchService.OnDataUpdated += UpdateMarketData;
+
+            _sessionService.OnLogout += async () =>
+            {
+                await _liveTickService.StopConnectionAsync();
+            };
         }
 
+        #endregion
 
+        #region Public Methods
 
+        /// <summary>
+        /// Loads market data locally without forcing synchronization.
+        /// </summary>
         public void LoadLocalData()
         {
             LoadData(forceSync: false);
         }
 
+        /// <summary>
+        /// Ensures an empty row exists at the bottom of the grid.
+        /// </summary>
+        public void EnsureEmptyRow()
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                if (MarketWatchSymbolsCollection == null) return;
+
+                var emptyRows = MarketWatchSymbolsCollection.Where(x => string.IsNullOrWhiteSpace(x.SymbolName)).ToList();
+                foreach (var row in emptyRows)
+                {
+                    MarketWatchSymbolsCollection.Remove(row);
+                }
+
+                MarketWatchSymbolsCollection.Add(new MarketWatchSymbols { SymbolName = "" });
+                UpdateSymbolCount();
+            });
+        }
+
+        /// <summary>
+        /// Sets the visibility tracking for a symbol to manage real-time subscriptions.
+        /// </summary>
+        public void SetSymbolVisibility(string symbolName, bool isVisible)
+        {
+            if (string.IsNullOrWhiteSpace(symbolName)) return;
+
+            lock (_nativeVisibleSymbols)
+            {
+                if (isVisible)
+                    _nativeVisibleSymbols.Add(symbolName);
+                else
+                    _nativeVisibleSymbols.Remove(symbolName);
+            }
+
+            DebounceSync();
+        }
+
+        #endregion
+
+        #region Real-Time Sync Logic
+
+        /// <summary>
+        /// Debounces rapid visibility changes before executing synchronization.
+        /// </summary>
+        private async void DebounceSync()
+        {
+            int currentId = Interlocked.Increment(ref _debounceId);
+
+            await Task.Delay(150);
+
+            if (currentId == _debounceId)
+            {
+                await ExecuteSyncAsync();
+            }
+        }
+
+        /// <summary>
+        /// Executes the synchronization process to subscribe or unsubscribe from symbols.
+        /// </summary>
+        private async Task ExecuteSyncAsync()
+        {
+            await _syncLock.WaitAsync();
+            try
+            {
+                HashSet<string> targetVisible;
+                lock (_nativeVisibleSymbols)
+                {
+                    targetVisible = new HashSet<string>(_nativeVisibleSymbols, StringComparer.OrdinalIgnoreCase);
+                }
+
+                var toRemove = _currentlySubscribed.Except(targetVisible).ToList();
+                var toAdd = targetVisible.Except(_currentlySubscribed).ToList();
+
+                var tasks = new List<Task>();
+
+                foreach (var sym in toRemove)
+                {
+                    tasks.Add(Task.Run(async () =>
+                    {
+                        if (await _liveTickService.UnsubscribeSymbolAsync(sym))
+                        {
+                            lock (_currentlySubscribed) _currentlySubscribed.Remove(sym);
+                        }
+                    }));
+                }
+
+                foreach (var sym in toAdd)
+                {
+                    tasks.Add(Task.Run(async () =>
+                    {
+                        if (await _liveTickService.SubscribeSymbolAsync(sym))
+                        {
+                            lock (_currentlySubscribed) _currentlySubscribed.Add(sym);
+                        }
+                    }));
+                }
+
+                await Task.WhenAll(tasks);
+            }
+            finally
+            {
+                _syncLock.Release();
+            }
+        }
+
+        /// <summary>
+        /// Processes incoming live tick data and updates the symbol model.
+        /// </summary>
+        private void HandleLiveTick(TickData tick)
+        {
+            Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                var existing = MarketWatchSymbolsCollection.FirstOrDefault(x => x.SymbolName == tick.SymbolName);
+                if (existing != null)
+                {
+                    if (tick.Bid != existing.Bid)
+                    {
+                        existing.BidDir = tick.Bid > existing.Bid ? 1 : -1;
+                        existing.TimeDir = existing.BidDir;
+                    }
+
+                    if (tick.Ask != existing.Ask)
+                    {
+                        existing.AskDir = tick.Ask > existing.Ask ? 1 : -1;
+                    }
+
+                    if (tick.Ltp != existing.Ltp)
+                    {
+                        existing.LtpDir = tick.Ltp > existing.Ltp ? 1 : -1;
+                    }
+
+                    existing.Bid = tick.Bid;
+                    existing.Ask = tick.Ask;
+                    existing.Ltp = tick.Ltp;
+                    existing.High = tick.High;
+                    existing.Low = tick.Low;
+                    existing.Open = tick.Open;
+                    existing.Close = tick.PreviousClose;
+
+                    existing.Spread = (double)GetSpread((decimal)tick.Ask, (decimal)tick.Bid, existing.SymbolDigit);
+                    existing.Dcp = GetDailyChangePercent((decimal)tick.Bid, (decimal)tick.PreviousClose).ToString("F2") + "%";
+                    existing.Dcv = (double)GetDailyChangeValue((decimal)tick.Bid, (decimal)tick.PreviousClose);
+                    existing.Time = ConvertToTime(tick.UpdateTime);
+                }
+            });
+        }
+
+        /// <summary>
+        /// Handles real-time reconnection by forcing a full data synchronization.
+        /// </summary>
+        private void HandleLiveReconnected()
+        {
+            Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                lock (_currentlySubscribed)
+                {
+                    _currentlySubscribed.Clear();
+                }
+                DebounceSync();
+            });
+        }
+
+        #endregion
+
+        #region API & Data Loading
+
+        /// <summary>
+        /// Fetches market data from the service.
+        /// </summary>
         private async void LoadData(bool forceSync)
         {
             var data = await _marketWatchService.GetMarketWatchDataAsync(forceSync);
@@ -167,6 +383,9 @@ namespace ClientDesktop.ViewModel
             }
         }
 
+        /// <summary>
+        /// Updates the market data collections based on API response.
+        /// </summary>
         private void UpdateMarketData(MarketWatchData marketWatchData)
         {
             if (marketWatchData == null) return;
@@ -206,39 +425,9 @@ namespace ClientDesktop.ViewModel
             }
         }
 
-        private void ApplyColumnVisibility(string apiFields)
-        {
-            if (string.IsNullOrEmpty(apiFields)) return;
-
-            var fields = new HashSet<string>(apiFields.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(f => f.Trim().ToLowerInvariant()));
-
-            if (fields.Contains("ltp")) ShowLtp = true;
-            if (fields.Contains("hl")) ShowHighLow = true;
-            if (fields.Contains("open")) ShowOpen = true;
-            if (fields.Contains("close")) ShowClose = true;
-            if (fields.Contains("time")) ShowTime = true;
-            if (fields.Contains("spread")) ShowSpread = true;
-            if (fields.Contains("dailychangepercentage")) ShowDcp = true;
-            if (fields.Contains("dailychangevalue")) ShowDcv = true;
-        }
-
-        private void ShowSpecificationView(object parameter)
-        {
-            var item = parameter as MarketWatchSymbols ?? SelectedMarketItem;
-
-            if (item != null && MarketWatchSymbolsCollection.Contains(item))
-            {
-                _dialogService.ShowDialog<SymbolSpecificationViewModel>(
-                    "Symbol Specification",
-                    configureViewModel: vm =>
-                    {
-                        vm.SymbolName = item.SymbolName;
-                        vm.SymbolId = item.SymbolId;
-                    }
-                );
-            }
-        }
-
+        /// <summary>
+        /// Saves the current symbol configuration and preferences to the server.
+        /// </summary>
         private async Task SaveClientWatchProfileAsync()
         {
             try
@@ -249,7 +438,6 @@ namespace ClientDesktop.ViewModel
                     return;
                 }
 
-                // 1. Prepare Column String based on Boolean Properties
                 var apiFields = new List<string>();
                 if (ShowLtp) apiFields.Add("ltp");
                 if (ShowHighLow) apiFields.Add("hl");
@@ -262,7 +450,6 @@ namespace ClientDesktop.ViewModel
 
                 string displayColumns = string.Join(",", apiFields);
 
-                // 2. Prepare Symbol Config
                 var symbolsConfig = new List<object>();
                 int position = 1;
 
@@ -278,7 +465,6 @@ namespace ClientDesktop.ViewModel
                     });
                 }
 
-                // 3. Create Payload
                 var payload = new
                 {
                     fontSize = SelectedFontSize,
@@ -286,7 +472,6 @@ namespace ClientDesktop.ViewModel
                     symbolsConfig = symbolsConfig
                 };
 
-                // 4. Call Service
                 var apiResp = await _marketWatchService.SaveProfileAsync(payload);
 
                 if (apiResp?.isSuccess == true)
@@ -304,8 +489,13 @@ namespace ClientDesktop.ViewModel
             }
         }
 
-        #region Hide & Show Symbols Feature
+        #endregion
 
+        #region Symbol Operations
+
+        /// <summary>
+        /// Hides a specific symbol from the market watch grid.
+        /// </summary>
         private async Task HideSymbolAsync(object parameter)
         {
             var item = parameter as MarketWatchSymbols ?? SelectedMarketItem;
@@ -313,6 +503,9 @@ namespace ClientDesktop.ViewModel
             await ProcessHideOperationAsync(new List<int> { item.SymbolId }, "Hide");
         }
 
+        /// <summary>
+        /// Hides all visible symbols from the market watch grid.
+        /// </summary>
         private async Task HideAllSymbolsAsync()
         {
             var visibleSymbols = MarketWatchSymbolsCollection
@@ -329,6 +522,9 @@ namespace ClientDesktop.ViewModel
             await ProcessHideOperationAsync(ids, "Hide All");
         }
 
+        /// <summary>
+        /// Processes API request to hide a collection of symbols.
+        /// </summary>
         private async Task ProcessHideOperationAsync(List<int> symbolIds, string operationName)
         {
             if (symbolIds == null || symbolIds.Count == 0) return;
@@ -368,6 +564,9 @@ namespace ClientDesktop.ViewModel
             }
         }
 
+        /// <summary>
+        /// Restores all hidden symbols back to the grid.
+        /// </summary>
         private async Task ShowAllSymbolsAsync()
         {
             try
@@ -385,8 +584,7 @@ namespace ClientDesktop.ViewModel
                 {
                     foreach (var symbol in symbolsToRestore)
                     {
-                        var existing = MarketWatchSymbolsCollection.FirstOrDefault(x =>
-                            x.SymbolName == symbol.SymbolName);
+                        var existing = MarketWatchSymbolsCollection.FirstOrDefault(x => x.SymbolName == symbol.SymbolName);
 
                         if (existing == null)
                         {
@@ -408,8 +606,9 @@ namespace ClientDesktop.ViewModel
             }
         }
 
-        #endregion
-
+        /// <summary>
+        /// Populates the suggestion list based on the search query.
+        /// </summary>
         private void SearchHiddenSymbols(string searchText)
         {
             IsSuggestionOpen = false;
@@ -437,6 +636,9 @@ namespace ClientDesktop.ViewModel
             }
         }
 
+        /// <summary>
+        /// Adds a selected symbol from the hidden list to the visible grid.
+        /// </summary>
         private async Task AddSymbolAsync(MarketWatchSymbols symbol)
         {
             if (symbol == null) return;
@@ -456,7 +658,52 @@ namespace ClientDesktop.ViewModel
             await Task.CompletedTask;
         }
 
+        #endregion
+
         #region Helpers
+
+        /// <summary>
+        /// Applies column visibility settings based on the provided API string.
+        /// </summary>
+        private void ApplyColumnVisibility(string apiFields)
+        {
+            if (string.IsNullOrEmpty(apiFields)) return;
+
+            var fields = new HashSet<string>(apiFields.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(f => f.Trim().ToLowerInvariant()));
+
+            if (fields.Contains("ltp")) ShowLtp = true;
+            if (fields.Contains("hl")) ShowHighLow = true;
+            if (fields.Contains("open")) ShowOpen = true;
+            if (fields.Contains("close")) ShowClose = true;
+            if (fields.Contains("time")) ShowTime = true;
+            if (fields.Contains("spread")) ShowSpread = true;
+            if (fields.Contains("dailychangepercentage")) ShowDcp = true;
+            if (fields.Contains("dailychangevalue")) ShowDcv = true;
+        }
+
+        /// <summary>
+        /// Opens the symbol specification dialog for the selected item.
+        /// </summary>
+        private void ShowSpecificationView(object parameter)
+        {
+            var item = parameter as MarketWatchSymbols ?? SelectedMarketItem;
+
+            if (item != null && MarketWatchSymbolsCollection.Contains(item))
+            {
+                _dialogService.ShowDialog<SymbolSpecificationViewModel>(
+                    "Symbol Specification",
+                    configureViewModel: vm =>
+                    {
+                        vm.SymbolName = item.SymbolName;
+                        vm.SymbolId = item.SymbolId;
+                    }
+                );
+            }
+        }
+
+        /// <summary>
+        /// Maps API symbol model to the application symbol model.
+        /// </summary>
         private MarketWatchSymbols CreateMarketItem(MarketWatchApiSymbol apiSymbol)
         {
             var book = apiSymbol.symbolBook;
@@ -482,27 +729,12 @@ namespace ClientDesktop.ViewModel
                 Dcp = GetDailyChangePercent(bid, close).ToString("F2") + "%",
                 Dcv = (double)GetDailyChangeValue(bid, close),
                 Time = ConvertToTime(updateTime),
-                IsUp = ltp > close
             };
         }
 
-        public void EnsureEmptyRow()
-        {
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                if (MarketWatchSymbolsCollection == null) return;
-
-                var emptyRows = MarketWatchSymbolsCollection.Where(x => string.IsNullOrWhiteSpace(x.SymbolName)).ToList();
-                foreach (var row in emptyRows)
-                {
-                    MarketWatchSymbolsCollection.Remove(row);
-                }
-
-                MarketWatchSymbolsCollection.Add(new MarketWatchSymbols { SymbolName = "" });
-                UpdateSymbolCount();
-            });
-        }
-
+        /// <summary>
+        /// Updates the displayed symbol count text.
+        /// </summary>
         private void UpdateSymbolCount()
         {
             int visibleCount = MarketWatchSymbolsCollection.Count(s => !string.IsNullOrWhiteSpace(s.SymbolName));
@@ -512,6 +744,9 @@ namespace ClientDesktop.ViewModel
             SymbolCountText = $"{visibleCount} / {totalCount}";
         }
 
+        /// <summary>
+        /// Converts unix timestamp to a local time string format.
+        /// </summary>
         private string ConvertToTime(long timestamp)
         {
             if (timestamp <= 0) return "--:--:--";
@@ -524,6 +759,9 @@ namespace ClientDesktop.ViewModel
             catch { return "--:--:--"; }
         }
 
+        /// <summary>
+        /// Filters market items based on the search input.
+        /// </summary>
         private bool FilterMarketItems(object item)
         {
             if (string.IsNullOrWhiteSpace(SearchText)) return true;
@@ -535,6 +773,9 @@ namespace ClientDesktop.ViewModel
             return marketWatchSymbols != null && marketWatchSymbols.SymbolName.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
+        /// <summary>
+        /// Calculates the spread based on ask and bid prices.
+        /// </summary>
         private decimal GetSpread(decimal ask, decimal bid, int symbolDigit)
         {
             try
@@ -545,13 +786,20 @@ namespace ClientDesktop.ViewModel
             catch { return 0; }
         }
 
+        /// <summary>
+        /// Calculates the daily change percentage based on WinForms logic.
+        /// </summary>
         private decimal GetDailyChangePercent(decimal bid, decimal close)
         {
             if (bid == 0) return 0;
-            return Math.Round((100 * (bid - close)) / bid, 2); // WinForms formula
+            return Math.Round((100 * (bid - close)) / bid, 2);
         }
 
+        /// <summary>
+        /// Calculates the daily change value difference.
+        /// </summary>
         private decimal GetDailyChangeValue(decimal bid, decimal close) => bid - close;
+
         #endregion
     }
 }

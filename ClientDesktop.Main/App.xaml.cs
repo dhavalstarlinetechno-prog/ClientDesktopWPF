@@ -1,21 +1,36 @@
 ﻿using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Infrastructure.Helpers;
 using ClientDesktop.Infrastructure.Services;
-using ClientDesktop.Main.Login; 
-using ClientDesktop.ViewModel;  
-using Microsoft.Extensions.DependencyInjection; 
+using ClientDesktop.ViewModel;
+using Microsoft.Extensions.DependencyInjection;
 using System.Windows;
 
 namespace ClientDesktop.Main
 {
+    /// <summary>
+    /// Interaction logic for App.xaml. Acts as the entry point and configures dependency injection.
+    /// </summary>
     public partial class App : Application
     {
+        #region Properties
+
+        /// <summary>
+        /// Gets the global service provider for dependency injection.
+        /// </summary>
         public static IServiceProvider ServiceProvider { get; private set; }
 
+        #endregion
+
+        #region Protected Methods
+
+        /// <summary>
+        /// Triggers upon application startup to initialize services and launch the main window.
+        /// </summary>
         protected override void OnStartup(StartupEventArgs e)
         {
             var services = new ServiceCollection();
             ConfigureServices(services);
+
             ServiceProvider = services.BuildServiceProvider();
             AppServiceLocator.Current = ServiceProvider;
 
@@ -30,9 +45,16 @@ namespace ClientDesktop.Main
             base.OnStartup(e);
         }
 
+        #endregion
+
+        #region Private Methods
+
+        /// <summary>
+        /// Registers all required core services, view models, and views into the dependency injection container.
+        /// </summary>
         private void ConfigureServices(IServiceCollection services)
         {
-            // 1. Core Services
+            // Core Services
             services.AddSingleton<SessionService>();
             services.AddSingleton<AuthService>();
             services.AddSingleton<ClientService>();
@@ -43,13 +65,17 @@ namespace ClientDesktop.Main
             services.AddSingleton<LedgerService>();
             services.AddSingleton<SymbolSpecificationService>();
             services.AddSingleton<InvoiceService>();
-            // 2. Api Service
+
+            // Api Service
             services.AddSingleton<IApiService, ApiService>();
 
-            // 3. Dialog Service (Interface mapping)
+            // SignalR Service
+            services.AddSingleton<LiveTickService>();
+
+            // Dialog Service (Interface mapping)
             services.AddSingleton<IDialogService, DialogService>();
 
-            // 4. ViewModels
+            // ViewModels
             services.AddTransient<LoginPageViewModel>();
             services.AddSingleton<MainWindowViewModel>();
             services.AddSingleton<MarketWatchViewModel>();
@@ -59,8 +85,11 @@ namespace ClientDesktop.Main
             services.AddTransient<LedgerViewModel>();
             services.AddTransient<SymbolSpecificationViewModel>();
             services.AddTransient<InvoiceViewModel>();
-            // 5. Views (Windows)
+
+            // Views (Windows)
             services.AddSingleton<MainWindow>();
         }
+
+        #endregion
     }
 }

@@ -6,14 +6,33 @@ using ClientDesktop.Infrastructure.Logger;
 
 namespace ClientDesktop.Infrastructure.Services
 {
+    /// <summary>
+    /// Service responsible for managing market watch data, user profiles, and symbol visibility.
+    /// </summary>
     public class MarketWatchService
     {
+        #region Fields
+
         private readonly IApiService _apiService;
         private readonly SessionService _sessionService;
         private readonly IRepository<MarketWatchData> _repo;
 
+        #endregion
+
+        #region Events
+
+        /// <summary>
+        /// Event triggered when the market watch data is successfully updated from the API.
+        /// </summary>
         public event Action<MarketWatchData> OnDataUpdated;
 
+        #endregion
+
+        #region Constructor
+
+        /// <summary>
+        /// Initializes a new instance of the MarketWatchService class.
+        /// </summary>
         public MarketWatchService(IApiService apiService, SessionService sessionService)
         {
             _apiService = apiService;
@@ -21,6 +40,13 @@ namespace ClientDesktop.Infrastructure.Services
             _repo = new FileRepository<MarketWatchData>();
         }
 
+        #endregion
+
+        #region Public Methods
+
+        /// <summary>
+        /// Retrieves market watch data from the local repository or API based on the sync flag.
+        /// </summary>
         public async Task<MarketWatchData> GetMarketWatchDataAsync(bool forceApiSync = false)
         {
             try
@@ -67,6 +93,9 @@ namespace ClientDesktop.Infrastructure.Services
             }
         }
 
+        /// <summary>
+        /// Saves the client's market watch profile configuration to the server.
+        /// </summary>
         public async Task<HideSymbolResponse> SaveProfileAsync(object payload)
         {
             try
@@ -81,6 +110,9 @@ namespace ClientDesktop.Infrastructure.Services
             }
         }
 
+        /// <summary>
+        /// Sends a request to the server to hide specific symbols for the user.
+        /// </summary>
         public async Task<HideSymbolResponse> HideSymbolsAsync(List<int> symbolIds)
         {
             try
@@ -95,5 +127,7 @@ namespace ClientDesktop.Infrastructure.Services
                 return null;
             }
         }
+
+        #endregion
     }
 }
