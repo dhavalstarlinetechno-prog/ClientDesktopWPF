@@ -60,41 +60,51 @@
          Visibility="Visible">
 
             <Grid>
+                <Grid VerticalAlignment="Top" Margin="15,30,15,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-                <!-- Password Section -->
+                    <Viewbox Width="35" Height="35" Margin="0,2,10,0" VerticalAlignment="Top" Grid.Column="0">
+                        <Canvas Width="24" Height="24">
+                            <Path Fill="#F3B021" Data="M19,3H5C3.9,3,3,3.9,3,5v14c0,1.1,0.9,2,2,2h14c1.1,0,2-0.9,2-2V5C21,3.9,20.1,3,19,3z"/>
+                            <Path Fill="#FFFFFF" Data="M7,7h10v4H7V7z M7,13h2v2H7V13z M11,13h2v2h-2V13z M15,13h2v2h-2V13z M7,17h2v2H7V17z M11,17h2v2h-2V17z M15,17h2v2h-2V17z"/>
+                        </Canvas>
+                    </Viewbox>
+
+                    <TextBlock x:Name="Lbldetails"
+                   Grid.Column="1"
+                   FontWeight="Bold"
+                   TextWrapping="Wrap"
+                   FontSize="15.5"                  
+                   LineHeight="22"
+                   Text="This report represents sample ledger format. It contains sample data only for education purpose. Ledger can be displayed in below structure." 
+                   FontFamily="Microsoft Sans Serif"
+                   VerticalAlignment="Top"/>
+                </Grid>
+
                 <StackPanel Orientation="Horizontal"
-                     HorizontalAlignment="Center"
-                     VerticalAlignment="Center">
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center">
 
                     <PasswordBox x:Name="TxtPassword"
-                          Width="227"
-                          Height="27"
-                          VerticalContentAlignment="Center"
-                          PasswordChanged="TxtPassword_PasswordChanged" 
-                          HorizontalAlignment="Center" 
-                          VerticalAlignment="Center" 
-                          FontFamily="Microsoft Sans Serif" 
-                          FontSize="13"/>
+                     Width="227"
+                     Height="27"
+                     VerticalContentAlignment="Center"
+                     PasswordChanged="TxtPassword_PasswordChanged" 
+                     FontFamily="Microsoft Sans Serif" 
+                     FontSize="13"/>
 
                     <Button x:Name="Btngo"
-                     Content="Go"
-                     Width="82"
-                     Height="30"                     
-                     Margin="10,0" 
-                     FontFamily="Microsoft Sans Serif"       
-                     Click="Btngo_Click"                     
-                     Style="{StaticResource FixedBlueButtonStyle}"/>
+                Content="Go"
+                Width="82"
+                Height="30"                      
+                Margin="10,0" 
+                FontFamily="Microsoft Sans Serif"        
+                Click="Btngo_Click"                      
+                Style="{StaticResource FixedBlueButtonStyle}"/>
                 </StackPanel>
-
-                <!-- Details -->
-                <TextBlock x:Name="Lbldetails"
-                    Margin="65,30,65,0"
-                    FontWeight="Bold"
-                    TextWrapping="Wrap"
-                    VerticalAlignment="Top"
-                    FontSize="15"
-                    Text="This report represents sample ledger format. It contains sample data only for education purpose. Ledger can be displayed in below structure." FontFamily="Microsoft Sans Serif"/>
-                <Image HorizontalAlignment="Left" Height="40" Margin="9,29,0,0" VerticalAlignment="Top" Width="50"/>
             </Grid>
         </Border>
 
@@ -127,6 +137,7 @@
 
                     <!-- Start Date Picker -->
                     <DatePicker x:Name="Dtpstartdate"
+                                Style="{StaticResource CustomDatePickerStyle}"
                                 Grid.Column="1"
                                 Width="135"
                                 Height="26"
@@ -143,6 +154,7 @@
 
                     <!-- End Date Picker -->
                     <DatePicker x:Name="Dtpenddate"
+                                Style="{StaticResource CustomDatePickerStyle}"
                                 Grid.Column="3"
                                 Width="135"
                                 Height="26"
@@ -205,9 +217,8 @@
 
                <TextBlock x:Name="TxtNoData"
                Text="No Data Available"
-               FontSize="15"
-               FontWeight="Bold"
-               Foreground="Black"
+               FontSize="24"             
+               Foreground="Gray"
                Visibility="Collapsed"
                HorizontalAlignment="Center"
                VerticalAlignment="Center" Margin="0,0,0,250" FontFamily="Microsoft Sans Serif"/>

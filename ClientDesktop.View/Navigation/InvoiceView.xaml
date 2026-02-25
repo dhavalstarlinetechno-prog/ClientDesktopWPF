@@ -6,57 +6,68 @@
              xmlns:local="clr-namespace:ClientDesktop.View.Navigation"
              mc:Ignorable="d" 
              d:DesignHeight="1000" d:DesignWidth="653">
-    <UserControl.Resources>
 
+    <UserControl.Resources>
+        <!-- Button Style -->
         <Style x:Key="FixedBlueButtonStyle" TargetType="Button">
-            <!-- Default (Enabled State) -->
             <Setter Property="Background" Value="CornflowerBlue"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="BorderBrush" Value="CornflowerBlue"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Cursor" Value="Hand"/>
-
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="border"
-                 Background="{TemplateBinding Background}"
-                 BorderBrush="{TemplateBinding BorderBrush}"
-                 BorderThickness="{TemplateBinding BorderThickness}"
-                 CornerRadius="3">
-                            <ContentPresenter 
-                 HorizontalAlignment="Center"
-                 VerticalAlignment="Center"
-                 RecognizesAccessKey="True"
-                 TextElement.Foreground="{TemplateBinding Foreground}"/>
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="3">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              RecognizesAccessKey="True"
+                                              TextElement.Foreground="{TemplateBinding Foreground}"/>
                         </Border>
-
                         <ControlTemplate.Triggers>
-                            <!-- When Disabled -->
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Foreground" Value="Black"/>
                                 <Setter TargetName="border" Property="Opacity" Value="0.7"/>
                             </Trigger>
-
                         </ControlTemplate.Triggers>
-
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
 
+        <!-- DataGrid Header Style -->
         <Style x:Key="DataGridHeaderStyle" TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="White"/>
-            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontWeight" Value="Regular"/>
             <Setter Property="BorderBrush" Value="LightGray"/>
             <Setter Property="BorderThickness" Value="0,0,1,1"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="Padding" Value="5"/>
         </Style>
+
+        <!-- Column Alignment Styles -->
+        <Style x:Key="LeftAlignedCellStyle" TargetType="TextBlock">
+            <Setter Property="TextAlignment" Value="Left"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="Margin" Value="10,2,5,2"/>
+        </Style>
+        <Style x:Key="RightAlignedCellStyle" TargetType="TextBlock">
+            <Setter Property="TextAlignment" Value="Right"/>
+            <Setter Property="HorizontalAlignment" Value="Right"/>
+            <Setter Property="Margin" Value="5,2,10,2"/>
+        </Style>
+        <Style x:Key="RightAlignedHeaderStyle" TargetType="DataGridColumnHeader" BasedOn="{StaticResource DataGridHeaderStyle}">
+            <Setter Property="HorizontalContentAlignment" Value="Right"/>
+            <Setter Property="Padding" Value="0,0,10,0"/>
+        </Style>
     </UserControl.Resources>
 
     <Grid>
+        <!-- Password Panel -->
         <Grid x:Name="Mainpanel" Visibility="Visible">
             <Border BorderBrush="Gray" BorderThickness="1">
                 <Grid>
@@ -66,46 +77,38 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <TextBlock x:Name="Lbltext"
-                           Grid.Row="0"
-                           Margin="40,30,40,20"
-                           FontSize="15"
-                           FontWeight="Bold"
-                           TextWrapping="Wrap"
-                           HorizontalAlignment="Center"
-                           FontFamily="Microsoft Sans Serif"
-                           Text="This report represents sample invoice format. It contains sample data only for education purpose. Invoice can be displayed in &#x0a;below structure"/>
+                    <Viewbox Width="40" Height="40" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="10,0,10,0">
+                        <Canvas Width="100" Height="100">
+                            <Ellipse Fill="#FF3498DB" Width="96" Height="96" Canvas.Left="2" Canvas.Top="2"/>
+                            <Rectangle Fill="#FFF1C40F" Width="40" Height="55" Canvas.Left="30" Canvas.Top="20" RadiusX="2" RadiusY="2"/>
+                            <Rectangle Fill="White" Width="34" Height="49" Canvas.Left="33" Canvas.Top="23"/>
+                            <Rectangle Fill="#FFE74C3C" Width="16" Height="6" Canvas.Left="42" Canvas.Top="18"/>
+                            <Ellipse Fill="#FFE74C3C" Width="4" Height="4" Canvas.Left="36" Canvas.Top="30"/>
+                            <Rectangle Fill="#FFBDC3C7" Width="20" Height="2" Canvas.Left="42" Canvas.Top="31"/>
+                            <Ellipse Fill="#FFE74C3C" Width="4" Height="4" Canvas.Left="36" Canvas.Top="40"/>
+                            <Rectangle Fill="#FFBDC3C7" Width="20" Height="2" Canvas.Left="42" Canvas.Top="41"/>
+                            <Ellipse Fill="#FFE74C3C" Width="4" Height="4" Canvas.Left="36" Canvas.Top="50"/>
+                            <Rectangle Fill="#FFBDC3C7" Width="20" Height="2" Canvas.Left="42" Canvas.Top="51"/>
+                            <Ellipse Fill="#FFF1C40F" Stroke="#FFE67E22" StrokeThickness="1" Width="22" Height="22" Canvas.Left="58" Canvas.Top="58"/>
+                            <Path Stroke="White" StrokeThickness="2.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                              Data="M 64,70 L 67,73 L 74,66" />
+                        </Canvas>
+                    </Viewbox>
 
-                    <StackPanel Grid.Row="1"
-                            Orientation="Horizontal"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Margin="0,-80,0,0">
-                        <PasswordBox x:Name="TxtPassword"
-                                 Width="188"
-                                 Height="24"
-                                 VerticalContentAlignment="Center"
-                                 FontFamily="Microsoft Sans Serif" 
-                                 FontSize="13"    
-                                 PasswordChanged="TxtPassword_PasswordChanged"/>
+                    <TextBlock x:Name="Lbltext" Grid.Row="0" Margin="40,30,40,20" FontSize="15" FontWeight="Bold" TextWrapping="Wrap" HorizontalAlignment="Center" FontFamily="Microsoft Sans Serif" Text="This report represents sample invoice format. It contains sample data only for education purpose. Invoice can be displayed in &#x0a;below structure"/>
 
-                        <Button x:Name="Btngo"
-                            Content="Go"
-                            Width="82"
-                            Height="30"
-                            Margin="10,0,0,0"                          
-                            FontFamily="Microsoft Sans Serif" 
-                            Click="Btngo_Click"
-                            Style="{StaticResource FixedBlueButtonStyle}"/>
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-80,0,0">
+                        <PasswordBox x:Name="TxtPassword" Width="188" Height="24" VerticalContentAlignment="Center" FontFamily="Microsoft Sans Serif" PasswordChanged="TxtPassword_PasswordChanged"/>
+                        <Button x:Name="Btngo" Content="Go" Width="82" Height="30" Margin="10,0,0,0" FontFamily="Microsoft Sans Serif" Click="Btngo_Click" Style="{StaticResource FixedBlueButtonStyle}"/>
                     </StackPanel>
                 </Grid>
             </Border>
         </Grid>
 
-        <Grid x:Name="Childpanel" Background="White" Visibility="Visible">
+        <!-- Main Content Panel -->
+        <Grid x:Name="Childpanel" Background="White" Visibility="Hidden">
             <Border BorderBrush="Gray" BorderThickness="1">
                 <Grid Margin="10">
-
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
@@ -116,7 +119,6 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
-
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
@@ -125,81 +127,95 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
-                        <Label Content="Select Week :"
-                           Grid.Row="0"
-                           Grid.Column="0"
-                           FontFamily="Microsoft Sans Serif"
-                           FontSize="13"
-                           VerticalAlignment="Center"
-                           FontWeight="Regular"/>
+                        <Label Content="Select Week :" Grid.Row="0" Grid.Column="0" FontFamily="Microsoft Sans Serif" FontSize="13" VerticalAlignment="Center" FontWeight="Regular"/>
 
-                        <ComboBox x:Name="Cmbselectweek"
-                              Grid.Row="0"
-                              Grid.Column="1"
-                              Width="260"
-                              Height="26"
-                              Margin="10,0,0,0"                              
-                              FontFamily="Microsoft Sans Serif"
-                              VerticalContentAlignment="Center"
-                              Background="White"
-                              BorderBrush="White"
-                              FontSize="13" SelectionChanged="Cmbselectweek_SelectionChanged">
+                        <ComboBox x:Name="Cmbselectweek" 
+                            Style="{StaticResource CustomComboBoxStyle}"      
+                            Grid.Row="0" Grid.Column="1" 
+                            Width="260" Height="26" 
+                            Margin="10,0,0,0" 
+                            FontFamily="Microsoft Sans Serif" 
+                            VerticalContentAlignment="Center"                                                        
+                            SelectionChanged="Cmbselectweek_SelectionChanged">
                             <ComboBoxItem Content="Select" IsSelected="True"/>
                             <ComboBoxItem Content="Current week"/>
                             <ComboBoxItem Content="Previous Week"/>
                             <ComboBoxItem Content="Last Previous Week"/>
                         </ComboBox>
 
-                        <Button x:Name="Btngetdata"
-                            Content="Go"
-                            Grid.Row="0"
-                            Grid.Column="2"
-                            Width="82"
-                            Height="30"
-                            Margin="10,0,0,0"                            
-                            Click="Btngetdata_Click"
-                            Style="{StaticResource FixedBlueButtonStyle}"/>
+                        <Button x:Name="Btngetdata" Content="Go" Grid.Row="0" Grid.Column="2" Width="82" Height="30" Margin="10,0,0,0" Click="Btngetdata_Click" Style="{StaticResource FixedBlueButtonStyle}"/>
 
-                        <Image Grid.Row="0"
-                           Grid.Column="4"
-                           Width="35"
-                           Height="35"
-                           HorizontalAlignment="Right"
-                           Visibility="Hidden"
-                           Cursor="Hand"/>
-
-                        <Label x:Name="Lblfrom"
-                           Grid.Row="1"
-                           Grid.Column="0"
-                           Grid.ColumnSpan="5"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center"
-                           FontWeight="Bold"
-                           FontSize="14"
-                           Content=""
-                           Margin="0,5,0,5"/>
-
-                        <Label x:Name="Lblfromdate"
-                           Grid.Row="1"
-                           Grid.Column="0"
-                           Grid.ColumnSpan="5"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center"
-                           FontWeight="Bold"
-                           FontSize="14"
-                           Content=""
-                           Visibility="Collapsed" 
-                           Margin="0,5,0,5"/>
+                        <Label x:Name="Lblfrom" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="5" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" FontSize="14" Content="" Margin="0,5,0,5"/>
+                        <Label x:Name="Lblfromdate" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="5" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" FontSize="14" Content="" Visibility="Collapsed" Margin="0,5,0,5"/>
                     </Grid>
 
-                    <Border x:Name="Gridpanel"
-                        Grid.Row="1"                     
-                        BorderBrush="LightGray"
-                        BorderThickness="1"
-                        Margin="10">
+                    <Border x:Name="Gridpanel" Grid.Row="1" BorderBrush="LightGray" BorderThickness="1" Margin="10">
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
-                            <StackPanel x:Name="GridpanelContent"
-                                    Margin="10"/>
+                            <StackPanel x:Name="GridpanelContent" Margin="10">
+
+                                <!-- 1. Security Grids (Dynamic list bound from Code) -->
+                                <ItemsControl x:Name="SecurityGridsList">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding SecurityName}" FontWeight="Bold" Margin="0,15,0,5" FontSize="14" />
+                                                <DataGrid ItemsSource="{Binding SecurityData}" 
+                                                          Style="{StaticResource CustomDataGrid}"
+                                                          Margin="0,0,0,20" ColumnWidth="*" CanUserSortColumns="False"                                                                                                             
+                                                          LoadingRow="SecurityDataGrid_LoadingRow"
+                                                          SelectionChanged="DataGrid_SelectionChanged">
+                                                    <DataGrid.Columns>
+                                                        <DataGridTextColumn Header="Date" Binding="{Binding Date}" Width="180" MinWidth="180" ElementStyle="{StaticResource LeftAlignedCellStyle}"/>
+                                                        <DataGridTextColumn Header="Type" Binding="{Binding Type}" ElementStyle="{StaticResource LeftAlignedCellStyle}"/>
+                                                        <DataGridTextColumn Header="B Vol" Binding="{Binding BVol}" ElementStyle="{StaticResource RightAlignedCellStyle}" HeaderStyle="{StaticResource RightAlignedHeaderStyle}"/>
+                                                        <DataGridTextColumn Header="S Vol" Binding="{Binding SVol}" ElementStyle="{StaticResource RightAlignedCellStyle}" HeaderStyle="{StaticResource RightAlignedHeaderStyle}"/>
+                                                        <DataGridTextColumn Header="Rate" Binding="{Binding Rate}" ElementStyle="{StaticResource RightAlignedCellStyle}" HeaderStyle="{StaticResource RightAlignedHeaderStyle}"/>
+                                                        <DataGridTextColumn Header="Comm" Binding="{Binding Comm}" ElementStyle="{StaticResource RightAlignedCellStyle}" HeaderStyle="{StaticResource RightAlignedHeaderStyle}"/>
+                                                        <DataGridTextColumn Header="Net" Binding="{Binding Net}" ElementStyle="{StaticResource RightAlignedCellStyle}" HeaderStyle="{StaticResource RightAlignedHeaderStyle}"/>
+                                                    </DataGrid.Columns>
+                                                </DataGrid>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <!-- 2. Summary Grid -->
+                                <StackPanel x:Name="SummaryPanel" Visibility="Collapsed">
+                                    <TextBlock Text="SUMMARY" FontWeight="Bold" FontSize="15" HorizontalAlignment="Center" Margin="0,20,0,10" />
+                                    <DataGrid x:Name="SummaryDataGrid"
+                                              Style="{StaticResource CustomDataGrid}"                                          
+                                              CanUserSortColumns="False"
+                                              Margin="0,0,0,20" ColumnWidth="*"                                                                                           
+                                              LoadingRow="SummaryDataGrid_LoadingRow"
+                                              SelectionChanged="DataGrid_SelectionChanged">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Symbol" Binding="{Binding Symbol}" Width="400" MinWidth="400" ElementStyle="{StaticResource LeftAlignedCellStyle}"/>
+                                            <DataGridTextColumn Header="M2M" Binding="{Binding M2M}" ElementStyle="{StaticResource RightAlignedCellStyle}" HeaderStyle="{StaticResource RightAlignedHeaderStyle}"/>
+                                            <DataGridTextColumn Header="Comm" Binding="{Binding Comm}" ElementStyle="{StaticResource RightAlignedCellStyle}" HeaderStyle="{StaticResource RightAlignedHeaderStyle}"/>
+                                            <DataGridTextColumn Header="Total" Binding="{Binding Total}" ElementStyle="{StaticResource RightAlignedCellStyle}" HeaderStyle="{StaticResource RightAlignedHeaderStyle}"/>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </StackPanel>
+
+                                <!-- 3. Carry Forward Grid -->
+                                <StackPanel x:Name="CarryForwardPanel" Visibility="Collapsed">
+                                    <TextBlock Text="CARRY FORWARD" FontWeight="Bold" FontSize="15" HorizontalAlignment="Center" Margin="0,20,0,10" />
+                                    <DataGrid x:Name="CarryForwardDataGrid"
+                                              Style="{StaticResource CustomDataGrid}"
+                                              Margin="0,0,0,20" ColumnWidth="*"                                          
+                                              CanUserSortColumns="False"
+                                              LoadingRow="CarryForwardDataGrid_LoadingRow"
+                                              SelectionChanged="DataGrid_SelectionChanged">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Symbol" Binding="{Binding Symbol}" Width="400" MinWidth="400" ElementStyle="{StaticResource LeftAlignedCellStyle}"/>
+                                            <DataGridTextColumn Header="Type" Binding="{Binding Type}" ElementStyle="{StaticResource RightAlignedCellStyle}" HeaderStyle="{StaticResource RightAlignedHeaderStyle}"/>
+                                            <DataGridTextColumn Header="Quantity" Binding="{Binding Quantity}" ElementStyle="{StaticResource RightAlignedCellStyle}" HeaderStyle="{StaticResource RightAlignedHeaderStyle}"/>
+                                            <DataGridTextColumn Header="Net" Binding="{Binding Net}" ElementStyle="{StaticResource RightAlignedCellStyle}" HeaderStyle="{StaticResource RightAlignedHeaderStyle}"/>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </StackPanel>
+
+                            </StackPanel>
                         </ScrollViewer>
                     </Border>
                 </Grid>

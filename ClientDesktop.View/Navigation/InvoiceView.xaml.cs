@@ -27,6 +27,26 @@ using System.Windows.Shapes;
 
 namespace ClientDesktop.View.Navigation
 {
+    // Data Models for Dynamic Binding
+    public class SecurityGridItem
+    {
+        public string SecurityName { get; set; }
+        public List<SecurityRow> SecurityData { get; set; }
+    }
+
+    //public class SecurityRow
+    //{
+    //    public string Date { get; set; }
+    //    public string Type { get; set; }
+    //    public string BVol { get; set; }
+    //    public string SVol { get; set; }
+    //    public string Rate { get; set; }
+    //    public string Comm { get; set; }
+    //    public string Net { get; set; }
+    //    public bool IsHeader { get; set; }
+    //    public bool IsTotal { get; set; }
+    //}
+
     /// <summary>
     /// Interaction logic for InvoiceView.xaml
     /// </summary>
@@ -34,7 +54,7 @@ namespace ClientDesktop.View.Navigation
     {
         private readonly InvoiceViewModel _viewModel;
         private readonly SessionService _sessionService;
-        bool isDataLoaded = false;       
+        bool isDataLoaded = false;
         DateTime today = DateTime.Today;
         DateTime thisWeekStart = new DateTime();
         DateTime thisWeekEnd = new DateTime();
@@ -42,6 +62,7 @@ namespace ClientDesktop.View.Navigation
         public static string todatefilter = string.Empty;
         private PDFBuilder _pdfBuilder = new PDFBuilder();
         Invoicemodel invoice = new Invoicemodel();
+
         public InvoiceView()
         {
             InitializeComponent();
@@ -52,7 +73,6 @@ namespace ClientDesktop.View.Navigation
                 _sessionService = AppServiceLocator.GetService<SessionService>();
                 _viewModel = AppServiceLocator.GetService<InvoiceViewModel>();
 
-                // Set DataContext once
                 this.DataContext = _viewModel;
             }
         }
@@ -60,7 +80,7 @@ namespace ClientDesktop.View.Navigation
         private async void Btngo_Click(object sender, RoutedEventArgs e)
         {
             Btngo.IsEnabled = false;
-            if (Childpanel.Visibility == Visibility.Hidden)                
+            if (Childpanel.Visibility == Visibility.Hidden)
             {
                 bool isValid = await _viewModel.VerifyPasswordAsync(TxtPassword.Password);
                 if (isValid)
@@ -82,6 +102,12 @@ namespace ClientDesktop.View.Navigation
                         Btngetdata.IsEnabled = false;
                         Lblfrom.Visibility = Visibility.Hidden;
                         Lblfromdate.Content = CommonMessages.NoDataAvailable;
+                        if (Lblfromdate.Content.ToString() == "No Data Avaliable")
+                        {
+                            Lblfromdate.FontSize = 20;
+                            Lblfromdate.Foreground = Brushes.Gray;
+                            Lblfromdate.FontWeight = FontWeights.Regular;
+                        }
                         Lblfromdate.Visibility = Visibility.Visible;
                     }
                 }
@@ -156,7 +182,13 @@ namespace ClientDesktop.View.Navigation
                 return;
             }
 
-            GridpanelContent.Children.Clear();
+            // Clear old data bindings
+            SecurityGridsList.ItemsSource = null;
+            SummaryDataGrid.ItemsSource = null;
+            SummaryPanel.Visibility = Visibility.Collapsed;
+            CarryForwardDataGrid.ItemsSource = null;
+            CarryForwardPanel.Visibility = Visibility.Collapsed;
+
             Gridpanel.Visibility = Visibility.Visible;
             Btngetdata.IsEnabled = false;
 
@@ -167,25 +199,31 @@ namespace ClientDesktop.View.Navigation
 
             if (_viewModel == null) return;
             await _viewModel.LoadInvoiceDetailAsync(fromdatefilter, todatefilter);
-            
 
             if (_viewModel.InvoiceDetails != null)
             {
-                 List<string> Securities = _viewModel.InvoiceDetails
-                .Select(s => s.SecurityName)
-                .Where(x => !string.IsNullOrEmpty(x))
-                .Distinct()
-                .OrderBy(x => x)
-                .ToList();
+                List<string> Securities = _viewModel.InvoiceDetails
+               .Select(s => s.SecurityName)
+               .Where(x => !string.IsNullOrEmpty(x))
+               .Distinct()
+               .OrderBy(x => x)
+               .ToList();
 
                 if (Securities == null || Securities.Count == 0)
                 {
                     Lblfrom.Visibility = Visibility.Collapsed;
                     Lblfromdate.Visibility = Visibility.Visible;
-                    Lblfromdate.Content = "No Data Available";
+                    Lblfromdate.Content = CommonMessages.NoDataAvailable;
+                    if (Lblfromdate.Content.ToString() == "No Data Avaliable")
+                    {
+                        Lblfromdate.FontSize = 20;
+                        Lblfromdate.Foreground = Brushes.Gray;
+                        Lblfromdate.FontWeight = FontWeights.Regular;
+                    }
                     Btngetdata.IsEnabled = true;
                     return;
                 }
+
                 if (Cmbselectweek.Text == "Current week")
                 {
                     int diff = (7 + ((int)today.DayOfWeek - (int)DayOfWeek.Monday)) % 7;
@@ -216,7 +254,6 @@ namespace ClientDesktop.View.Navigation
                 }
 
                 var invoiceData = _viewModel.InvoiceDetails;
-
                 if (invoiceData == null || invoiceData.Count == 0)
                 {
                     Btngetdata.IsEnabled = true;
@@ -226,37 +263,10 @@ namespace ClientDesktop.View.Navigation
 
                 #region SecurityGrid
 
+                var securityGridItemsList = new List<SecurityGridItem>();
+
                 foreach (var security in Securities)
                 {
-                    TextBlock lbl = new TextBlock
-                    {
-                        Text = security,
-                        FontWeight = FontWeights.Bold,
-                        Margin = new Thickness(0, 15, 0, 5),
-                        FontSize = 14
-                    };
-                    GridpanelContent.Children.Add(lbl);
-
-                    DataGrid dg = CreateBaseGrid();
-                    string[] RightSecurityCols = { "B Vol", "S Vol", "Rate", "Comm", "Net" };
-
-                    foreach (var col in RightSecurityCols)
-                    {
-                        var column = dg.Columns
-                               .FirstOrDefault(c => c.Header?.ToString() == col);
-
-                        if (column is DataGridTextColumn textColumn)
-                        {
-                            Style cellStyle = new Style(typeof(TextBlock));
-                            cellStyle.Setters.Add(new Setter(TextBlock.TextAlignmentProperty, TextAlignment.Right));
-                            cellStyle.Setters.Add(new Setter(TextBlock.HorizontalAlignmentProperty, HorizontalAlignment.Right));
-                            textColumn.ElementStyle = cellStyle;
-
-                            Style headerStyle = new Style(typeof(DataGridColumnHeader));
-                            headerStyle.Setters.Add(new Setter(HorizontalContentAlignmentProperty, HorizontalAlignment.Right));
-                            column.HeaderStyle = headerStyle;
-                        }
-                    }
                     var symbols = securityTable.AsEnumerable()
                                 .Where(r => r.Field<string>("securityName") == security)
                                 .Select(r => r.Field<string>("symbolName"))
@@ -275,11 +285,10 @@ namespace ClientDesktop.View.Navigation
                     dtSecurity.Columns.Add("Net", typeof(string));
                     dtSecurity.Columns.Add("IsHeader", typeof(bool));
                     dtSecurity.Columns.Add("IsTotal", typeof(bool));
-                    dtSecurity.Columns.Add("RowColor", typeof(string));
 
                     foreach (var symbol in symbols)
                     {
-                        dtSecurity.Rows.Add(symbol, "", "", "", "", "", "", true, false, "Header");
+                        dtSecurity.Rows.Add(symbol, "", "", "", "", "", "", true, false);
 
                         var symbolRows = securityTable.AsEnumerable()
                                     .Where(r => r.Field<string>("symbolName") == symbol &&
@@ -288,7 +297,6 @@ namespace ClientDesktop.View.Navigation
                                     .ThenBy(r => r.Field<DateTime>("dealCreatedOn"))
                                     .ToList();
 
-                      
                         foreach (var row in symbolRows)
                         {
                             string side = row["Side"]?.ToString();
@@ -314,7 +322,7 @@ namespace ClientDesktop.View.Navigation
                             CommonHelper.FormatAmount(invoice.Price),
                             CommonHelper.FormatAmount(invoice.UplineCommission),
                             CommonHelper.FormatAmount(invoice.Pnl),
-                            false, false, "Normal");
+                            false, false);
                         }
                         double totalPnl = symbolRows.Sum(r => Convert.ToDouble(r["pnl"]));
                         double totalComm = symbolRows.Sum(r => Convert.ToDouble(r["uplineCommission"]));
@@ -322,67 +330,43 @@ namespace ClientDesktop.View.Navigation
                             "", "", "", "", "",
                             CommonHelper.FormatAmount(totalComm),
                             CommonHelper.FormatAmount(totalPnl),
-                            false, false, "Summary"
+                            false, false
                         );
                         dtSecurity.Rows.Add(
                             "", "",
                             "", "",
                             "", "Total",
                             CommonHelper.FormatAmount(totalPnl + totalComm),
-                            false, true, "Total"
+                            false, true
                         );
-                        ApplyGridStyle(dg, "default");
-
-                        dg.ItemsSource = null;
-
-                        var gridData = new List<SecurityRow>();
-
-                        foreach (DataRow dr in dtSecurity.Rows)
-                        {
-                            bool isHeader = Convert.ToBoolean(dr["IsHeader"]);
-                            bool isTotal = Convert.ToBoolean(dr["IsTotal"]);
-                            string rowColor = dr["RowColor"].ToString();
-
-                            dg.LoadingRow += (s, ess) =>
-                            {
-                                var row = ess.Row.Item as SecurityRow;
-
-                                if (row != null && row.IsHeader)
-                                {
-                                    ess.Row.Foreground = Brushes.Black;
-                                    var color = (Color)ColorConverter.ConvertFromString("#EFECC8");
-                                    ess.Row.Background = new SolidColorBrush(color);
-                                    ess.Row.FontWeight = FontWeights.Bold;
-                                }
-                                else if (row.IsTotal)
-                                {
-                                    ess.Row.FontWeight = FontWeights.Regular;
-                                    ess.Row.Background = Brushes.Transparent;
-                                }
-                                else
-                                {
-                                    ess.Row.Background = ess.Row.GetIndex() % 2 == 0 ? Brushes.White : new SolidColorBrush(Color.FromRgb(240, 240, 240)); // Example: grayish alternating rows
-                                    ess.Row.FontWeight = FontWeights.Normal;
-                                }
-                            };
-                            gridData.Add(new SecurityRow
-                            {
-                                Date = dr["Date"]?.ToString(),
-                                Type = dr["Type"]?.ToString(),
-                                BVol = dr["BVol"]?.ToString(),
-                                SVol = dr["SVol"]?.ToString(),
-                                Rate = dr["Rate"]?.ToString(),
-                                Comm = dr["Comm"]?.ToString(),
-                                Net = dr["Net"]?.ToString(),
-                                IsHeader = Convert.ToBoolean(dr["IsHeader"]),
-                                IsTotal = Convert.ToBoolean(dr["IsTotal"])
-                            });
-                        }
-
-                        dg.ItemsSource = gridData;
                     }
-                    GridpanelContent.Children.Add(dg);
+
+                    var gridData = new List<SecurityRow>();
+                    foreach (DataRow dr in dtSecurity.Rows)
+                    {
+                        gridData.Add(new SecurityRow
+                        {
+                            Date = dr["Date"]?.ToString(),
+                            Type = dr["Type"]?.ToString(),
+                            BVol = dr["BVol"]?.ToString(),
+                            SVol = dr["SVol"]?.ToString(),
+                            Rate = dr["Rate"]?.ToString(),
+                            Comm = dr["Comm"]?.ToString(),
+                            Net = dr["Net"]?.ToString(),
+                            IsHeader = Convert.ToBoolean(dr["IsHeader"]),
+                            IsTotal = Convert.ToBoolean(dr["IsTotal"])
+                        });
+                    }
+
+                    securityGridItemsList.Add(new SecurityGridItem
+                    {
+                        SecurityName = security,
+                        SecurityData = gridData
+                    });
                 }
+
+                // Bind to the XAML ItemsControl
+                SecurityGridsList.ItemsSource = securityGridItemsList;
 
                 #endregion SecurityGrid
 
@@ -432,59 +416,6 @@ namespace ClientDesktop.View.Navigation
 
                 if (filteredRows.Any())
                 {
-                    TextBlock summaryTitle = new TextBlock
-                    {
-                        Text = "SUMMARY",
-                        FontWeight = FontWeights.Bold,
-                        FontSize = 15,
-                        HorizontalAlignment = HorizontalAlignment.Center,
-                        Margin = new Thickness(0, 20, 0, 10)
-                    };
-
-                    GridpanelContent.Children.Add(summaryTitle);
-
-                    DataGrid dgSummary = new DataGrid
-                    {
-                        AutoGenerateColumns = false,
-                        IsReadOnly = true,
-                        CanUserAddRows = false,
-                        HeadersVisibility = DataGridHeadersVisibility.Column,
-                        HorizontalGridLinesBrush = Brushes.Gray,
-                        VerticalGridLinesBrush = Brushes.Gray,
-                        Margin = new Thickness(0, 0, 0, 20),
-                        VerticalAlignment = VerticalAlignment.Top,
-                        ColumnWidth = new DataGridLength(1, DataGridLengthUnitType.Star),
-                        EnableRowVirtualization = false,
-                        CanUserSortColumns = false,
-                        ColumnHeaderHeight = 30,
-                        RowHeight = 25
-                    };
-
-                    dgSummary.Columns.Add(new DataGridTextColumn { Header = "Symbol", Binding = new Binding("Symbol") });
-                    dgSummary.Columns.Add(new DataGridTextColumn { Header = "M2M", Binding = new Binding("M2M") });
-                    dgSummary.Columns.Add(new DataGridTextColumn { Header = "Comm", Binding = new Binding("Comm") });
-                    dgSummary.Columns.Add(new DataGridTextColumn { Header = "Total", Binding = new Binding("Total") });
-
-                    string[] RightSummaryCols = { "M2M", "Comm", "Total" };
-
-                    foreach (var col in RightSummaryCols)
-                    {
-                        var column = dgSummary.Columns
-                               .FirstOrDefault(c => c.Header?.ToString() == col);
-
-                        if (column is DataGridTextColumn textColumn)
-                        {
-                            Style cellStyle = new Style(typeof(TextBlock));
-                            cellStyle.Setters.Add(new Setter(TextBlock.TextAlignmentProperty, TextAlignment.Right));
-                            cellStyle.Setters.Add(new Setter(TextBlock.HorizontalAlignmentProperty, HorizontalAlignment.Right));
-                            textColumn.ElementStyle = cellStyle;
-
-                            Style headerStyle = new Style(typeof(DataGridColumnHeader));
-                            headerStyle.Setters.Add(new Setter(HorizontalContentAlignmentProperty, HorizontalAlignment.Right));
-                            column.HeaderStyle = headerStyle;
-                        }
-                    }
-
                     DataTable dtSummary = new DataTable();
                     dtSummary.Columns.Add("Symbol", typeof(string));
                     dtSummary.Columns.Add("M2M", typeof(string));
@@ -558,48 +489,15 @@ namespace ClientDesktop.View.Navigation
                                        "GrandTotal",
                                        "");
 
-                    ApplyGridStyle(dgSummary, "summary");
-
-                    // ✅ Proper WPF Row Styling (Correct Way)
-                    dgSummary.LoadingRow += (s, es) =>
-                    {
-                        var rowView = es.Row.Item as DataRowView;
-                        if (rowView == null) return;
-
-                        string rowType = rowView["RowType"]?.ToString();
-
-                        if (rowType == "SecurityHeader")
-                        {
-                            var color = (Color)ColorConverter.ConvertFromString("#EFECC8");
-                            es.Row.Background = new SolidColorBrush(color);
-                            es.Row.FontWeight = FontWeights.Bold;
-                        }
-                        else if (rowType == "SecurityTotal")
-                        {
-                            es.Row.FontWeight = FontWeights.Bold;
-                        }
-                        else if (rowType == "GrandTotal")
-                        {
-                            es.Row.Background = Brushes.Gainsboro;
-                            es.Row.FontWeight = FontWeights.Bold;
-                        }
-                        else
-                        {
-                            es.Row.Background = es.Row.GetIndex() % 2 == 0 ? Brushes.White : new SolidColorBrush(Color.FromRgb(240, 240, 240)); // Example: grayish alternating rows
-                            es.Row.FontWeight = FontWeights.Normal;
-                        }
-                    };
-
-                    dgSummary.ItemsSource = dtSummary.DefaultView;
-
-                    GridpanelContent.Children.Add(dgSummary);
+                    SummaryDataGrid.ItemsSource = dtSummary.DefaultView;
+                    SummaryPanel.Visibility = Visibility.Visible;
                 }
 
                 #endregion SummaryGrid
 
                 #region CarryForwardGrid
-                
-                var carryData = _viewModel.InvoiceDetails;        
+
+                var carryData = _viewModel.InvoiceDetails;
                 if (carryData == null || carryData.Count == 0)
                 {
                     Btngetdata.IsEnabled = true;
@@ -617,58 +515,6 @@ namespace ClientDesktop.View.Navigation
 
                 if (filteredRowscarry.Any())
                 {
-                    TextBlock carryTitle = new TextBlock
-                    {
-                        Text = "CARRY FORWARD",
-                        FontWeight = FontWeights.Bold,
-                        FontSize = 15,
-                        HorizontalAlignment = HorizontalAlignment.Center,
-                        Margin = new Thickness(0, 20, 0, 10)
-                    };
-
-                    GridpanelContent.Children.Add(carryTitle);
-
-                    DataGrid CarryforwardDataGrid = new DataGrid
-                    {
-                        AutoGenerateColumns = false,
-                        IsReadOnly = true,
-                        HeadersVisibility = DataGridHeadersVisibility.Column,
-                        HorizontalGridLinesBrush = Brushes.Gray,
-                        VerticalGridLinesBrush = Brushes.Gray,
-                        CanUserAddRows = false,
-                        Margin = new Thickness(0, 0, 0, 20),
-                        ColumnWidth = new DataGridLength(1, DataGridLengthUnitType.Star),
-                        CanUserSortColumns = false,
-                        ColumnHeaderHeight = 30,
-                        RowHeight = 25
-                    };
-
-
-                    CarryforwardDataGrid.Columns.Add(new DataGridTextColumn { Header = "Symbol", Binding = new Binding("Symbol") });
-                    CarryforwardDataGrid.Columns.Add(new DataGridTextColumn { Header = "Type", Binding = new Binding("Type") });
-                    CarryforwardDataGrid.Columns.Add(new DataGridTextColumn { Header = "Quantity", Binding = new Binding("Quantity") });
-                    CarryforwardDataGrid.Columns.Add(new DataGridTextColumn { Header = "Net", Binding = new Binding("Net") });
-
-                    string[] RightSummaryCols = { "Type", "Quantity", "Net" };
-
-                    foreach (var col in RightSummaryCols)
-                    {
-                        var column = CarryforwardDataGrid.Columns
-                               .FirstOrDefault(c => c.Header?.ToString() == col);
-
-                        if (column is DataGridTextColumn textColumn)
-                        {
-                            Style cellStyle = new Style(typeof(TextBlock));
-                            cellStyle.Setters.Add(new Setter(TextBlock.TextAlignmentProperty, TextAlignment.Right));
-                            cellStyle.Setters.Add(new Setter(TextBlock.HorizontalAlignmentProperty, HorizontalAlignment.Right));
-                            textColumn.ElementStyle = cellStyle;
-
-                            Style headerStyle = new Style(typeof(DataGridColumnHeader));
-                            headerStyle.Setters.Add(new Setter(HorizontalContentAlignmentProperty, HorizontalAlignment.Right));
-                            column.HeaderStyle = headerStyle;
-                        }
-                    }
-
                     DataTable dtCarry = new DataTable();
                     dtCarry.Columns.Add("Symbol", typeof(string));
                     dtCarry.Columns.Add("Type", typeof(string));
@@ -707,56 +553,18 @@ namespace ClientDesktop.View.Navigation
                             );
                         }
                     }
-                    CarryforwardDataGrid.ItemsSource = null;
 
-                    CarryforwardDataGrid.LoadingRow += (s, ec) =>
-                    {
-                        DataRowView row = ec.Row.Item as DataRowView;
-                        if (row == null) return;
-
-                        string rowType = row["RowType"]?.ToString();
-                        string side = row["Side"]?.ToString();
-
-                        ec.Row.Background = Brushes.Transparent;
-                        ec.Row.Foreground = Brushes.Black;
-                        ec.Row.FontWeight = FontWeights.Normal;
-
-                        if (rowType == "SecurityHeader")
-                        {
-                            ec.Row.FontWeight = FontWeights.Bold;
-                            var color = (Color)ColorConverter.ConvertFromString("#EFECC8");
-                            ec.Row.Background = new SolidColorBrush(color);
-                            ec.Row.Padding = new Thickness(10, 4, 0, 4);
-                        }
-                        else if (rowType == "SymbolData")
-                        {
-
-                            Brush textBrush = (side?.Equals("Sell", StringComparison.OrdinalIgnoreCase) ?? false)
-                                              ? Brushes.Red : Brushes.Blue;
-
-                            Dispatcher.BeginInvoke(new Action(() =>
-                            {
-                                for (int i = 1; i < CarryforwardDataGrid.Columns.Count; i++)
-                                {
-                                    var cellContent = CarryforwardDataGrid.Columns[i].GetCellContent(ec.Row);
-                                    if (cellContent is TextBlock tb)
-                                    {
-                                        tb.Foreground = textBrush;
-                                    }
-                                }
-                            }), System.Windows.Threading.DispatcherPriority.Render);
-                        }
-                    };
-
-
-                    CarryforwardDataGrid.ItemsSource = dtCarry.DefaultView;
-                    GridpanelContent.Children.Add(CarryforwardDataGrid);
+                    CarryForwardDataGrid.ItemsSource = dtCarry.DefaultView;
+                    CarryForwardPanel.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    CarryForwardPanel.Visibility = Visibility.Visible;                   
                 }
 
                 #endregion CarryForwardGrid
-
             }
-        }   
+        }
 
         public DataTable ToDataTable<T>(List<T> items)
         {
@@ -778,388 +586,199 @@ namespace ClientDesktop.View.Navigation
             return dt;
         }
 
-        private DataGrid CreateBaseGrid()
+        // ============================================
+        // EVENT HANDLERS FOR ROW STYLING (COLORS)
+        // ============================================
+
+        private void SecurityDataGrid_LoadingRow(object sender, DataGridRowEventArgs e)
         {
-            DataGrid dg = new DataGrid
+            var row = e.Row;
+            var item = row.Item as SecurityRow;
+            if (item == null) return;
+            int rowIndex = row.GetIndex();
+
+            if (item.IsHeader)
             {
-                AutoGenerateColumns = false,
-                IsReadOnly = true,
-                CanUserAddRows = false,
-                HeadersVisibility = DataGridHeadersVisibility.Column,
-                HorizontalGridLinesBrush = Brushes.Gray,
-                VerticalGridLinesBrush = Brushes.Gray,
-                Margin = new Thickness(0, 0, 0, 20),
-                ColumnWidth = new DataGridLength(1, DataGridLengthUnitType.Star),
-                CanUserSortColumns = false,
-                ColumnHeaderHeight = 30,
-                RowHeight = 25
-            };
+                row.Foreground = Brushes.Black;
+                row.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EFECC8"));
+                row.FontWeight = FontWeights.Bold;
+                row.Padding = new Thickness(10, 4, 0, 4);
+            }
+            else if (item.IsTotal)
+            {
+                row.Background = new SolidColorBrush(Color.FromRgb(240, 240, 240));
+                row.Foreground = Brushes.Black;
+                row.FontWeight = FontWeights.Regular;
+            }
+            else
+            {
+                row.Background = rowIndex % 2 == 0 ? Brushes.White : new SolidColorBrush(Color.FromRgb(240, 240, 240));
+                row.FontWeight = FontWeights.Normal;
+            }
 
-            dg.Columns.Add(new DataGridTextColumn { Header = "Date", Binding = new System.Windows.Data.Binding("Date") });
-            dg.Columns.Add(new DataGridTextColumn { Header = "Type", Binding = new System.Windows.Data.Binding("Type") });
-            dg.Columns.Add(new DataGridTextColumn { Header = "B Vol", Binding = new System.Windows.Data.Binding("BVol") });
-            dg.Columns.Add(new DataGridTextColumn { Header = "S Vol", Binding = new System.Windows.Data.Binding("SVol") });
-            dg.Columns.Add(new DataGridTextColumn { Header = "Rate", Binding = new System.Windows.Data.Binding("Rate") });
-            dg.Columns.Add(new DataGridTextColumn { Header = "Comm", Binding = new System.Windows.Data.Binding("Comm") });
-            dg.Columns.Add(new DataGridTextColumn { Header = "Net", Binding = new System.Windows.Data.Binding("Net") });
+            // Cell specific styling using Dispatcher for DataGrid Virtualization safety
+            DataGrid dg = sender as DataGrid;
+            dg.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                for (int i = 0; i < dg.Columns.Count; i++)
+                {
+                    var column = dg.Columns[i];
+                    var cellContent = column.GetCellContent(row);
+                    if (cellContent is TextBlock textBlock)
+                    {
+                        string columnName = column.Header?.ToString();
+                        string cellText = textBlock.Text;
 
-            return dg;
+                        switch (columnName)
+                        {
+                            case "B Vol":
+                                if (!string.IsNullOrEmpty(cellText) && cellText != "-") textBlock.Foreground = new SolidColorBrush(Colors.Blue);
+                                break;
+                            case "S Vol":
+                                if (!string.IsNullOrEmpty(cellText) && cellText != "-") textBlock.Foreground = new SolidColorBrush(Colors.Red);
+                                break;
+                            case "Comm":
+                            case "Net":
+                                if (decimal.TryParse(cellText?.Replace(" ", ""), out decimal value))
+                                    textBlock.Foreground = value < 0 ? new SolidColorBrush(Colors.Red) : new SolidColorBrush(Colors.Blue);
+                                break;
+                            case "Type":
+                                if (cellText == "Buy") textBlock.Foreground = new SolidColorBrush(Colors.Blue);
+                                else if (cellText == "Sell") textBlock.Foreground = new SolidColorBrush(Colors.Red);
+                                else if (cellText == "CF") textBlock.Foreground = new SolidColorBrush(Colors.Green);
+                                break;
+                        }
+                    }
+                }
+            }), System.Windows.Threading.DispatcherPriority.Render);
         }
 
-        private void ApplyGridStyle(DataGrid dg, string styleType = "default")
+        private void SummaryDataGrid_LoadingRow(object sender, DataGridRowEventArgs e)
         {
-            try
+            var row = e.Row;
+            var rowView = row.Item as DataRowView;
+            if (rowView == null) return;
+            int rowIndex = row.GetIndex();
+
+            string rowType = rowView["RowType"]?.ToString();
+            string symbol = rowView["Symbol"]?.ToString()?.Trim().ToLower();
+
+            if (rowType == "SecurityHeader")
             {
-                // Common setup for all grids
-                dg.IsReadOnly = true;
-                dg.CanUserAddRows = false;
-                dg.CanUserDeleteRows = false;
-                dg.CanUserReorderColumns = false;
-                dg.CanUserResizeColumns = true;
-                dg.CanUserSortColumns = false;
-                dg.HeadersVisibility = DataGridHeadersVisibility.Column;
-                dg.GridLinesVisibility = DataGridGridLinesVisibility.All;
-                dg.HorizontalGridLinesBrush = new SolidColorBrush(Colors.LightGray);
-                dg.VerticalGridLinesBrush = new SolidColorBrush(Colors.LightGray);
-                dg.SelectionMode = DataGridSelectionMode.Single;
-                dg.SelectionUnit = DataGridSelectionUnit.FullRow;
-                dg.BorderBrush = new SolidColorBrush(Colors.LightGray);
-                dg.BorderThickness = new Thickness(1);
-                dg.RowHeight = 25;
-                dg.ColumnHeaderHeight = 35;
-                dg.Margin = new Thickness(0, 0, 0, 20);
-                dg.EnableRowVirtualization = false;
-                dg.EnableColumnVirtualization = false;
-
-                // Disable selection highlighting
-                dg.SelectionChanged += (s, e) =>
-                {
-                    if (dg.SelectedItem != null)
-                    {
-                        dg.UnselectAll();
-                    }
-                };
-
-                dg.LoadingRow += (sender, e) =>
-                {
-                    var row = e.Row;
-                    var item = row.Item;
-                    int rowIndex = row.GetIndex();
-
-                    // Common row colors
-                    var rowColors = new[]
-                    {
-                Brushes.White,
-                new SolidColorBrush(Color.FromRgb(240, 240, 240)) // ThemeManager.GridRowBackColor
-            };
-                    var headerColor = new SolidColorBrush(Color.FromRgb(200, 200, 200)); // ThemeManager.InvoiceBackColor
-
-                    bool isTotalRow = false;
-                    bool isHeaderRow = false;
-                    bool isGrandTotalRow = false;
-
-                    DataRowView rowView = item as DataRowView;
-                    if (rowView != null)
-                    {
-                        if (styleType == "default")
-                        {
-                            // Check for Total row
-                            foreach (object cellValue in rowView.Row.ItemArray)
-                            {
-                                if (cellValue != null && cellValue.ToString().Trim().Equals("Total", StringComparison.OrdinalIgnoreCase))
-                                {
-                                    isTotalRow = true;
-                                    break;
-                                }
-                            }
-
-                            if (!isTotalRow)
-                            {
-                                // Check for Header row
-                                string dateVal = rowView["Date"]?.ToString();
-                                string typeVal = rowView["Type"]?.ToString();
-                                string bVolVal = rowView["BVol"]?.ToString();
-                                string sVolVal = rowView["SVol"]?.ToString();
-
-                                isHeaderRow = string.IsNullOrWhiteSpace(typeVal) &&
-                                             string.IsNullOrWhiteSpace(bVolVal) &&
-                                             string.IsNullOrWhiteSpace(sVolVal) &&
-                                             !string.IsNullOrWhiteSpace(dateVal);
-                            }
-                        }
-                        else if (styleType == "summary")
-                        {
-                            string symbol = rowView["Symbol"]?.ToString()?.Trim().ToLower();
-                            isTotalRow = symbol == "total";
-                            isGrandTotalRow = symbol == "grand total";
-
-                            if (!isTotalRow && !isGrandTotalRow)
-                            {
-                                string m2mVal = rowView["M2M"]?.ToString();
-                                string commVal = rowView["Comm"]?.ToString();
-                                string totalVal = rowView["Total"]?.ToString();
-
-                                isHeaderRow = string.IsNullOrWhiteSpace(m2mVal) &&
-                                             string.IsNullOrWhiteSpace(commVal) &&
-                                             string.IsNullOrWhiteSpace(totalVal) &&
-                                             !string.IsNullOrWhiteSpace(symbol);
-                            }
-                        }
-                        else if (styleType == "carry")
-                        {
-                            string symbol = rowView["Symbol"]?.ToString()?.Trim().ToLower();
-                            isTotalRow = symbol == "total";
-
-                            if (!isTotalRow)
-                            {
-                                string type = rowView["Type"]?.ToString();
-                                string quantity = rowView["Quantity"]?.ToString();
-                                string netVal = rowView["Net"]?.ToString();
-
-                                isHeaderRow = string.IsNullOrWhiteSpace(type) &&
-                                             string.IsNullOrWhiteSpace(quantity) &&
-                                             string.IsNullOrWhiteSpace(netVal) &&
-                                             !string.IsNullOrWhiteSpace(symbol);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        SecurityRow securityRow = item as SecurityRow;
-                        if (securityRow != null)
-                        {
-                            isHeaderRow = securityRow.IsHeader;
-                            isTotalRow = securityRow.IsTotal;
-                        }
-                    }
-
-                    // Apply styles
-                    if (isGrandTotalRow)
-                    {
-                        row.Background = new SolidColorBrush(Color.FromRgb(220, 220, 220)); // Gainsboro
-                        row.FontWeight = FontWeights.Bold;
-                        row.FontSize = 14;
-                    }
-                    else if (isTotalRow)
-                    {
-                        row.Background = new SolidColorBrush(Color.FromRgb(240, 240, 240)); // ThemeManager.GridRowBackColor
-                        row.Foreground = Brushes.Black;
-                        row.FontWeight = FontWeights.Bold;
-                    }
-                    else if (isHeaderRow)
-                    {
-                        var color = (Color)ColorConverter.ConvertFromString("#EFECC8");
-                        row.Background = new SolidColorBrush(color);
-                        row.Foreground = Brushes.Black;
-                        row.FontWeight = FontWeights.Bold;
-                        row.Padding = new Thickness(10, 4, 0, 4);
-                    }
-                    else
-                    {
-                        // Alternating row colors
-                        row.Background = rowIndex % 2 == 0 ?
-                            Brushes.White :
-                            new SolidColorBrush(Color.FromRgb(240, 240, 240));
-                        row.FontWeight = FontWeights.Normal;
-                    }
-                };
-
-                // Cell formatting for colors based on values
-                dg.LoadingRow += (sender, e) =>
-                {
-                    var row = e.Row;
-                    var item = row.Item;
-
-                    // Apply cell-specific formatting after row is loaded
-                    Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        for (int i = 0; i < dg.Columns.Count; i++)
-                        {
-                            var column = dg.Columns[i];
-                            var cellContent = column.GetCellContent(row);
-
-                            TextBlock textBlock = cellContent as TextBlock;
-                            if (textBlock != null)
-                            {
-                                string columnName = column.Header?.ToString();
-                                string cellText = textBlock.Text;
-
-                                if (styleType == "default")
-                                {
-                                    switch (columnName)
-                                    {
-                                        case "B Vol":
-                                            if (!string.IsNullOrEmpty(cellText) && cellText != "-")
-                                                textBlock.Foreground = new SolidColorBrush(Colors.Blue);
-                                            break;
-                                        case "S Vol":
-                                            if (!string.IsNullOrEmpty(cellText) && cellText != "-")
-                                                textBlock.Foreground = new SolidColorBrush(Colors.Red);
-                                            break;
-                                        case "Comm":
-                                        case "Net":
-                                            decimal value;
-                                            if (decimal.TryParse(cellText?.Replace(" ", ""), out value))
-                                            {
-                                                textBlock.Foreground = value < 0 ?
-                                                    new SolidColorBrush(Colors.Red) :
-                                                    new SolidColorBrush(Colors.Blue);
-                                            }
-                                            break;
-                                        case "Type":
-                                            if (cellText == "Buy")
-                                                textBlock.Foreground = new SolidColorBrush(Colors.Blue);
-                                            else if (cellText == "Sell")
-                                                textBlock.Foreground = new SolidColorBrush(Colors.Red);
-                                            else if (cellText == "CF")
-                                                textBlock.Foreground = new SolidColorBrush(Colors.Green);
-                                            break;
-                                    }
-                                }
-                                else if (styleType == "summary")
-                                {
-                                    if (columnName == "M2M" || columnName == "Comm" || columnName == "Total")
-                                    {
-                                        decimal value;
-                                        if (decimal.TryParse(cellText?.Replace(" ", ""), out value))
-                                        {
-                                            bool makeRed = value < 0 || (value == 0 && columnName == "Comm");
-                                            textBlock.Foreground = makeRed ?
-                                                new SolidColorBrush(Colors.Red) :
-                                                new SolidColorBrush(Colors.Blue);
-                                        }
-                                    }
-
-                                    // Check if this is a grand total row
-                                    DataRowView rowView = item as DataRowView;
-                                    if (rowView != null)
-                                    {
-                                        string symbol = rowView["Symbol"]?.ToString()?.Trim().ToLower();
-                                        if (symbol == "grand total")
-                                        {
-                                            textBlock.FontSize = 14;
-                                            textBlock.FontWeight = FontWeights.Bold;
-                                        }
-                                    }
-                                }
-                                else if (styleType == "carry")
-                                {
-                                    DataRowView rowView = item as DataRowView;
-                                    if (rowView != null)
-                                    {
-                                        string side = rowView["Side"]?.ToString();
-
-                                        if (columnName == "Type" && !string.IsNullOrEmpty(side))
-                                        {
-                                            textBlock.Foreground = side.Equals("Sell", StringComparison.OrdinalIgnoreCase) ?
-                                                new SolidColorBrush(Colors.Red) :
-                                                new SolidColorBrush(Colors.Blue);
-                                        }
-                                        else if (columnName == "Quantity" || columnName == "Net")
-                                        {
-                                            textBlock.Foreground = new SolidColorBrush(Colors.Blue);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }), System.Windows.Threading.DispatcherPriority.Render);
-                };
-
-                // Set column styles based on type
-                string[] rightAlignedColumns;
-                if (styleType == "default")
-                {
-                    rightAlignedColumns = new[] { "B Vol", "S Vol", "Rate", "Comm", "Net" };
-                }
-                else if (styleType == "summary")
-                {
-                    rightAlignedColumns = new[] { "M2M", "Comm", "Total" };
-                }
-                else if (styleType == "carry")
-                {
-                    rightAlignedColumns = new[] { "Type", "Quantity", "Net" };
-                }
-                else
-                {
-                    rightAlignedColumns = new string[0];
-                }
-
-                foreach (var column in dg.Columns)
-                {
-                    string header = column.Header?.ToString();
-
-                    // Right align specific columns
-                    if (Array.IndexOf(rightAlignedColumns, header) >= 0)
-                    {
-                        DataGridTextColumn textColumn = column as DataGridTextColumn;
-                        if (textColumn != null)
-                        {
-                            // Right align cell content
-                            Style cellStyle = new Style(typeof(TextBlock));
-                            cellStyle.Setters.Add(new Setter(TextBlock.TextAlignmentProperty, TextAlignment.Right));
-                            cellStyle.Setters.Add(new Setter(TextBlock.HorizontalAlignmentProperty, HorizontalAlignment.Right));
-                            cellStyle.Setters.Add(new Setter(TextBlock.MarginProperty, new Thickness(5, 2, 10, 2)));
-                            textColumn.ElementStyle = cellStyle;
-
-                            // Right align header
-                            Style headerStyle = new Style(typeof(DataGridColumnHeader));
-                            headerStyle.Setters.Add(new Setter(DataGridColumnHeader.HorizontalContentAlignmentProperty, HorizontalAlignment.Right));
-                            headerStyle.Setters.Add(new Setter(DataGridColumnHeader.PaddingProperty, new Thickness(0, 0, 10, 0)));
-                            column.HeaderStyle = headerStyle;
-                        }
-                    }
-                    else
-                    {
-                        // Left align for other columns
-                        DataGridTextColumn textColumn = column as DataGridTextColumn;
-                        if (textColumn != null)
-                        {
-                            Style cellStyle = new Style(typeof(TextBlock));
-                            cellStyle.Setters.Add(new Setter(TextBlock.TextAlignmentProperty, TextAlignment.Left));
-                            cellStyle.Setters.Add(new Setter(TextBlock.HorizontalAlignmentProperty, HorizontalAlignment.Left));
-                            cellStyle.Setters.Add(new Setter(TextBlock.MarginProperty, new Thickness(10, 2, 5, 2)));
-                            textColumn.ElementStyle = cellStyle;
-                        }
-                    }
-
-                    // Make columns not sortable
-                    column.CanUserSort = false;
-                }
-
-                // Handle special column widths for different grid types
-                if (styleType == "default")
-                {
-                    var dateColumn = dg.Columns.FirstOrDefault(c =>
-                    {
-                        string header = c.Header?.ToString();
-                        return header == "Date";
-                    });
-
-                    if (dateColumn != null)
-                    {
-                        dateColumn.MinWidth = 180;
-                        dateColumn.Width = new DataGridLength(180);
-                    }
-                }
-                else if (styleType == "summary" || styleType == "carry")
-                {
-                    var symbolColumn = dg.Columns.FirstOrDefault(c =>
-                    {
-                        string header = c.Header?.ToString();
-                        return header == "Symbol";
-                    });
-
-                    if (symbolColumn != null)
-                    {
-                        symbolColumn.MinWidth = 400;
-                        symbolColumn.Width = new DataGridLength(400);
-                    }
-                }
+                row.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EFECC8"));
+                row.Foreground = Brushes.Black;
+                row.FontWeight = FontWeights.Bold;
+                row.Padding = new Thickness(10, 4, 0, 4);
             }
-            catch (Exception ex)
+            else if (rowType == "SecurityTotal" || symbol == "total")
             {
-                System.Diagnostics.Debug.WriteLine($"Error in ApplyGridStyle: {ex.Message}");
+                row.Background = new SolidColorBrush(Color.FromRgb(240, 240, 240));
+                row.Foreground = Brushes.Black;
+                row.FontWeight = FontWeights.Bold;
+                
+            }
+            else if (rowType == "GrandTotal" || symbol == "grand total")
+            {
+                row.Background = new SolidColorBrush(Color.FromRgb(220, 220, 220));
+                row.Foreground = Brushes.Black;
+                row.FontWeight = FontWeights.Bold;
+                row.FontSize = 14;               
+            }
+            else
+            {
+                row.Background = rowIndex % 2 == 0 ? Brushes.White : new SolidColorBrush(Color.FromRgb(240, 240, 240));
+                row.FontWeight = FontWeights.Normal;
+            }
+
+            DataGrid dg = sender as DataGrid;
+            dg.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                for (int i = 0; i < dg.Columns.Count; i++)
+                {
+                    var column = dg.Columns[i];
+                    var cellContent = column.GetCellContent(row);
+                    if (cellContent is TextBlock textBlock)
+                    {
+                        string columnName = column.Header?.ToString();
+                        string cellText = textBlock.Text;
+
+                        if (columnName == "M2M" || columnName == "Comm" || columnName == "Total")
+                        {
+                            if (decimal.TryParse(cellText?.Replace(" ", ""), out decimal value))
+                            {
+                                bool makeRed = value < 0 || (value == 0 && columnName == "Comm");
+                                textBlock.Foreground = makeRed ? new SolidColorBrush(Colors.Red) : new SolidColorBrush(Colors.Blue);
+                            }
+                        }
+
+                        if (symbol == "total")
+                        {                            
+                            textBlock.FontWeight = FontWeights.Bold;
+                            textBlock.HorizontalAlignment = HorizontalAlignment.Right;
+                        }
+
+                        if (symbol == "grand total")
+                        {
+                            textBlock.FontSize = 14;
+                            textBlock.FontWeight = FontWeights.Bold;
+                            textBlock.HorizontalAlignment = HorizontalAlignment.Right;
+                        }
+                    }
+                }
+            }), System.Windows.Threading.DispatcherPriority.Render);
+        }
+
+        private void CarryForwardDataGrid_LoadingRow(object sender, DataGridRowEventArgs e)
+        {
+            var row = e.Row;
+            var rowView = row.Item as DataRowView;
+            if (rowView == null) return;
+            int rowIndex = row.GetIndex();
+
+            string rowType = rowView["RowType"]?.ToString();
+            string side = rowView["Side"]?.ToString();
+
+            if (rowType == "SecurityHeader")
+            {
+                row.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EFECC8"));
+                row.Foreground = Brushes.Black;
+                row.FontWeight = FontWeights.Bold;
+                row.Padding = new Thickness(10, 4, 0, 4);
+            }
+            else
+            {
+                row.Background = rowIndex % 2 == 0 ? Brushes.White : new SolidColorBrush(Color.FromRgb(240, 240, 240));
+                row.Foreground = Brushes.Black;
+                row.FontWeight = FontWeights.Normal;
+            }
+
+            DataGrid dg = sender as DataGrid;
+            dg.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                Brush textBrush = (side?.Equals("Sell", StringComparison.OrdinalIgnoreCase) ?? false) ? Brushes.Red : Brushes.Blue;
+
+                for (int i = 0; i < dg.Columns.Count; i++)
+                {
+                    var column = dg.Columns[i];
+                    var cellContent = column.GetCellContent(row);
+                    if (cellContent is TextBlock textBlock)
+                    {
+                        string columnName = column.Header?.ToString();
+                        if (columnName == "Type" || columnName == "Quantity" || columnName == "Net")
+                        {
+                            textBlock.Foreground = textBrush;
+                        }
+                    }
+                }
+            }), System.Windows.Threading.DispatcherPriority.Render);
+        }
+
+        private void DataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // Prevent cell/row selection highlighting
+            if (sender is DataGrid dg && dg.SelectedItem != null)
+            {
+                dg.UnselectAll();
             }
         }
     }
