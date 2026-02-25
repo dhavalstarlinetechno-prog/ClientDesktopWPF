@@ -1,0 +1,209 @@
+﻿<UserControl x:Class="ClientDesktop.View.Navigation.InvoiceView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:ClientDesktop.View.Navigation"
+             mc:Ignorable="d" 
+             d:DesignHeight="1000" d:DesignWidth="653">
+    <UserControl.Resources>
+
+        <Style x:Key="FixedBlueButtonStyle" TargetType="Button">
+            <!-- Default (Enabled State) -->
+            <Setter Property="Background" Value="CornflowerBlue"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="BorderBrush" Value="CornflowerBlue"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border"
+                 Background="{TemplateBinding Background}"
+                 BorderBrush="{TemplateBinding BorderBrush}"
+                 BorderThickness="{TemplateBinding BorderThickness}"
+                 CornerRadius="3">
+                            <ContentPresenter 
+                 HorizontalAlignment="Center"
+                 VerticalAlignment="Center"
+                 RecognizesAccessKey="True"
+                 TextElement.Foreground="{TemplateBinding Foreground}"/>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <!-- When Disabled -->
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Foreground" Value="Black"/>
+                                <Setter TargetName="border" Property="Opacity" Value="0.7"/>
+                            </Trigger>
+
+                        </ControlTemplate.Triggers>
+
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="DataGridHeaderStyle" TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="BorderBrush" Value="LightGray"/>
+            <Setter Property="BorderThickness" Value="0,0,1,1"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="5"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid x:Name="Mainpanel" Visibility="Visible">
+            <Border BorderBrush="Gray" BorderThickness="1">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock x:Name="Lbltext"
+                           Grid.Row="0"
+                           Margin="40,30,40,20"
+                           FontSize="15"
+                           FontWeight="Bold"
+                           TextWrapping="Wrap"
+                           HorizontalAlignment="Center"
+                           FontFamily="Microsoft Sans Serif"
+                           Text="This report represents sample invoice format. It contains sample data only for education purpose. Invoice can be displayed in &#x0a;below structure"/>
+
+                    <StackPanel Grid.Row="1"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Margin="0,-80,0,0">
+                        <PasswordBox x:Name="TxtPassword"
+                                 Width="188"
+                                 Height="24"
+                                 VerticalContentAlignment="Center"
+                                 FontFamily="Microsoft Sans Serif" 
+                                 FontSize="13"    
+                                 PasswordChanged="TxtPassword_PasswordChanged"/>
+
+                        <Button x:Name="Btngo"
+                            Content="Go"
+                            Width="82"
+                            Height="30"
+                            Margin="10,0,0,0"                          
+                            FontFamily="Microsoft Sans Serif" 
+                            Click="Btngo_Click"
+                            Style="{StaticResource FixedBlueButtonStyle}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Grid x:Name="Childpanel" Background="White" Visibility="Visible">
+            <Border BorderBrush="Gray" BorderThickness="1">
+                <Grid Margin="10">
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Label Content="Select Week :"
+                           Grid.Row="0"
+                           Grid.Column="0"
+                           FontFamily="Microsoft Sans Serif"
+                           FontSize="13"
+                           VerticalAlignment="Center"
+                           FontWeight="Regular"/>
+
+                        <ComboBox x:Name="Cmbselectweek"
+                              Grid.Row="0"
+                              Grid.Column="1"
+                              Width="260"
+                              Height="26"
+                              Margin="10,0,0,0"                              
+                              FontFamily="Microsoft Sans Serif"
+                              VerticalContentAlignment="Center"
+                              Background="White"
+                              BorderBrush="White"
+                              FontSize="13" SelectionChanged="Cmbselectweek_SelectionChanged">
+                            <ComboBoxItem Content="Select" IsSelected="True"/>
+                            <ComboBoxItem Content="Current week"/>
+                            <ComboBoxItem Content="Previous Week"/>
+                            <ComboBoxItem Content="Last Previous Week"/>
+                        </ComboBox>
+
+                        <Button x:Name="Btngetdata"
+                            Content="Go"
+                            Grid.Row="0"
+                            Grid.Column="2"
+                            Width="82"
+                            Height="30"
+                            Margin="10,0,0,0"                            
+                            Click="Btngetdata_Click"
+                            Style="{StaticResource FixedBlueButtonStyle}"/>
+
+                        <Image Grid.Row="0"
+                           Grid.Column="4"
+                           Width="35"
+                           Height="35"
+                           HorizontalAlignment="Right"
+                           Visibility="Hidden"
+                           Cursor="Hand"/>
+
+                        <Label x:Name="Lblfrom"
+                           Grid.Row="1"
+                           Grid.Column="0"
+                           Grid.ColumnSpan="5"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           FontWeight="Bold"
+                           FontSize="14"
+                           Content=""
+                           Margin="0,5,0,5"/>
+
+                        <Label x:Name="Lblfromdate"
+                           Grid.Row="1"
+                           Grid.Column="0"
+                           Grid.ColumnSpan="5"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           FontWeight="Bold"
+                           FontSize="14"
+                           Content=""
+                           Visibility="Collapsed" 
+                           Margin="0,5,0,5"/>
+                    </Grid>
+
+                    <Border x:Name="Gridpanel"
+                        Grid.Row="1"                     
+                        BorderBrush="LightGray"
+                        BorderThickness="1"
+                        Margin="10">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel x:Name="GridpanelContent"
+                                    Margin="10"/>
+                        </ScrollViewer>
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

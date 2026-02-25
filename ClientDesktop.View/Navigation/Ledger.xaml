@@ -69,13 +69,19 @@
                     <PasswordBox x:Name="TxtPassword"
                           Width="227"
                           Height="27"
-                          PasswordChanged="TxtPassword_PasswordChanged" HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="Microsoft Sans Serif" FontSize="13"/>
+                          VerticalContentAlignment="Center"
+                          PasswordChanged="TxtPassword_PasswordChanged" 
+                          HorizontalAlignment="Center" 
+                          VerticalAlignment="Center" 
+                          FontFamily="Microsoft Sans Serif" 
+                          FontSize="13"/>
 
                     <Button x:Name="Btngo"
                      Content="Go"
                      Width="82"
                      Height="30"                     
-                     Margin="10,0"                    
+                     Margin="10,0" 
+                     FontFamily="Microsoft Sans Serif"       
                      Click="Btngo_Click"                     
                      Style="{StaticResource FixedBlueButtonStyle}"/>
                 </StackPanel>
@@ -147,7 +153,9 @@
                      Content="Go"
                      Width="82"
                      Height="30"                                 
-                     Margin="10,0" Click="Btngetdata_Click" 
+                     Margin="10,0" 
+                     Click="Btngetdata_Click" 
+                     FontFamily="Microsoft Sans Serif"           
                      Style="{StaticResource FixedBlueButtonStyle}"/>
 
                     <StackPanel Grid.Column="6"

@@ -5,9 +5,9 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:ClientDesktop.View.Specification"
              mc:Ignorable="d" 
-             d:Height="720" d:Width="799" Height="Auto" Loaded="UserControl_Loaded">
+             Width="650" Height="Auto" Loaded="UserControl_Loaded">
     <Grid>
-        <DockPanel Width="799" Height="660">
+        <DockPanel>
             <Button x:Name="BtnClose" 
                 Content="Close" 
                 Height="30" 
@@ -40,7 +40,7 @@
                     <Grid x:Name="Tablespecification">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="42"/>
-                            <ColumnDefinition Width="206"/>
+                            <ColumnDefinition Width="150"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
@@ -232,7 +232,7 @@
                     <Grid x:Name="SecondGrid">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="42"/>
-                            <ColumnDefinition Width="206"/>
+                            <ColumnDefinition Width="150"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>

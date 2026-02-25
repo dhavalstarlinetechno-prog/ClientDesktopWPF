@@ -31,6 +31,7 @@ namespace ClientDesktop.View.Navigation
         private List<LoginInfo> _loginInfos = new List<LoginInfo>();
         private Window _banScriptWindow;
         private Window _ledgerWindow;
+        private Window _invoiceWindow;
         private TreeViewItem _activeTreeItem;
         private readonly AuthService _authService;
 
@@ -217,6 +218,39 @@ namespace ClientDesktop.View.Navigation
                     else
                     {
                         _ledgerWindow.Activate();
+                    }
+
+                    SetActiveItem(treeViewItem);
+                    e.Handled = true;
+                }
+
+                else if (selectedData.Title == "Invoice")
+                {
+                    if (_invoiceWindow == null || !_invoiceWindow.IsVisible)
+                    {
+                        _invoiceWindow = new Window
+                        {
+                            Title = "Invoice",
+                            Content = new InvoiceView(),
+                            WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                            Background = Brushes.White,
+                            Height = 653,
+                            Width = 1000
+                        };
+
+                        _invoiceWindow.Closed += (s, args) =>
+                        {
+                            _invoiceWindow = null;
+
+                            if (_activeTreeItem != null)
+                                _activeTreeItem.IsSelected = true;
+                        };
+
+                        _invoiceWindow.Show();
+                    }
+                    else
+                    {
+                        _invoiceWindow.Activate();
                     }
 
                     SetActiveItem(treeViewItem);
