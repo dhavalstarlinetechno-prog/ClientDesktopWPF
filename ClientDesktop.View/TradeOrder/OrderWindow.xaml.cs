@@ -16,5 +16,12 @@ namespace ClientDesktop.View.TradeOrder
             InitializeComponent();
         }
 
+        private void UserControl_Unloaded(object sender, RoutedEventArgs e)
+        {
+            if (this.DataContext is ClientDesktop.ViewModel.TradeViewModel vm)
+            {
+                vm.Cleanup();
+            }
+        }
     }
 }

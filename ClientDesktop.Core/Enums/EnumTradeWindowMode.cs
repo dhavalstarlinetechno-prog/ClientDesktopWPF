@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ClientDesktop.Core.Enums
 {
-    public enum TradeWindowMode
+    public enum EnumTradeWindowMode
     {
         FromTradeButton,
         FromMarketWatch,

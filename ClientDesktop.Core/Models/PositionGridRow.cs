@@ -12,6 +12,7 @@ namespace ClientDesktop.Core.Models
     public class PositionGridRow
     {
         public string Id { get; set; }
+        public int SymbolId { get; set; }
         public string SymbolName { get; set; }
         public DateTime? Time { get; set; }
         public string Side { get; set; }

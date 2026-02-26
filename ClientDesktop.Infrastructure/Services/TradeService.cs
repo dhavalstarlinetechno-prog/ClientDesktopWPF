@@ -3,6 +3,8 @@ using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Helpers;
 using ClientDesktop.Infrastructure.Logger;
+using DocumentFormat.OpenXml.Drawing.Charts;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -40,6 +42,26 @@ namespace ClientDesktop.Infrastructure.Services
             {
                 FileLogger.Log("MarketWatchService", $"Error: {ex.Message}");
                 return new MarketWatchData();
+            }
+        }
+
+        public async Task<(bool Success, string ErrorMessage, SymbolData SymbolData)> GetSymbolDataAsync(string clientId, int symbolId)
+        {
+            try
+            {
+                var url = CommonHelper.ToReplaceUrl($"{AppConfig.GetSymbolDataForTrade}/{clientId}/{symbolId}", _sessionService.PrimaryDomain);
+                var responseData = await _apiService.GetAsync<SymbolDataResponse>(url);
+
+                if (responseData == null || responseData.Data == null)
+                {
+                    return (true, "Failed to get Symbol details", null);
+                }
+
+                return (true, null, responseData.Data.FirstOrDefault());
+            }
+            catch (Exception ex)
+            {
+                return (true, ex.Message, null);
             }
         }
     }

@@ -267,8 +267,8 @@ namespace ClientDesktop.ViewModel
                 "New Trade Order",
                 configureViewModel: vm =>
                 {
-                    vm.CurrentOrderType = TradeOrderType.Market;
-                    vm.CurrentWindowMode = TradeWindowMode.FromTradeButton;
+                    vm.CurrentOrderTypeEnum = EnumTradeOrderType.Market;
+                    vm.CurrentWindowModeEnum = EnumTradeWindowMode.FromTradeButton;
                     vm.positionGridRow = null;
 
                     _ = vm.LoadSymbolListAsync();

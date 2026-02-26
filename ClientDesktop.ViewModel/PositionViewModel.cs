@@ -70,6 +70,7 @@ namespace ClientDesktop.ViewModel
                     tempRows.Add(new PositionGridRow
                     {
                         Id = pos.Id,
+                        SymbolId = pos.SymbolId,
                         SymbolName = pos.SymbolName,
                         Time = pos.LastInAt,
                         Side = displaySide,
@@ -112,6 +113,7 @@ namespace ClientDesktop.ViewModel
                     tempRows.Add(new PositionGridRow
                     {
                         Id = ord.OrderId,
+                        SymbolId = ord.SymbolId,
                         SymbolName = ord.SymbolName,
                         Time = ord.UpdatedAt,
                         Side = displaySide,
@@ -145,12 +147,15 @@ namespace ClientDesktop.ViewModel
                     "Trade Order",
                     configureViewModel: vm =>
                     {
+                        _ = vm.LoadSymbolListAsync();
+
                         vm.positionGridRow = selectedRow;
-                        vm.CurrentWindowMode = selectedRow.Type == RowType.Position ? TradeWindowMode.FromPosition : TradeWindowMode.FromOrder;
-                        vm.CurrentOrderType = selectedRow.IsPosition ? TradeOrderType.Market :
-                              selectedRow.OrderType?.Contains("Stop", StringComparison.OrdinalIgnoreCase) == true ? TradeOrderType.StopLimit :
-                              selectedRow.OrderType?.Contains("Limit", StringComparison.OrdinalIgnoreCase) == true ? TradeOrderType.Limit :
-                              TradeOrderType.Market;
+                        vm.CurrentWindowModeEnum = selectedRow.Type == RowType.Position ? EnumTradeWindowMode.FromPosition : EnumTradeWindowMode.FromOrder;
+                        vm.CurrentOrderTypeEnum = selectedRow.IsPosition ? EnumTradeOrderType.Market :
+                              selectedRow.OrderType?.Contains("Stop", StringComparison.OrdinalIgnoreCase) == true ? EnumTradeOrderType.StopLimit :
+                              selectedRow.OrderType?.Contains("Limit", StringComparison.OrdinalIgnoreCase) == true ? EnumTradeOrderType.Limit :
+                              EnumTradeOrderType.Market;
+
                     }
                 );
         }
