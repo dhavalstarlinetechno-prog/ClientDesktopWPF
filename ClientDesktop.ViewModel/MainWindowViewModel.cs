@@ -9,30 +9,53 @@ using System.Windows.Input;
 
 namespace ClientDesktop.ViewModel
 {
+    /// <summary>
+    /// ViewModel for managing the main application window, including authentication and global session state.
+    /// </summary>
     public class MainWindowViewModel : ViewModelBase
     {
+        #region Fields
+
         private readonly SessionService _sessionService;
         private readonly AuthService _authService;
         private readonly ClientService _clientService;
         private readonly IDialogService _dialogService;
 
         private string _title = string.Empty;
+        private string _userId;
+        private bool _isLoggedIn;
+
+        #endregion
+
+        #region Properties
+
         public string Title { get => _title; set => SetProperty(ref _title, value); }
 
-        private string _userId;
         public string UserId { get => _userId; set => SetProperty(ref _userId, value); }
 
-        private bool _isLoggedIn;
         public bool IsLoggedIn { get => _isLoggedIn; set => SetProperty(ref _isLoggedIn, value); }
 
         public MarketWatchViewModel MarketWatchVM { get; }
 
         public Func<bool>? OpenDisclaimerAction { get; set; }
 
+        #endregion
+
+        #region Commands
+
         public ICommand DisconnectCommand { get; }
+
         public ICommand ShowLoginCommand { get; }
 
         public ICommand OpenNewOrderCommand => new RelayCommand(param => OpenNewOrderWindow());
+
+        #endregion
+
+        #region Constructor
+
+        /// <summary>
+        /// Initializes a new instance of the MainWindowViewModel class.
+        /// </summary>
         public MainWindowViewModel(
             SessionService sessionService,
             AuthService authService,
@@ -51,6 +74,13 @@ namespace ClientDesktop.ViewModel
             ShowLoginCommand = new RelayCommand(_ => ShowLoginWindow());
         }
 
+        #endregion
+
+        #region Public Methods
+
+        /// <summary>
+        /// Initializes the home window, validates the network, and attempts auto-login.
+        /// </summary>
         public async Task InitializeHomeAsync()
         {
             await _authService.GetServerListAsync();
@@ -99,6 +129,27 @@ namespace ClientDesktop.ViewModel
             }
         }
 
+        /// <summary>
+        /// Opens the login dialog and triggers post-login setup upon successful authentication.
+        /// </summary>
+        public void ShowLoginWindow()
+        {
+            _dialogService.ShowDialog<LoginPageViewModel>("Login", (vm) =>
+            {
+                if (_sessionService.IsLoggedIn)
+                {
+                    _ = PerformPostLoginSetup();
+                }
+            });
+        }
+
+        #endregion
+
+        #region Private Methods
+
+        /// <summary>
+        /// Attempts to automatically log in using saved credentials.
+        /// </summary>
         private async Task<bool> AutoLoginAsync(LoginInfo user)
         {
             try
@@ -135,21 +186,16 @@ namespace ClientDesktop.ViewModel
                     FileLogger.Log("Network", $"User '{user.UserId}' Disconnected");
                 }
             }
-            catch { }
+            catch
+            {
+                // Silently catch auto-login failures
+            }
             return false;
         }
 
-        public void ShowLoginWindow()
-        {
-            _dialogService.ShowDialog<LoginPageViewModel>("Login", (vm) =>
-            {
-                if (_sessionService.IsLoggedIn)
-                {
-                    _ = PerformPostLoginSetup();
-                }
-            });
-        }
-
+        /// <summary>
+        /// Performs necessary setup operations like displaying disclaimers and loading client lists after login.
+        /// </summary>
         private async Task PerformPostLoginSetup()
         {
             bool disclaimerAcknowledged = ShowDisclaimerAndCheck();
@@ -180,6 +226,9 @@ namespace ClientDesktop.ViewModel
             }
         }
 
+        /// <summary>
+        /// Displays the disclaimer dialog and returns whether the user acknowledged it.
+        /// </summary>
         private bool ShowDisclaimerAndCheck()
         {
             if (OpenDisclaimerAction != null)
@@ -189,6 +238,9 @@ namespace ClientDesktop.ViewModel
             return false;
         }
 
+        /// <summary>
+        /// Initializes the application state properties after a successful login.
+        /// </summary>
         private void InitializeAfterLogin()
         {
             UserId = _sessionService.UserId;
@@ -196,6 +248,9 @@ namespace ClientDesktop.ViewModel
             Title = _sessionService.ServerListData?.FirstOrDefault(q => q?.licenseId.ToString() == _sessionService.LicenseId)?.serverDisplayName ?? "Home";
         }
 
+        /// <summary>
+        /// Sets the application state to restricted mode, clearing user-specific data from the UI.
+        /// </summary>
         private void SetRestrictedMode()
         {
             Title = string.Empty;
@@ -203,6 +258,9 @@ namespace ClientDesktop.ViewModel
             UserId = string.Empty;
         }
 
+        /// <summary>
+        /// Opens a new trade order dialog initialized with market order parameters.
+        /// </summary>
         private void OpenNewOrderWindow()
         {
             _dialogService.ShowDialog<TradeViewModel>(
@@ -218,6 +276,9 @@ namespace ClientDesktop.ViewModel
             );
         }
 
+        /// <summary>
+        /// Disconnects the current session and returns to the login window.
+        /// </summary>
         private void Disconnect()
         {
             _sessionService.ClearSession();
@@ -225,5 +286,7 @@ namespace ClientDesktop.ViewModel
             FileLogger.Log("Network", "Disconnected.");
             ShowLoginWindow();
         }
+
+        #endregion
     }
 }

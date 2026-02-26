@@ -5,13 +5,25 @@ using ClientDesktop.Infrastructure.Helpers;
 
 namespace ClientDesktop.Infrastructure.Services
 {
+    /// <summary>
+    /// Service responsible for handling user authentication, session management, and server list retrieval.
+    /// </summary>
     public class AuthService
     {
+        #region Fields
+
         private readonly IRepository<List<LoginInfo>> _loginRepo;
         private readonly IRepository<List<ServerList>> _serverRepo;
         private readonly IApiService _apiService;
         private readonly SessionService _sessionService;
 
+        #endregion
+
+        #region Constructor
+
+        /// <summary>
+        /// Initializes a new instance of the AuthService class.
+        /// </summary>
         public AuthService(IApiService apiService, SessionService sessionService)
         {
             _loginRepo = new FileRepository<List<LoginInfo>>();
@@ -20,8 +32,13 @@ namespace ClientDesktop.Infrastructure.Services
             _sessionService = sessionService;
         }
 
-        #region Server Management
+        #endregion
 
+        #region Public Methods
+
+        /// <summary>
+        /// Retrieves the list of available servers from the local cache or API.
+        /// </summary>
         public async Task<List<ServerList>> GetServerListAsync()
         {
             string folderName = AESHelper.ToBase64UrlSafe("Servers");
@@ -44,13 +61,17 @@ namespace ClientDesktop.Infrastructure.Services
                     return response.data.licenseDetail;
                 }
             }
-            catch { }
+            catch
+            {
+                // Ignore API exceptions to safely return an empty list below.
+            }
 
             return new List<ServerList>();
         }
-        #endregion
 
-        #region Login & Auth
+        /// <summary>
+        /// Authenticates the user with the given credentials and license ID.
+        /// </summary>
         public async Task<(bool Success, string Message, AuthResponseData Data)> LoginAsync(string user, string pass, string licenseId, bool isRemember)
         {
             var formData = new Dictionary<string, string>
@@ -70,9 +91,14 @@ namespace ClientDesktop.Infrastructure.Services
                 return (true, "Success", result.data);
             }
 
-            return (false, result?.successMessage ?? ((Newtonsoft.Json.Linq.JProperty)((Newtonsoft.Json.Linq.JContainer)result.exception).Last).Value.ToString() ?? "Login Failed", null);
+            string errorMessage = result?.successMessage ?? ((Newtonsoft.Json.Linq.JProperty)((Newtonsoft.Json.Linq.JContainer)result.exception).Last).Value.ToString() ?? "Login Failed";
+
+            return (false, errorMessage, null);
         }
 
+        /// <summary>
+        /// Retrieves the profile information for the currently authenticated user.
+        /// </summary>
         public async Task<AuthResponseObj> GetUserProfileAsync()
         {
             try
@@ -86,6 +112,9 @@ namespace ClientDesktop.Infrastructure.Services
             }
         }
 
+        /// <summary>
+        /// Saves the user's login history, including session state and preferences, to local storage.
+        /// </summary>
         public void SaveLoginHistory(string user, string pass, string licenseId, bool isRemember)
         {
             string fileName = AESHelper.ToBase64UrlSafe("LoginData");
@@ -127,11 +156,15 @@ namespace ClientDesktop.Infrastructure.Services
             _loginRepo.Save(fileName, list);
         }
 
+        /// <summary>
+        /// Loads and retrieves the login history data from local storage.
+        /// </summary>
         public List<LoginInfo> GetLoginHistory()
         {
             string fileName = AESHelper.ToBase64UrlSafe("LoginData");
             return _loginRepo.Load(fileName) ?? new List<LoginInfo>();
         }
+
         #endregion
     }
 }

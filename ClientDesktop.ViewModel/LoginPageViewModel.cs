@@ -8,20 +8,36 @@ using System.Windows.Input;
 
 namespace ClientDesktop.ViewModel
 {
+    /// <summary>
+    /// ViewModel for handling user login, server selection, and authentication.
+    /// </summary>
     public class LoginPageViewModel : ViewModelBase, ICloseable
     {
+        #region Fields
+
+        private const int Threshold = 3;
         private readonly SessionService _sessionService;
         private readonly AuthService _authService;
-        private const int Threshold = 3;
+
+        private ServerList _selectedServer;
+        private string _username;
+        private string _password;
+        private bool _isRememberMe;
+
+        #endregion
+
+        #region Properties
 
         public Action CloseAction { get; set; }
 
         public List<ServerList> AllServers { get; private set; } = new();
+
         public ObservableCollection<ServerList> FilteredServers { get; } = new();
+
         public ObservableCollection<string> LoginHistory { get; } = new();
 
-        // --- Properties ---
-        private ServerList _selectedServer;
+        public bool IsBusy { get; set; }
+
         public ServerList SelectedServer
         {
             get => _selectedServer;
@@ -35,14 +51,15 @@ namespace ClientDesktop.ViewModel
             }
         }
 
-        private string _username;
         public string Username
         {
             get => _username;
             set
             {
                 if (!string.IsNullOrEmpty(value) && !value.All(char.IsDigit))
+                {
                     return;
+                }
 
                 if (SetProperty(ref _username, value))
                 {
@@ -51,21 +68,33 @@ namespace ClientDesktop.ViewModel
             }
         }
 
-        private string _password;
         public string Password
         {
             get => _password;
             set => SetProperty(ref _password, value);
         }
 
-        private bool _isRememberMe;
-        public bool IsRememberMe { get => _isRememberMe; set => SetProperty(ref _isRememberMe, value); }
+        public bool IsRememberMe
+        {
+            get => _isRememberMe;
+            set => SetProperty(ref _isRememberMe, value);
+        }
 
-        public bool IsBusy { get; set; }
+        #endregion
+
+        #region Commands
 
         public ICommand LoginCommand { get; }
+
         public ICommand CancelCommand { get; }
 
+        #endregion
+
+        #region Constructor
+
+        /// <summary>
+        /// Initializes a new instance of the LoginPageViewModel class.
+        /// </summary>
         public LoginPageViewModel(SessionService sessionService, AuthService authService)
         {
             _sessionService = sessionService;
@@ -77,6 +106,13 @@ namespace ClientDesktop.ViewModel
             _ = LoadServerListAsync();
         }
 
+        #endregion
+
+        #region Public Methods
+
+        /// <summary>
+        /// Asynchronously loads the list of available servers and applies the last successful login selection.
+        /// </summary>
         public async Task LoadServerListAsync()
         {
             try
@@ -114,6 +150,9 @@ namespace ClientDesktop.ViewModel
             }
         }
 
+        /// <summary>
+        /// Filters the available server list based on the user's input.
+        /// </summary>
         public void FilterServers(string input)
         {
             if (AllServers == null) return;
@@ -137,11 +176,19 @@ namespace ClientDesktop.ViewModel
             }
         }
 
+        #endregion
+
+        #region Private Methods
+
+        /// <summary>
+        /// Loads the login history specific to the currently selected server.
+        /// </summary>
         private void LoadLoginHistoryForServer()
         {
             LoginHistory.Clear();
             Password = string.Empty;
             IsRememberMe = false;
+
             var history = _authService.GetLoginHistory();
             if (history != null && SelectedServer != null)
             {
@@ -155,6 +202,9 @@ namespace ClientDesktop.ViewModel
             }
         }
 
+        /// <summary>
+        /// Checks the login history to auto-fill the password if the user has chosen to be remembered.
+        /// </summary>
         private void CheckLoginHistory()
         {
             if (string.IsNullOrEmpty(Username) || SelectedServer == null)
@@ -183,6 +233,9 @@ namespace ClientDesktop.ViewModel
             }
         }
 
+        /// <summary>
+        /// Authenticates the user credentials against the selected server and establishes the session.
+        /// </summary>
         private async Task LoginAsync()
         {
             try
@@ -218,6 +271,7 @@ namespace ClientDesktop.ViewModel
                             IpAddress = profileResult.data.ip,
                             Device = "Windows"
                         };
+
                         _sessionService.socketLoginInfos = socketInfo;
                         _sessionService.IsPasswordReadOnly = profileResult.data.isreadonlypassword;
                     }
@@ -229,7 +283,7 @@ namespace ClientDesktop.ViewModel
                     LogDisconnect();
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 LogDisconnect();
             }
@@ -239,9 +293,13 @@ namespace ClientDesktop.ViewModel
             }
         }
 
+        /// <summary>
+        /// Logs a disconnection event for the current user or a general disconnection.
+        /// </summary>
         private void LogDisconnect()
         {
             string compName = SelectedServer?.companyName;
+
             if (!string.IsNullOrEmpty(Username) && !string.IsNullOrEmpty(compName))
             {
                 FileLogger.Log("Network", $"User '{Username}' Disconnected from {compName}");
@@ -251,5 +309,7 @@ namespace ClientDesktop.ViewModel
                 FileLogger.Log("Network", "Disconnected");
             }
         }
+
+        #endregion
     }
 }

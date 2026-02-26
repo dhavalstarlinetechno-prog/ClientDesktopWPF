@@ -1,29 +1,45 @@
 ﻿using ClientDesktop.Core.Models;
 using ClientDesktop.View.Disclaimer;
 using ClientDesktop.ViewModel;
-using Microsoft.Extensions.DependencyInjection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
 
 namespace ClientDesktop.Main.Login
 {
+    /// <summary>
+    /// Interaction logic for the Login Page user control.
+    /// </summary>
     public partial class LoginPage : UserControl
     {
+        #region Fields
+
+        private const int Threshold = 3;
         private bool _isPasswordVisible = false;
         private bool _isInternalChange = false;
         private bool _isUpdating = false;
-        private const int Threshold = 3;
 
+        #endregion
+
+        #region Constructor
+
+        /// <summary>
+        /// Initializes a new instance of the LoginPage class.
+        /// </summary>
         public LoginPage()
         {
             InitializeComponent();
         }
 
+        #endregion
+
+        #region UI Event Handlers
+
+        /// <summary>
+        /// Synchronizes the password from the ViewModel and sets initial focus when the control loads.
+        /// </summary>
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
-            // Sync Password on Load
             if (DataContext is LoginPageViewModel vm)
             {
                 if (!string.IsNullOrEmpty(vm.Password) && txtPassword.Password != vm.Password)
@@ -46,6 +62,9 @@ namespace ClientDesktop.Main.Login
             cmbServerName.Focus();
         }
 
+        /// <summary>
+        /// Updates the ViewModel when the password box text changes.
+        /// </summary>
         private void TxtPassword_PasswordChanged(object sender, RoutedEventArgs e)
         {
             if (DataContext is LoginPageViewModel vm)
@@ -57,6 +76,9 @@ namespace ClientDesktop.Main.Login
             }
         }
 
+        /// <summary>
+        /// Toggles the visibility of the password characters between masked and unmasked states.
+        /// </summary>
         private void BtnEye_Click(object sender, RoutedEventArgs e)
         {
             _isPasswordVisible = !_isPasswordVisible;
@@ -79,6 +101,9 @@ namespace ClientDesktop.Main.Login
             }
         }
 
+        /// <summary>
+        /// Opens the disclaimer dialog window.
+        /// </summary>
         private void Disclaimer_Click(object sender, MouseButtonEventArgs e)
         {
             var disclaimerView = new DisclaimerView();
@@ -86,25 +111,9 @@ namespace ClientDesktop.Main.Login
             disclaimerView.ShowDialog();
         }
 
-        #region Server List Management
-        private List<ServerList> Filter(string input)
-        {
-            var vm = this.DataContext as LoginPageViewModel;
-            if (vm == null || vm.AllServers == null) return new List<ServerList>();
-
-            if (string.IsNullOrWhiteSpace(input)) return new List<ServerList>();
-
-            input = input.Trim();
-
-            if (input.Length < Threshold) return new List<ServerList>();
-
-            return vm.AllServers
-                .Where(s => (s.companyName ?? string.Empty)
-                    .IndexOf(input, StringComparison.OrdinalIgnoreCase) >= 0)
-                .Take(20)
-                .ToList();
-        }
-
+        /// <summary>
+        /// Handles the text changed event to filter the server list and manage auto-selection based on user input.
+        /// </summary>
         private void CmbServerName_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (_isInternalChange) return;
@@ -141,10 +150,8 @@ namespace ClientDesktop.Main.Login
 
                 if (needsUpdate)
                 {
-                    // Lock events
                     _isInternalChange = true;
 
-                    // Clear items to force refresh
                     vm.FilteredServers.Clear();
 
                     if (results.Count > 0)
@@ -153,7 +160,6 @@ namespace ClientDesktop.Main.Login
 
                         var firstMatch = results[0];
 
-                        // Auto-Select Logic
                         if (firstMatch.companyName.StartsWith(txt, StringComparison.OrdinalIgnoreCase))
                         {
                             cmbServerName.SelectedItem = firstMatch;
@@ -169,7 +175,6 @@ namespace ClientDesktop.Main.Login
                         }
                         else
                         {
-                            // Partial match but not prefix match -> Restore text
                             cmbServerName.SelectedItem = null;
                             cmbServerName.Text = txt;
                             textBox.Text = txt;
@@ -180,11 +185,9 @@ namespace ClientDesktop.Main.Login
                     }
                     else
                     {
-                        // No results (or threshold not met) -> Clear selection but KEEP text
                         cmbServerName.IsDropDownOpen = false;
                         cmbServerName.SelectedItem = null;
 
-                        // Explicitly restore text because setting SelectedItem=null clears it
                         cmbServerName.Text = txt;
                         textBox.Text = txt;
                         textBox.Select(txt.Length, 0);
@@ -197,7 +200,6 @@ namespace ClientDesktop.Main.Login
                     if (results.Count > 0) cmbServerName.IsDropDownOpen = true;
                 }
 
-                // Extra safety: If results are empty but selection exists (rare mismatch)
                 if (results.Count == 0 && cmbServerName.SelectedItem != null)
                 {
                     _isInternalChange = true;
@@ -214,6 +216,9 @@ namespace ClientDesktop.Main.Login
             }
         }
 
+        /// <summary>
+        /// Prevents the server dropdown from opening if the input text length is below the required threshold.
+        /// </summary>
         private void CmbServerName_DropDownOpened(object sender, EventArgs e)
         {
             var txt = cmbServerName.Text.Trim();
@@ -223,6 +228,9 @@ namespace ClientDesktop.Main.Login
             }
         }
 
+        /// <summary>
+        /// Handles the selection change event to update the text box with the newly selected server name.
+        /// </summary>
         private void CmbServerName_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (_isUpdating || _isInternalChange) return;
@@ -245,6 +253,9 @@ namespace ClientDesktop.Main.Login
             }
         }
 
+        /// <summary>
+        /// Handles keyboard events within the server name combo box, specifically clearing the selection on Escape key.
+        /// </summary>
         private void CmbServerName_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Escape)
@@ -260,6 +271,32 @@ namespace ClientDesktop.Main.Login
                 e.Handled = true;
             }
         }
+
+        #endregion
+
+        #region Private Methods
+
+        /// <summary>
+        /// Filters the server list based on the provided input string.
+        /// </summary>
+        private List<ServerList> Filter(string input)
+        {
+            var vm = this.DataContext as LoginPageViewModel;
+            if (vm == null || vm.AllServers == null) return new List<ServerList>();
+
+            if (string.IsNullOrWhiteSpace(input)) return new List<ServerList>();
+
+            input = input.Trim();
+
+            if (input.Length < Threshold) return new List<ServerList>();
+
+            return vm.AllServers
+                .Where(s => (s.companyName ?? string.Empty)
+                    .IndexOf(input, StringComparison.OrdinalIgnoreCase) >= 0)
+                .Take(20)
+                .ToList();
+        }
+
         #endregion
     }
 }

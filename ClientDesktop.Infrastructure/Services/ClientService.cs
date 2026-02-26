@@ -5,12 +5,24 @@ using ClientDesktop.Infrastructure.Helpers;
 
 namespace ClientDesktop.Infrastructure.Services
 {
+    /// <summary>
+    /// Service responsible for managing client details, fetching them from the API, and handling local caching.
+    /// </summary>
     public class ClientService
     {
+        #region Fields
+
         private readonly IApiService _apiService;
         private readonly SessionService _sessionService;
         private readonly IRepository<List<ClientDetails>> _clientRepo;
 
+        #endregion
+
+        #region Constructor
+
+        /// <summary>
+        /// Initializes a new instance of the ClientService class.
+        /// </summary>
         public ClientService(IApiService apiService, SessionService sessionService)
         {
             _apiService = apiService;
@@ -18,6 +30,13 @@ namespace ClientDesktop.Infrastructure.Services
             _clientRepo = new FileRepository<List<ClientDetails>>();
         }
 
+        #endregion
+
+        #region Public Methods
+
+        /// <summary>
+        /// Retrieves the master list of clients, optionally updating specific details, and caches the result locally.
+        /// </summary>
         public async Task<(bool Success, string ErrorMessage, List<ClientDetails> Clients, bool IsViewLocked)> GetClientListAsync(ClientDetails clientDetails)
         {
             string folderName = AESHelper.ToBase64UrlSafe(_sessionService.LicenseId);
@@ -73,6 +92,9 @@ namespace ClientDesktop.Infrastructure.Services
             }
         }
 
+        /// <summary>
+        /// Retrieves the specific details for the currently authenticated client.
+        /// </summary>
         public async Task<(bool Success, string ErrorMessage, ClientDetails Clients)> GetSpecificClientListAsync()
         {
             try
@@ -92,5 +114,7 @@ namespace ClientDesktop.Infrastructure.Services
                 return (true, ex.Message, null);
             }
         }
+
+        #endregion
     }
 }

@@ -1,28 +1,56 @@
-﻿using ClientDesktop.Core.Config;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using ClientDesktop.Core.Config;
 using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Infrastructure.Helpers;
 using Newtonsoft.Json;
 
 namespace ClientDesktop.Infrastructure.Services
 {
+    /// <summary>
+    /// Generic repository for saving and loading data to and from the local file system with encryption.
+    /// </summary>
     public class FileRepository<T> : IRepository<T>
     {
+        #region Fields
+
         private readonly string _baseFolder;
 
+        #endregion
+
+        #region Constructor
+
+        /// <summary>
+        /// Initializes a new instance of the FileRepository class and ensures the base directory exists.
+        /// </summary>
         public FileRepository()
         {
             _baseFolder = AppConfig.AppDataPath;
-            if (!Directory.Exists(_baseFolder)) Directory.CreateDirectory(_baseFolder);
+            if (!Directory.Exists(_baseFolder))
+            {
+                Directory.CreateDirectory(_baseFolder);
+            }
         }
 
+        #endregion
+
+        #region Public Methods
+
+        /// <summary>
+        /// Saves the specified data to a file, optionally under a specific key within a JSON dictionary, applying encryption.
+        /// </summary>
         public void Save(string filename, T data, string key = null)
         {
             try
             {
                 string path = Path.Combine(_baseFolder, filename + ".dat");
-
                 string dir = Path.GetDirectoryName(path);
-                if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+
+                if (!Directory.Exists(dir))
+                {
+                    Directory.CreateDirectory(dir);
+                }
 
                 string contentToSave;
 
@@ -41,12 +69,16 @@ namespace ClientDesktop.Infrastructure.Services
                             string existingEncrypted = File.ReadAllText(path);
                             string existingJson = AESHelper.DecompressAndDecryptString(existingEncrypted);
                             var existingDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(existingJson);
+
                             if (existingDict != null)
                             {
                                 dataDictionary = existingDict;
                             }
                         }
-                        catch { /* Ignore errors, start fresh */ }
+                        catch
+                        {
+                            // Ignore deserialization errors to start fresh
+                        }
                     }
 
                     dataDictionary[key] = data;
@@ -56,9 +88,15 @@ namespace ClientDesktop.Infrastructure.Services
                 string encrypted = AESHelper.CompressAndEncryptString(contentToSave);
                 File.WriteAllText(path, encrypted);
             }
-            catch (Exception ex) { Console.WriteLine("Save Error: " + ex.Message); }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Save Error: " + ex.Message);
+            }
         }
 
+        /// <summary>
+        /// Loads and decrypts data from a file, optionally extracting it via a specific key.
+        /// </summary>
         public T Load(string filename, string key = null)
         {
             try
@@ -85,7 +123,12 @@ namespace ClientDesktop.Infrastructure.Services
 
                 return default;
             }
-            catch { return default; }
+            catch
+            {
+                return default;
+            }
         }
+
+        #endregion
     }
 }

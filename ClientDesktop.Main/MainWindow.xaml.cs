@@ -1,39 +1,49 @@
-﻿using AvalonDock.Layout;
-using AvalonDock.Layout.Serialization;
-using ClientDesktop.View.Disclaimer;
-using ClientDesktop.View.TradeOrder;
-using ClientDesktop.ViewModel;
+﻿using System;
 using System.IO;
+using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
+using AvalonDock.Layout;
+using AvalonDock.Layout.Serialization;
+using ClientDesktop.View.Disclaimer;
+using ClientDesktop.ViewModel;
 
 namespace ClientDesktop.Main
 {
+    /// <summary>
+    /// Interaction logic for the main application window, managing layout, docking, and session UI state.
+    /// </summary>
     public partial class MainWindow : Window
     {
+        #region Fields
+
         private const string LayoutFileName = "layout.xml";
 
-        public static RoutedCommand ToggleMarketWatchCommand = new RoutedCommand();
-        public static RoutedCommand ToggleNavigatorCommand = new RoutedCommand();
-        public static RoutedCommand ToggleToolboxCommand = new RoutedCommand();
+        public static readonly RoutedCommand ToggleMarketWatchCommand = new RoutedCommand();
+        public static readonly RoutedCommand ToggleNavigatorCommand = new RoutedCommand();
+        public static readonly RoutedCommand ToggleToolboxCommand = new RoutedCommand();
 
+        #endregion
+
+        #region Constructor
+
+        /// <summary>
+        /// Initializes a new instance of the MainWindow class and sets up view model bindings.
+        /// </summary>
         public MainWindow(MainWindowViewModel viewModel)
         {
             InitializeComponent();
             this.DataContext = viewModel;
 
-            // --- CONNECT DISCLAIMER LOGIC ---
             viewModel.OpenDisclaimerAction = () =>
             {
                 var disclaimer = new DisclaimerView();
-                // Return true only if User clicked Acknowledge
                 return disclaimer.ShowDialog() == true;
             };
 
             UpdateLoginState(false, null);
 
-            // Listen for login changes
             viewModel.PropertyChanged += (s, e) =>
             {
                 if (e.PropertyName == nameof(MainWindowViewModel.IsLoggedIn) ||
@@ -47,78 +57,40 @@ namespace ClientDesktop.Main
             this.Closing += MainWindow_Closing;
         }
 
-        private void ToggleMarketWatch_Executed(object sender, ExecutedRoutedEventArgs e)
-        {
-            ToggleAnchorable("MarketWatch");
-        }
+        #endregion
 
-        private void ToggleNavigator_Executed(object sender, ExecutedRoutedEventArgs e)
-        {
-            ToggleAnchorable("Navigator");
-        }
+        #region Public Methods
 
-        private void Window_StateChanged(object sender, System.EventArgs e)
+        /// <summary>
+        /// Updates the visibility and styling of the user profile UI based on the login state.
+        /// </summary>
+        public void UpdateLoginState(bool isLoggedIn, string username)
         {
-            if (this.WindowState == WindowState.Maximized)
+            if (isLoggedIn)
             {
-                BtnMaximize.Content = "❐";
-
-                RootGrid.Margin = new Thickness(8);
+                TxtUserName.Text = username;
+                TxtUserName.Visibility = Visibility.Visible;
+                UserIconPath.Fill = new SolidColorBrush(Colors.Green);
+                MenuConnect.Visibility = Visibility.Collapsed;
+                MenuDisconnect.Visibility = Visibility.Visible;
             }
             else
             {
-                BtnMaximize.Content = "☐";
-
-                RootGrid.Margin = new Thickness(0);
+                TxtUserName.Text = string.Empty;
+                TxtUserName.Visibility = Visibility.Collapsed;
+                UserIconPath.Fill = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#666666"));
+                MenuConnect.Visibility = Visibility.Visible;
+                MenuDisconnect.Visibility = Visibility.Collapsed;
             }
         }
 
-        // ==========================================
-        // BUTTON CLICKS
-        // ==========================================
-        private void Minimize_Click(object sender, RoutedEventArgs e)
-        {
-            this.WindowState = WindowState.Minimized;
-        }
+        #endregion
 
-        private void Maximize_Click(object sender, RoutedEventArgs e)
-        {
-            // Just toggle the state. The 'Window_StateChanged' method above will handle the icons and margins!
-            if (this.WindowState == WindowState.Maximized)
-                this.WindowState = WindowState.Normal;
-            else
-                this.WindowState = WindowState.Maximized;
-        }
+        #region Window Events
 
-        private void Close_Click(object sender, RoutedEventArgs e)
-        {
-            this.Close();
-        }
-        private void ToggleToolbox_Executed(object sender, ExecutedRoutedEventArgs e)
-        {
-            ToggleAnchorable("Toolbox");
-        }
-
-        // --- HELPER FOR TOGGLING ---
-        private void ToggleAnchorable(string contentId)
-        {
-            if (dockManager.Layout == null) return;
-
-            // Find the anchorable by ContentId in the CURRENT layout tree
-            var anchorable = dockManager.Layout.Descendents()
-                .OfType<LayoutAnchorable>()
-                .FirstOrDefault(a => a.ContentId == contentId);
-
-            if (anchorable != null)
-            {
-                if (anchorable.IsVisible)
-                    anchorable.Hide();
-                else
-                    anchorable.Show();
-            }
-        }
-
-        // --- LAYOUT LOGIC ---
+        /// <summary>
+        /// Handles the window loaded event to deserialize and apply the saved AvalonDock layout.
+        /// </summary>
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             var serializer = new XmlLayoutSerializer(dockManager);
@@ -140,6 +112,9 @@ namespace ClientDesktop.Main
             }
         }
 
+        /// <summary>
+        /// Handles the window closing event to serialize and save the current AvalonDock layout.
+        /// </summary>
         private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             var serializer = new XmlLayoutSerializer(dockManager);
@@ -153,44 +128,136 @@ namespace ClientDesktop.Main
             }
         }
 
-        private void MenuConnect_Click(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// Adjusts the window margins and maximize/restore button icons based on the window state.
+        /// </summary>
+        private void Window_StateChanged(object sender, EventArgs e)
         {
-            if (DataContext is MainWindowViewModel vm) vm.ShowLoginWindow();
-        }
-
-        private void MenuDisconnect_Click(object sender, RoutedEventArgs e)
-        {
-            if (DataContext is MainWindowViewModel vm) vm.DisconnectCommand.Execute(null);
-            //if (DataContext is MainWindowViewModel vm)
-            //{
-            //    if (MessageBox.Show("Are you sure you want to disconnect?", "Disconnect", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
-            //    {
-            //        vm.DisconnectCommand.Execute(null);
-            //    }
-            //}
-        }
-
-        public void UpdateLoginState(bool isLoggedIn, string username)
-        {
-            if (isLoggedIn)
+            if (this.WindowState == WindowState.Maximized)
             {
-                TxtUserName.Text = username;
-                TxtUserName.Visibility = Visibility.Visible;
-                UserIconPath.Fill = new SolidColorBrush(Colors.Green);
-                MenuConnect.Visibility = Visibility.Collapsed;
-                MenuDisconnect.Visibility = Visibility.Visible;
-
+                BtnMaximize.Content = "❐";
+                RootGrid.Margin = new Thickness(8);
             }
             else
             {
-                TxtUserName.Text = "";
-                TxtUserName.Visibility = Visibility.Collapsed;
-                UserIconPath.Fill = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#666666"));
-                MenuConnect.Visibility = Visibility.Visible;
-                MenuDisconnect.Visibility = Visibility.Collapsed;
-
+                BtnMaximize.Content = "☐";
+                RootGrid.Margin = new Thickness(0);
             }
         }
 
+        #endregion
+
+        #region Command Executed Handlers
+
+        /// <summary>
+        /// Toggles the visibility of the Market Watch anchorable window.
+        /// </summary>
+        private void ToggleMarketWatch_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            ToggleAnchorable("MarketWatch");
+        }
+
+        /// <summary>
+        /// Toggles the visibility of the Navigator anchorable window.
+        /// </summary>
+        private void ToggleNavigator_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            ToggleAnchorable("Navigator");
+        }
+
+        /// <summary>
+        /// Toggles the visibility of the Toolbox anchorable window.
+        /// </summary>
+        private void ToggleToolbox_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            ToggleAnchorable("Toolbox");
+        }
+
+        #endregion
+
+        #region UI Event Handlers
+
+        /// <summary>
+        /// Minimizes the application window.
+        /// </summary>
+        private void Minimize_Click(object sender, RoutedEventArgs e)
+        {
+            this.WindowState = WindowState.Minimized;
+        }
+
+        /// <summary>
+        /// Maximizes or restores the application window.
+        /// </summary>
+        private void Maximize_Click(object sender, RoutedEventArgs e)
+        {
+            if (this.WindowState == WindowState.Maximized)
+            {
+                this.WindowState = WindowState.Normal;
+            }
+            else
+            {
+                this.WindowState = WindowState.Maximized;
+            }
+        }
+
+        /// <summary>
+        /// Closes the application window.
+        /// </summary>
+        private void Close_Click(object sender, RoutedEventArgs e)
+        {
+            this.Close();
+        }
+
+        /// <summary>
+        /// Initiates the login process by opening the login window.
+        /// </summary>
+        private void MenuConnect_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is MainWindowViewModel vm)
+            {
+                vm.ShowLoginWindow();
+            }
+        }
+
+        /// <summary>
+        /// Initiates the disconnect process to log out the current user.
+        /// </summary>
+        private void MenuDisconnect_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is MainWindowViewModel vm)
+            {
+                vm.DisconnectCommand.Execute(null);
+            }
+        }
+
+        #endregion
+
+        #region Private Helpers
+
+        /// <summary>
+        /// Toggles the visibility of a layout anchorable pane based on its content ID.
+        /// </summary>
+        private void ToggleAnchorable(string contentId)
+        {
+            if (dockManager.Layout == null) return;
+
+            var anchorable = dockManager.Layout.Descendents()
+                .OfType<LayoutAnchorable>()
+                .FirstOrDefault(a => a.ContentId == contentId);
+
+            if (anchorable != null)
+            {
+                if (anchorable.IsVisible)
+                {
+                    anchorable.Hide();
+                }
+                else
+                {
+                    anchorable.Show();
+                }
+            }
+        }
+
+        #endregion
     }
 }
