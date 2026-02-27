@@ -41,6 +41,7 @@ namespace ClientDesktop.ViewModel
 
             RegisterMessenger();
             _liveTickService.OnTickReceived += HandleLiveTick;
+            _liveTickService.OnReconnected += HandleLiveReconnected;
         }
 
         /// <summary>
@@ -53,6 +54,10 @@ namespace ClientDesktop.ViewModel
                 if (message.IsLoggedIn)
                 {
                     LoadDataAsync();
+                }
+                else
+                {
+                    _subscribedSymbols.Clear();
                 }
             });
         }
@@ -73,8 +78,6 @@ namespace ClientDesktop.ViewModel
 
                 var positionsList = posResult.Positions ?? new List<Position>();
                 var ordersList = ordResult.Orders ?? new List<OrderModel>();
-
-                await UnsubscribeAllSymbolsAsync();
 
                 // --- A. ADD POSITIONS ---
                 foreach (var pos in positionsList)
@@ -254,6 +257,26 @@ namespace ClientDesktop.ViewModel
             });
         }
 
+        /// <summary>
+        /// Handles the automatic re-subscription of symbols when SignalR reconnects after a network drop.
+        /// </summary>
+        private async void HandleLiveReconnected()
+        {
+            _subscribedSymbols.Clear();
+
+            var symbolsToSubscribe = GridRows
+                .Where(r => r.Type == RowType.Position || r.Type == RowType.Order)
+                .Select(r => r.SymbolName)
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Distinct()
+                .ToList();
+
+            foreach (var sym in symbolsToSubscribe)
+            {
+                await SubscribeToSymbolAsync(sym);
+            }
+        }
+
         // Ye tere teeno core logics sambhalega
         private void UpdateRowPrice(PositionGridRow row, TickData tick)
         {
@@ -336,6 +359,7 @@ namespace ClientDesktop.ViewModel
         {
             await UnsubscribeAllSymbolsAsync();
             _liveTickService.OnTickReceived -= HandleLiveTick;
+            _liveTickService.OnReconnected -= HandleLiveReconnected;
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

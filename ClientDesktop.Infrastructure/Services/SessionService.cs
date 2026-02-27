@@ -1,4 +1,7 @@
-﻿using ClientDesktop.Core.Models;
+﻿using ClientDesktop.Core.Events;
+using ClientDesktop.Core.Models;
+using CommunityToolkit.Mvvm.Messaging;
+using System.Net.NetworkInformation;
 
 namespace ClientDesktop.Infrastructure.Services
 {
@@ -7,9 +10,10 @@ namespace ClientDesktop.Infrastructure.Services
     /// </summary>
     public class SessionService
     {
-        #region Properties
+        #region Variables And Properties
 
         public bool IsLoggedIn => !string.IsNullOrEmpty(Token);
+        public bool IsInternetAvailable { get; set; }
         public string Token { get; private set; }
         public string UserId { get; private set; }
         public string Username { get; private set; }
@@ -28,7 +32,24 @@ namespace ClientDesktop.Infrastructure.Services
 
         #endregion
 
-        #region Public Methods
+        #region Constructor
+
+        /// <summary>
+        /// Initializes a new instance of the SessionService class and sets the initial network availability state.
+        /// </summary>
+        public SessionService()
+        {
+            IsInternetAvailable = NetworkInterface.GetIsNetworkAvailable();
+
+            WeakReferenceMessenger.Default.Register<NetworkStateEvent>(this, (recipient, message) =>
+            {
+                IsInternetAvailable = message.IsConnected;
+            });
+        }
+
+        #endregion
+
+        #region Session Management
 
         /// <summary>
         /// Sets the active session data for the logged-in user.

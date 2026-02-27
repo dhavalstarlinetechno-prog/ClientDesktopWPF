@@ -218,7 +218,7 @@ namespace ClientDesktop.ViewModel
         /// </summary>
         public void SetSymbolVisibility(string symbolName, bool isVisible)
         {
-            if (string.IsNullOrWhiteSpace(symbolName)) return;
+            if (!_sessionService.IsLoggedIn || !_sessionService.IsInternetAvailable || string.IsNullOrWhiteSpace(symbolName)) return;
 
             lock (_nativeVisibleSymbols)
             {
@@ -244,6 +244,8 @@ namespace ClientDesktop.ViewModel
             {
                 if (message.IsLoggedIn)
                 {
+                    lock (_currentlySubscribed) _currentlySubscribed.Clear();
+
                     string url = CommonHelper.ToReplaceUrl(AppConfig.MarketWatchSignalRUrl, _sessionService.PrimaryDomain, "sglr");
 
                     if (!string.IsNullOrEmpty(url))
@@ -251,13 +253,13 @@ namespace ClientDesktop.ViewModel
                         await _liveTickService.InitializeAndStartAsync(url);
                     }
 
-                    lock (_currentlySubscribed) _currentlySubscribed.Clear();
                     LoadData(forceSync: true);
                 }
                 else
                 {
-                    await _liveTickService.StopConnectionAsync();
                     lock (_currentlySubscribed) _currentlySubscribed.Clear();
+                    lock (_nativeVisibleSymbols) _nativeVisibleSymbols.Clear();
+                    await _liveTickService.StopConnectionAsync();
                 }
             });
         }
