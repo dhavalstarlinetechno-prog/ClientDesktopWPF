@@ -1,4 +1,4 @@
-﻿using ClientDesktop.Core.Base;
+using ClientDesktop.Core.Base;
 using ClientDesktop.Core.Enums;
 using ClientDesktop.Core.Events;
 using ClientDesktop.Core.Interfaces;
@@ -17,8 +17,11 @@ namespace ClientDesktop.ViewModel
     {
         private readonly SessionService _sessionService;
         private readonly PositionService _positionService;
+        private readonly LiveTickService _liveTickService;
         private ObservableCollection<PositionGridRow> _gridRows;
         private readonly IDialogService _dialogService;
+        private readonly HashSet<string> _subscribedSymbols = new HashSet<string>();
+
         public ICommand DoubleClickCommand { get; }
         public ObservableCollection<PositionGridRow> GridRows
         {
@@ -26,16 +29,18 @@ namespace ClientDesktop.ViewModel
             set { _gridRows = value; OnPropertyChanged(); }
         }
 
-        public PositionViewModel(SessionService sessionService, PositionService positionService, IDialogService dialogService)
+        public PositionViewModel(SessionService sessionService, PositionService positionService, IDialogService dialogService, LiveTickService liveTickService)
         {
             _sessionService = sessionService;
             _positionService = positionService;
             _dialogService = dialogService;
+            _liveTickService = liveTickService;
             GridRows = new ObservableCollection<PositionGridRow>();
 
             DoubleClickCommand = new RelayCommand(row => PositionGridDoubleClick((PositionGridRow?)row));
 
             RegisterMessenger();
+            _liveTickService.OnTickReceived += HandleLiveTick;
         }
 
         /// <summary>
@@ -64,11 +69,12 @@ namespace ClientDesktop.ViewModel
                 var posResult = await positionTask;
                 var ordResult = await orderTask;
 
-                // 1. DONT use Dispatcher here yet. Build list in background.
                 var tempRows = new ObservableCollection<PositionGridRow>();
 
                 var positionsList = posResult.Positions ?? new List<Position>();
                 var ordersList = ordResult.Orders ?? new List<OrderModel>();
+
+                await UnsubscribeAllSymbolsAsync();
 
                 // --- A. ADD POSITIONS ---
                 foreach (var pos in positionsList)
@@ -81,16 +87,21 @@ namespace ClientDesktop.ViewModel
                     {
                         Id = pos.Id,
                         SymbolId = pos.SymbolId,
+                        SymbolDigit = pos.SymbolDigit,
                         SymbolName = pos.SymbolName,
                         Time = pos.LastInAt,
                         Side = displaySide,
                         OrderType = "Market",
                         Volume = pos.TotalVolume,
                         AveragePrice = pos.AveragePrice,
+                        AveragePriceDisplay = pos.AveragePrice.ToString($"F{pos.SymbolDigit}"),
                         CurrentPrice = pos.CurrentPrice,
+                        CurrentPriceDisplay = pos.CurrentPrice.ToString($"F{pos.SymbolDigit}"),
                         Pnl = pos.Pnl,
                         Type = RowType.Position
                     });
+
+                    await SubscribeToSymbolAsync(pos.SymbolName);
                 }
 
                 // --- B. ADD FOOTER (Summary) ---
@@ -124,19 +135,24 @@ namespace ClientDesktop.ViewModel
                     {
                         Id = ord.OrderId,
                         SymbolId = ord.SymbolId,
+                        SymbolDigit = ord.SymbolDigit,
                         SymbolName = ord.SymbolName,
                         Time = ord.UpdatedAt,
                         Side = displaySide,
                         OrderType = ord.OrderType,
                         Volume = ord.Volume,
                         AveragePrice = ord.Price,
+                        AveragePriceDisplay = ord.Price.ToString($"F{ord.SymbolDigit}"),
                         CurrentPrice = ord.CurrentPrice,
+                        CurrentPriceDisplay = ord.CurrentPrice.ToString($"F{ord.SymbolDigit}"),
                         Pnl = null,
                         Type = RowType.Order
                     });
+
+                    // IMPORTANT: Order ke symbol ko bhi subscribe karo taaki uska live price aaye
+                    await SubscribeToSymbolAsync(ord.SymbolName);
                 }
 
-                // 2. ONLY NOW, pass the completely built list to the UI thread
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     GridRows = tempRows;
@@ -165,7 +181,6 @@ namespace ClientDesktop.ViewModel
                               selectedRow.OrderType?.Contains("Stop", StringComparison.OrdinalIgnoreCase) == true ? EnumTradeOrderType.StopLimit :
                               selectedRow.OrderType?.Contains("Limit", StringComparison.OrdinalIgnoreCase) == true ? EnumTradeOrderType.Limit :
                               EnumTradeOrderType.Market;
-
                     }
                 );
         }
@@ -198,6 +213,129 @@ namespace ClientDesktop.ViewModel
             foreach (var p in positions) GridRows.Add(p);
             if (footer != null) GridRows.Add(footer);
             foreach (var o in orders) GridRows.Add(o);
+        }
+
+        private async Task SubscribeToSymbolAsync(string symbolName)
+        {
+            if (string.IsNullOrWhiteSpace(symbolName) || _subscribedSymbols.Contains(symbolName))
+                return;
+
+            await _liveTickService.SubscribeSymbolAsync(symbolName);
+            _subscribedSymbols.Add(symbolName);
+        }
+
+        private async Task UnsubscribeAllSymbolsAsync()
+        {
+            foreach (var symbol in _subscribedSymbols.ToList())
+            {
+                await _liveTickService.UnsubscribeSymbolAsync(symbol);
+            }
+            _subscribedSymbols.Clear();
+        }
+
+        private void HandleLiveTick(TickData tick)
+        {
+            if (string.IsNullOrEmpty(tick.SymbolName))
+                return;
+
+            Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                // Yahan Ab Position AUR Order dono ko filter karenge
+                var rowsToUpdate = GridRows.Where(r =>
+                    (r.Type == RowType.Position || r.Type == RowType.Order)
+                    && r.SymbolName == tick.SymbolName).ToList();
+
+                foreach (var row in rowsToUpdate)
+                {
+                    UpdateRowPrice(row, tick); // Naya method call kiya
+                }
+
+                UpdateFooterPnl();
+            });
+        }
+
+        // Ye tere teeno core logics sambhalega
+        private void UpdateRowPrice(PositionGridRow row, TickData tick)
+        {
+            int digits = row.SymbolDigit;
+
+            double newPrice;
+
+            // LOGIC 1: Buy = Ask, Sell = Bid
+            if (string.Equals(row.Side, "Buy", StringComparison.OrdinalIgnoreCase))
+            {
+                newPrice = tick.Ask;
+            }
+            else
+            {
+                newPrice = tick.Bid;
+            }
+
+            // COLOR LOGIC FOR PRICE (Purana price compare karo)
+            double oldPrice = row.CurrentPrice ?? newPrice;
+            if (newPrice > oldPrice)
+            {
+                row.PriceColor = "DodgerBlue"; // Ya "Blue" jo tujhe theek lage
+            }
+            else if (newPrice < oldPrice)
+            {
+                row.PriceColor = "Red";
+            }
+
+            // LOGIC 3: Decimal places strict formatting
+            row.CurrentPrice = Math.Round(newPrice, digits);
+            row.CurrentPriceDisplay = newPrice.ToString($"F{digits}"); // UI ko directly format de diya
+
+            // LOGIC 2: Sirf Positions ka PNL calculate karo, Orders ka nahi
+            if (row.Type == RowType.Position && row.AveragePrice.HasValue && row.Volume.HasValue)
+            {
+                double priceDifference;
+                if (string.Equals(row.Side, "Buy", StringComparison.OrdinalIgnoreCase))
+                {
+                    priceDifference = newPrice - row.AveragePrice.Value;
+                }
+                else
+                {
+                    priceDifference = row.AveragePrice.Value - newPrice;
+                }
+
+                decimal calculatedPnl = (decimal)(priceDifference * row.Volume.Value);
+                row.Pnl = Math.Round(calculatedPnl, 2);
+
+                // COLOR LOGIC FOR PNL
+                row.PnlColor = row.Pnl >= 0 ? "ForestGreen" : "Red";
+            }
+        }
+
+        private void UpdateFooterPnl()
+        {
+            var footerRow = GridRows.FirstOrDefault(r => r.Type == RowType.Footer);
+            if (footerRow == null)
+                return;
+
+            decimal totalPnl = GridRows
+                .Where(r => r.Type == RowType.Position)
+                .Sum(r => r.Pnl ?? 0);
+
+            footerRow.Pnl = totalPnl;
+
+            // Footer PNL ka color bhi update karo
+            footerRow.PnlColor = totalPnl >= 0 ? "ForestGreen" : "Red";
+
+            double balance = 50000.00;
+            double credit = 1000.00;
+            double equity = balance + credit + (double)totalPnl;
+            double margin = 2000.00;
+            double freeMargin = equity - margin;
+
+            string footerText = $"Balance: {balance:N2}   Eq: {equity:N2}   Credit: {credit:N2}   Margin: {margin:N2}   Free: {freeMargin:N2}";
+            footerRow.SymbolName = footerText;
+        }
+
+        public async void Cleanup()
+        {
+            await UnsubscribeAllSymbolsAsync();
+            _liveTickService.OnTickReceived -= HandleLiveTick;
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

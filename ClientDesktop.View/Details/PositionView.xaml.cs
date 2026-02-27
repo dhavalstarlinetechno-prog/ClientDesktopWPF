@@ -1,4 +1,4 @@
-﻿using ClientDesktop.Infrastructure.Helpers;
+using ClientDesktop.Infrastructure.Helpers;
 using ClientDesktop.ViewModel;
 using System.ComponentModel;
 using System.Windows.Controls;
@@ -14,6 +14,16 @@ namespace ClientDesktop.View.Details
             if (!DesignerProperties.GetIsInDesignMode(this))
             {
                 this.DataContext = AppServiceLocator.GetService<PositionViewModel>();
+            }
+
+            this.Unloaded += PositionView_Unloaded;
+        }
+
+        private void PositionView_Unloaded(object sender, System.Windows.RoutedEventArgs e)
+        {
+            if (this.DataContext is PositionViewModel vm)
+            {
+                vm.Cleanup();
             }
         }
 
