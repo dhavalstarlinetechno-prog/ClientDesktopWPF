@@ -70,7 +70,7 @@ namespace ClientDesktop.Infrastructure.Services
         }
 
         /// <summary>
-        /// Authenticates the user with the given credentials and license ID.
+        /// Authenticates the user with the given credentials and license ID, and broadcasts the login signal on success.
         /// </summary>
         public async Task<(bool Success, string Message, AuthResponseData Data)> LoginAsync(string user, string pass, string licenseId, bool isRemember)
         {
@@ -88,10 +88,11 @@ namespace ClientDesktop.Infrastructure.Services
             if (result != null && result.isSuccess && result.data != null)
             {
                 SaveLoginHistory(user, pass, licenseId, isRemember);
+
                 return (true, "Success", result.data);
             }
 
-            string errorMessage = result?.successMessage ?? ((Newtonsoft.Json.Linq.JProperty)((Newtonsoft.Json.Linq.JContainer)result.exception).Last).Value.ToString() ?? "Login Failed";
+            string errorMessage = result?.successMessage ?? ((result?.exception as Newtonsoft.Json.Linq.JContainer)?.Last as Newtonsoft.Json.Linq.JProperty)?.Value?.ToString() ?? "Login Failed";
 
             return (false, errorMessage, null);
         }

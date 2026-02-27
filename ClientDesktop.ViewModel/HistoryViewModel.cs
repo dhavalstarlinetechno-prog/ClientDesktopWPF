@@ -1,10 +1,12 @@
 ﻿using ClientDesktop.Core.Enums;
+using ClientDesktop.Core.Events;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Helpers;
 using ClientDesktop.Infrastructure.Logger;
 using ClientDesktop.Infrastructure.Services;
 using ClientDesktop.Models;
 using ClosedXML.Excel;
+using CommunityToolkit.Mvvm.Messaging;
 using iTextSharp.text;
 using iTextSharp.text.pdf;
 using iTextSharp.text.pdf.draw;
@@ -35,14 +37,23 @@ namespace ClientDesktop.ViewModel
             _sessionService = sessionService;
             _historyService = historyService;
 
-            _sessionService.OnLoginSuccess += HandleLogin;
+            RegisterMessenger();
         }
 
-        private void HandleLogin()
+        /// <summary>
+        /// Registers listeners for application-wide signals using the Event Aggregator.
+        /// </summary>
+        private void RegisterMessenger()
         {
-            LoadDataAsync();
-            ClientCrdeit = _sessionService.ClientListData.FirstOrDefault()?.CreditAmount ?? 0;
-            ClientBalance = _sessionService.ClientListData.FirstOrDefault()?.Balance ?? 0;
+            WeakReferenceMessenger.Default.Register<UserAuthEvent>(this, async (recipient, message) =>
+            {
+                if (message.IsLoggedIn)
+                {
+                    LoadDataAsync();
+                    ClientCrdeit = _sessionService.ClientListData.FirstOrDefault()?.CreditAmount ?? 0;
+                    ClientBalance = _sessionService.ClientListData.FirstOrDefault()?.Balance ?? 0;
+                }
+            });
         }
 
         public async Task LoadDataAsync()

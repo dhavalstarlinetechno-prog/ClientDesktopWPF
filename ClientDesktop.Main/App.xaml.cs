@@ -34,6 +34,8 @@ namespace ClientDesktop.Main
             ServiceProvider = services.BuildServiceProvider();
             AppServiceLocator.Current = ServiceProvider;
 
+            _ = ServiceProvider.GetRequiredService<SystemMonitorService>();
+
             var mainWindow = ServiceProvider.GetRequiredService<MainWindow>();
             mainWindow.Show();
 
@@ -56,6 +58,7 @@ namespace ClientDesktop.Main
         {
             // Core Services
             services.AddSingleton<SessionService>();
+            services.AddSingleton<SystemMonitorService>();
             services.AddSingleton<AuthService>();
             services.AddSingleton<ClientService>();
             services.AddSingleton<MarketWatchService>();

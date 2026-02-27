@@ -1,8 +1,10 @@
 ﻿using ClientDesktop.Core.Base;
 using ClientDesktop.Core.Enums;
+using ClientDesktop.Core.Events;
 using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Services;
+using CommunityToolkit.Mvvm.Messaging;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -31,15 +33,23 @@ namespace ClientDesktop.ViewModel
             _dialogService = dialogService;
             GridRows = new ObservableCollection<PositionGridRow>();
 
-            _sessionService.OnLoginSuccess += HandleLogin;
             DoubleClickCommand = new RelayCommand(row => PositionGridDoubleClick((PositionGridRow?)row));
 
-            //_sessionService.OnLogout += HandleLogout;
+            RegisterMessenger();
         }
 
-        private void HandleLogin()
+        /// <summary>
+        /// Registers listeners for application-wide signals using the Event Aggregator.
+        /// </summary>
+        private void RegisterMessenger()
         {
-            LoadDataAsync();
+            WeakReferenceMessenger.Default.Register<UserAuthEvent>(this, async (recipient, message) =>
+            {
+                if (message.IsLoggedIn)
+                {
+                    LoadDataAsync();
+                }
+            });
         }
 
         public async void LoadDataAsync()

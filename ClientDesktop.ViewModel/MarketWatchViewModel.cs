@@ -1,10 +1,12 @@
 ﻿using ClientDesktop.Core.Base;
 using ClientDesktop.Core.Config;
+using ClientDesktop.Core.Events;
 using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Helpers;
 using ClientDesktop.Infrastructure.Logger;
 using ClientDesktop.Infrastructure.Services;
+using CommunityToolkit.Mvvm.Messaging;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows;
@@ -14,6 +16,9 @@ using System.Windows.Threading;
 
 namespace ClientDesktop.ViewModel
 {
+    /// <summary>
+    /// ViewModel for managing the Market Watch view, including real-time ticks and symbol visibility.
+    /// </summary>
     public class MarketWatchViewModel : ViewModelBase
     {
         #region Fields
@@ -171,24 +176,9 @@ namespace ClientDesktop.ViewModel
             timer.Start();
             CurrentTime = DateTime.Now.ToString("HH:mm:ss");
 
-            _sessionService.OnLoginSuccess += async () =>
-            {
-                LoadData(forceSync: true);
-
-                string url = CommonHelper.ToReplaceUrl(AppConfig.MarketWatchSignalRUrl, _sessionService.PrimaryDomain, "sglr");
-
-                if (!string.IsNullOrEmpty(url))
-                {
-                    await _liveTickService.InitializeAndStartAsync(url);
-                }
-            };
-
             _marketWatchService.OnDataUpdated += UpdateMarketData;
 
-            _sessionService.OnLogout += async () =>
-            {
-                await _liveTickService.StopConnectionAsync();
-            };
+            RegisterMessenger();
         }
 
         #endregion
@@ -239,6 +229,35 @@ namespace ClientDesktop.ViewModel
             }
 
             DebounceSync();
+        }
+
+        #endregion
+
+        #region Private Methods
+
+        /// <summary>
+        /// Registers listeners for application-wide signals using the Event Aggregator.
+        /// </summary>
+        private void RegisterMessenger()
+        {
+            WeakReferenceMessenger.Default.Register<UserAuthEvent>(this, async (recipient, message) =>
+            {
+                if (message.IsLoggedIn)
+                {
+                    LoadData(forceSync: true);
+
+                    string url = CommonHelper.ToReplaceUrl(AppConfig.MarketWatchSignalRUrl, _sessionService.PrimaryDomain, "sglr");
+
+                    if (!string.IsNullOrEmpty(url))
+                    {
+                        await _liveTickService.InitializeAndStartAsync(url);
+                    }
+                }
+                else
+                {
+                    await _liveTickService.StopConnectionAsync();
+                }
+            });
         }
 
         #endregion

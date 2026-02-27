@@ -1,9 +1,11 @@
 ﻿using ClientDesktop.Core.Base;
 using ClientDesktop.Core.Enums;
+using ClientDesktop.Core.Events;
 using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Logger;
 using ClientDesktop.Infrastructure.Services;
+using CommunityToolkit.Mvvm.Messaging;
 using System.Windows;
 using System.Windows.Input;
 
@@ -72,6 +74,9 @@ namespace ClientDesktop.ViewModel
 
             DisconnectCommand = new RelayCommand(_ => Disconnect());
             ShowLoginCommand = new RelayCommand(_ => ShowLoginWindow());
+
+            // Initialize the Messenger to listen for authentication signals
+            RegisterMessenger();
         }
 
         #endregion
@@ -113,13 +118,13 @@ namespace ClientDesktop.ViewModel
                 {
                     bool loginSuccessful = await AutoLoginAsync(existingUser);
 
-                    if (loginSuccessful)
+                    if (!loginSuccessful)
                     {
-                        await PerformPostLoginSetup();
+                        ShowLoginWindow();
                     }
                     else
                     {
-                        ShowLoginWindow();
+                        await PerformPostLoginSetup();
                     }
                 }
                 else
@@ -130,7 +135,7 @@ namespace ClientDesktop.ViewModel
         }
 
         /// <summary>
-        /// Opens the login dialog and triggers post-login setup upon successful authentication.
+        /// Opens the login dialog. Setup is handled via Event Aggregator upon successful login signal.
         /// </summary>
         public void ShowLoginWindow()
         {
@@ -148,13 +153,30 @@ namespace ClientDesktop.ViewModel
         #region Private Methods
 
         /// <summary>
+        /// Registers to Event Aggregator signals such as UserAuthSignal.
+        /// </summary>
+        private void RegisterMessenger()
+        {
+            WeakReferenceMessenger.Default.Register<UserAuthEvent>(this, (recipient, message) =>
+            {
+                // NAYA LOGIC: Yaha se async hata diya aur sirf Logout (false) ko listen karega
+                if (!message.IsLoggedIn)
+                {
+                    HandleLogout();
+                }
+            });
+        }
+
+        /// <summary>
         /// Attempts to automatically log in using saved credentials.
         /// </summary>
         private async Task<bool> AutoLoginAsync(LoginInfo user)
         {
             try
             {
+                // LoginAsync inside AuthService will broadcast the UserAuthSignal on success.
                 var result = await _authService.LoginAsync(user.UserId, user.Password, user.LicenseId, true);
+
                 if (result.Success)
                 {
                     var data = result.Data;
@@ -218,11 +240,14 @@ namespace ClientDesktop.ViewModel
                 }
 
                 InitializeAfterLogin();
+
+                // THE GOLDEN FIX: Sab kuch 100% load hone ke baad hi signal fire karna hai!
+                WeakReferenceMessenger.Default.Send(new UserAuthEvent(true, _sessionService.UserId));
             }
             else
             {
-                _sessionService.ClearSession();
-                ShowLoginWindow();
+                // Trigger logout signal if disclaimer is rejected
+                WeakReferenceMessenger.Default.Send(new UserAuthEvent(false, string.Empty));
             }
         }
 
@@ -277,9 +302,17 @@ namespace ClientDesktop.ViewModel
         }
 
         /// <summary>
-        /// Disconnects the current session and returns to the login window.
+        /// Disconnects the current session by broadcasting a logout signal.
         /// </summary>
         private void Disconnect()
+        {
+            WeakReferenceMessenger.Default.Send(new UserAuthEvent(false, string.Empty));
+        }
+
+        /// <summary>
+        /// Handles the actual logout logic when a logout signal is received.
+        /// </summary>
+        private void HandleLogout()
         {
             _sessionService.ClearSession();
             SetRestrictedMode();

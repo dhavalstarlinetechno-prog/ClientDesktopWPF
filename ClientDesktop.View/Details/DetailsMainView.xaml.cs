@@ -1,7 +1,5 @@
-﻿using ClientDesktop.Infrastructure; // _sessionService ke liye
-using ClientDesktop.Infrastructure.Helpers;
-using ClientDesktop.Infrastructure.Services;
-using System.ComponentModel;
+﻿using ClientDesktop.Core.Events;
+using CommunityToolkit.Mvvm.Messaging;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -9,24 +7,29 @@ namespace ClientDesktop.View.Details
 {
     public partial class DetailsMainView : UserControl
     {
-        private SessionService _sessionService;
-
         public DetailsMainView()
         {
             InitializeComponent();
-
             UpdateTabsVisibility(false);
+            RegisterMessenger();
+        }
 
-            if (!DesignerProperties.GetIsInDesignMode(this))
+        /// <summary>
+        /// Registers listeners for application-wide signals using the Event Aggregator.
+        /// </summary>
+        private void RegisterMessenger()
+        {
+            WeakReferenceMessenger.Default.Register<UserAuthEvent>(this, async (recipient, message) =>
             {
-                _sessionService = AppServiceLocator.GetService<SessionService>();
-
-                if (_sessionService != null)
+                if (message.IsLoggedIn)
                 {
-                    _sessionService.OnLoginSuccess += () => Dispatcher.Invoke(() => UpdateTabsVisibility(true));
-                    _sessionService.OnLogout += () => Dispatcher.Invoke(() => UpdateTabsVisibility(false));
+                    UpdateTabsVisibility(true);
                 }
-            }
+                else
+                {
+                    UpdateTabsVisibility(false);
+                }
+            });
         }
 
         private void UpdateTabsVisibility(bool isLoggedIn)
@@ -35,11 +38,6 @@ namespace ClientDesktop.View.Details
             {
                 if (TabPosition != null) TabPosition.Visibility = Visibility.Visible;
                 if (TabHistory != null) TabHistory.Visibility = Visibility.Visible;
-
-                if (MainTabControl != null && TabPosition != null)
-                {
-                    MainTabControl.SelectedItem = TabPosition;
-                }
             }
             else
             {
