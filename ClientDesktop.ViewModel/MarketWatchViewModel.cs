@@ -244,18 +244,20 @@ namespace ClientDesktop.ViewModel
             {
                 if (message.IsLoggedIn)
                 {
-                    LoadData(forceSync: true);
-
                     string url = CommonHelper.ToReplaceUrl(AppConfig.MarketWatchSignalRUrl, _sessionService.PrimaryDomain, "sglr");
 
                     if (!string.IsNullOrEmpty(url))
                     {
                         await _liveTickService.InitializeAndStartAsync(url);
                     }
+
+                    lock (_currentlySubscribed) _currentlySubscribed.Clear();
+                    LoadData(forceSync: true);
                 }
                 else
                 {
                     await _liveTickService.StopConnectionAsync();
+                    lock (_currentlySubscribed) _currentlySubscribed.Clear();
                 }
             });
         }
