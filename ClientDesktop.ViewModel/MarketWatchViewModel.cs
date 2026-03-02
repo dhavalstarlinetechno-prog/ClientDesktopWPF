@@ -1,5 +1,6 @@
 ﻿using ClientDesktop.Core.Base;
 using ClientDesktop.Core.Config;
+using ClientDesktop.Core.Enums;
 using ClientDesktop.Core.Events;
 using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
@@ -132,6 +133,7 @@ namespace ClientDesktop.ViewModel
         public ICommand SaveProfileCommand { get; }
         public ICommand ShowSpecification { get; }
         public ICommand AddSymbolCommand { get; }
+        public ICommand ItemDoubleClickCommand { get; }
 
         #endregion
 
@@ -166,6 +168,7 @@ namespace ClientDesktop.ViewModel
             ShowAllCommand = new AsyncRelayCommand(async (_) => await ShowAllSymbolsAsync());
             SaveProfileCommand = new AsyncRelayCommand(async (_) => await SaveClientWatchProfileAsync());
             AddSymbolCommand = new AsyncRelayCommand(async (param) => await AddSymbolAsync(param as MarketWatchSymbols));
+            ItemDoubleClickCommand = new RelayCommand(param => OpenTradeWindowFromGrid(param as MarketWatchSymbols ?? SelectedMarketItem));
 
             DispatcherTimer timer = new DispatcherTimer();
             timer.Interval = TimeSpan.FromSeconds(1);
@@ -262,6 +265,29 @@ namespace ClientDesktop.ViewModel
                     await _liveTickService.StopConnectionAsync();
                 }
             });
+        }
+
+        /// <summary>
+        /// Opens a new trade order window for the specified symbol selected from the market watch grid.
+        /// </summary>
+        /// <param name="selectedSymbol">The symbol selected from the market watch grid for which to open the trade order window. Cannot be null, and
+        /// must have a non-empty SymbolName.</param>
+        private void OpenTradeWindowFromGrid(MarketWatchSymbols selectedSymbol)
+        {
+            if (selectedSymbol == null || string.IsNullOrWhiteSpace(selectedSymbol.SymbolName))
+                return;
+
+            _dialogService.ShowDialog<TradeViewModel>(
+                "New Trade Order",
+                configureViewModel: vm =>
+                {
+                    vm.CurrentOrderTypeEnum = EnumTradeOrderType.Market;
+                    vm.CurrentWindowModeEnum = EnumTradeWindowMode.FromMarketWatch;
+                    vm.SelectedSymbol = selectedSymbol.SymbolName;
+
+                    _ = vm.LoadSymbolListAsync();
+                }
+            );
         }
 
         #endregion

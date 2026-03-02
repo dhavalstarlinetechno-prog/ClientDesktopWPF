@@ -376,6 +376,12 @@
                 </Style>
             </DataGrid.RowStyle>
 
+            <DataGrid.InputBindings>
+                <MouseBinding Gesture="LeftDoubleClick" 
+                      Command="{Binding ItemDoubleClickCommand}" 
+                      CommandParameter="{Binding SelectedMarketItem}" />
+            </DataGrid.InputBindings>
+
             <!-- ========================================== -->
             <!-- COLUMNS                                    -->
             <!-- ========================================== -->
