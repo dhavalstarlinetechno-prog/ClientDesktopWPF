@@ -132,6 +132,7 @@ namespace ClientDesktop.ViewModel
         public ICommand ShowAllCommand { get; }
         public ICommand SaveProfileCommand { get; }
         public ICommand ShowSpecification { get; }
+        public ICommand ShowMarketSymbol { get; }
         public ICommand AddSymbolCommand { get; }
         public ICommand ItemDoubleClickCommand { get; }
 
@@ -163,6 +164,7 @@ namespace ClientDesktop.ViewModel
             _marketView.Filter = FilterMarketItems;
 
             ShowSpecification = new RelayCommand(ShowSpecificationView);
+            ShowMarketSymbol = new RelayCommand(ShowMarketwatchSymbol);
             HideSymbolCommand = new AsyncRelayCommand(async (param) => await HideSymbolAsync(param));
             HideAllCommand = new AsyncRelayCommand(async (_) => await HideAllSymbolsAsync());
             ShowAllCommand = new AsyncRelayCommand(async (_) => await ShowAllSymbolsAsync());
@@ -745,6 +747,22 @@ namespace ClientDesktop.ViewModel
                     {
                         vm.SymbolName = item.SymbolName;
                         vm.SymbolId = item.SymbolId;
+                    }
+                );
+            }
+        }
+
+        private void ShowMarketwatchSymbol(object parameter)
+        {
+            var item = parameter as MarketWatchSymbols ?? SelectedMarketItem;
+
+            if (item != null && MarketWatchSymbolsCollection.Contains(item))
+            {
+                _dialogService.ShowDialog<SymbolViewModel>(
+                    "Symbol",
+                    configureViewModel: vm =>
+                    {
+                        vm.SymbolName = item.SymbolName;
                     }
                 );
             }

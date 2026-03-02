@@ -68,6 +68,7 @@ namespace ClientDesktop.Main
             services.AddSingleton<LedgerService>();
             services.AddSingleton<TradeService>();
             services.AddSingleton<SymbolSpecificationService>();
+            services.AddSingleton<SymbolService>();
             services.AddSingleton<InvoiceService>();
 
             // Api Service
@@ -88,6 +89,7 @@ namespace ClientDesktop.Main
             services.AddTransient<BanScriptViewModel>();
             services.AddTransient<LedgerViewModel>();
             services.AddTransient<SymbolSpecificationViewModel>();
+            services.AddSingleton<SymbolViewModel>();
             services.AddTransient<InvoiceViewModel>();
             services.AddTransient<TradeViewModel>();
 

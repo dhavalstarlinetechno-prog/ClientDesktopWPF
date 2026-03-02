@@ -41,5 +41,14 @@
         public string SymbolId { get; set; }
         public string SymbolStatus { get; set; }
     }
+    public class SymbolDisplayModel
+    {
+        public string Symbol { get; set; }
+        public string Expiry { get; set; }
+        public string ExpiryClose { get; set; }
+        public string ParentId { get; set; }
+        public string SymbolStatus { get; set; }
+        public string RouteType { get; set; }
+    }
 
 }
