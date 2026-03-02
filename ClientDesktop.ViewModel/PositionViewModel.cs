@@ -21,6 +21,7 @@ namespace ClientDesktop.ViewModel
         private ObservableCollection<PositionGridRow> _gridRows;
         private readonly IDialogService _dialogService;
         private readonly HashSet<string> _subscribedSymbols = new HashSet<string>();
+        private Guid _currentLoadId = Guid.Empty;
 
         public ICommand DoubleClickCommand { get; }
         public ObservableCollection<PositionGridRow> GridRows
@@ -42,6 +43,7 @@ namespace ClientDesktop.ViewModel
             RegisterMessenger();
             _liveTickService.OnTickReceived += HandleLiveTick;
             _liveTickService.OnReconnected += HandleLiveReconnected;
+            _liveTickService.OnConnected += HandleLiveConnected;
         }
 
         /// <summary>
@@ -53,7 +55,9 @@ namespace ClientDesktop.ViewModel
             {
                 if (message.IsLoggedIn)
                 {
-                    LoadDataAsync();
+                    _currentLoadId = Guid.Empty;
+                    Application.Current.Dispatcher.Invoke(() => GridRows?.Clear());
+                    _subscribedSymbols.Clear();
                 }
                 else
                 {
@@ -64,12 +68,20 @@ namespace ClientDesktop.ViewModel
 
         public async void LoadDataAsync()
         {
+            Guid thisLoadId = Guid.NewGuid();
+            _currentLoadId = thisLoadId;
+
             try
             {
                 var positionTask = _positionService.GetPositionsAsync();
                 var orderTask = _positionService.GetOrdersAsync();
 
                 await Task.WhenAll(positionTask, orderTask);
+
+                if (_currentLoadId != thisLoadId || !_sessionService.IsLoggedIn)
+                {
+                    return;
+                }
 
                 var posResult = await positionTask;
                 var ordResult = await orderTask;
@@ -103,8 +115,6 @@ namespace ClientDesktop.ViewModel
                         Pnl = pos.Pnl,
                         Type = RowType.Position
                     });
-
-                    await SubscribeToSymbolAsync(pos.SymbolName);
                 }
 
                 // --- B. ADD FOOTER (Summary) ---
@@ -151,15 +161,13 @@ namespace ClientDesktop.ViewModel
                         Pnl = null,
                         Type = RowType.Order
                     });
-
-                    // IMPORTANT: Order ke symbol ko bhi subscribe karo taaki uska live price aaye
-                    await SubscribeToSymbolAsync(ord.SymbolName);
                 }
 
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     GridRows = tempRows;
                 });
+                await SubscribeToSymbolAsync();
             }
             catch (Exception ex)
             {
@@ -218,13 +226,24 @@ namespace ClientDesktop.ViewModel
             foreach (var o in orders) GridRows.Add(o);
         }
 
-        private async Task SubscribeToSymbolAsync(string symbolName)
+        private async Task SubscribeToSymbolAsync()
         {
-            if (string.IsNullOrWhiteSpace(symbolName) || _subscribedSymbols.Contains(symbolName))
-                return;
+            if (!_sessionService.IsLoggedIn || !_sessionService.IsInternetAvailable) return;
 
-            await _liveTickService.SubscribeSymbolAsync(symbolName);
-            _subscribedSymbols.Add(symbolName);
+            _subscribedSymbols.Clear();
+
+            var symbolsToSubscribe = GridRows
+                .Where(r => r.Type == RowType.Position || r.Type == RowType.Order)
+                .Select(r => r.SymbolName)
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Distinct()
+                .ToList();
+
+            foreach (var sym in symbolsToSubscribe)
+            {
+                await _liveTickService.SubscribeSymbolAsync(sym);
+                _subscribedSymbols.Add(sym);
+            }
         }
 
         private async Task UnsubscribeAllSymbolsAsync()
@@ -257,24 +276,17 @@ namespace ClientDesktop.ViewModel
             });
         }
 
+        private async void HandleLiveConnected()
+        {
+            LoadDataAsync();
+        }
+
         /// <summary>
         /// Handles the automatic re-subscription of symbols when SignalR reconnects after a network drop.
         /// </summary>
         private async void HandleLiveReconnected()
         {
-            _subscribedSymbols.Clear();
-
-            var symbolsToSubscribe = GridRows
-                .Where(r => r.Type == RowType.Position || r.Type == RowType.Order)
-                .Select(r => r.SymbolName)
-                .Where(s => !string.IsNullOrWhiteSpace(s))
-                .Distinct()
-                .ToList();
-
-            foreach (var sym in symbolsToSubscribe)
-            {
-                await SubscribeToSymbolAsync(sym);
-            }
+            await SubscribeToSymbolAsync();
         }
 
         // Ye tere teeno core logics sambhalega
@@ -358,8 +370,6 @@ namespace ClientDesktop.ViewModel
         public async void Cleanup()
         {
             await UnsubscribeAllSymbolsAsync();
-            _liveTickService.OnTickReceived -= HandleLiveTick;
-            _liveTickService.OnReconnected -= HandleLiveReconnected;
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

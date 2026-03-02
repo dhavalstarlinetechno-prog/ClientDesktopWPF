@@ -1,5 +1,6 @@
 ﻿using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Realtime;
+using Microsoft.AspNetCore.SignalR.Client;
 using System.Collections.Concurrent;
 using System.Globalization;
 
@@ -18,6 +19,7 @@ namespace ClientDesktop.Infrastructure.Services
 
         public event Action<TickData> OnTickReceived;
         public event Action OnReconnected;
+        public event Action OnConnected;
 
         #endregion
 
@@ -41,6 +43,11 @@ namespace ClientDesktop.Infrastructure.Services
             _signalR.OnReconnected += SignalR_OnReconnected;
 
             await _signalR.StartAsync();
+
+            if (_signalR.ConnectionState == HubConnectionState.Connected)
+            {
+                OnConnected?.Invoke();
+            }
         }
 
         /// <summary>
@@ -49,6 +56,8 @@ namespace ClientDesktop.Infrastructure.Services
         public async Task<bool> SubscribeSymbolAsync(string symbolName)
         {
             if (string.IsNullOrWhiteSpace(symbolName) || _signalR == null) return false;
+
+            if (_signalR.ConnectionState != HubConnectionState.Connected) return false;
 
             _subscriptions.AddOrUpdate(symbolName, 1, (key, count) => count + 1);
 
