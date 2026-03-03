@@ -192,6 +192,10 @@ namespace ClientDesktop.ViewModel
                               selectedRow.OrderType?.Contains("Stop", StringComparison.OrdinalIgnoreCase) == true ? EnumTradeOrderType.StopLimit :
                               selectedRow.OrderType?.Contains("Limit", StringComparison.OrdinalIgnoreCase) == true ? EnumTradeOrderType.Limit :
                               EnumTradeOrderType.Market;
+                        vm.OriginalOrderType = !selectedRow.IsOrder ? null :
+                              selectedRow.OrderType?.Contains("Stop", StringComparison.OrdinalIgnoreCase) == true ? EnumTradeOrderType.StopLimit :
+                              selectedRow.OrderType?.Contains("Limit", StringComparison.OrdinalIgnoreCase) == true ? EnumTradeOrderType.Limit :
+                              null;
                     }
                 );
         }
@@ -289,7 +293,6 @@ namespace ClientDesktop.ViewModel
             await SubscribeToSymbolAsync();
         }
 
-        // Ye tere teeno core logics sambhalega
         private void UpdateRowPrice(PositionGridRow row, TickData tick)
         {
             int digits = row.SymbolDigit;
@@ -310,7 +313,7 @@ namespace ClientDesktop.ViewModel
             double oldPrice = row.CurrentPrice ?? newPrice;
             if (newPrice > oldPrice)
             {
-                row.PriceColor = "DodgerBlue"; // Ya "Blue" jo tujhe theek lage
+                row.PriceColor = "DodgerBlue"; 
             }
             else if (newPrice < oldPrice)
             {

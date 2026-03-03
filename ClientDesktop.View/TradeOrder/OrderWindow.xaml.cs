@@ -3,8 +3,10 @@ using ClientDesktop.Infrastructure.Helpers;
 using ClientDesktop.ViewModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 
 namespace ClientDesktop.View.TradeOrder
@@ -22,6 +24,21 @@ namespace ClientDesktop.View.TradeOrder
             {
                 vm.Cleanup();
             }
+        }
+
+        private void NumberValidationTextBox(object sender, TextCompositionEventArgs e)
+        {
+            TextBox textBox = sender as TextBox;
+
+            Regex regex = new Regex("^[0-9.]+$");
+
+            if (e.Text == "." && textBox.Text.Contains("."))
+            {
+                e.Handled = true; 
+                return;
+            }
+
+            e.Handled = !regex.IsMatch(e.Text); 
         }
     }
 }

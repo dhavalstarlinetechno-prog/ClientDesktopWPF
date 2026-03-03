@@ -18,7 +18,7 @@ namespace ClientDesktop.Core.Models
         private decimal? _pnl;
 
         // --- COLOUR LOGIC PROPERTIES ---
-        private string _priceColor;
+        private string _priceColor = "Black";
         public string PriceColor
         {
             get => _priceColor;
@@ -32,7 +32,7 @@ namespace ClientDesktop.Core.Models
             }
         }
 
-        private string _pnlColor;
+        private string _pnlColor = "Black";
         public string PnlColor
         {
             get => _pnlColor;

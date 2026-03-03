@@ -283,11 +283,12 @@ namespace ClientDesktop.ViewModel
                 "New Trade Order",
                 configureViewModel: vm =>
                 {
+                    _ = vm.LoadSymbolListAsync();
+
                     vm.CurrentOrderTypeEnum = EnumTradeOrderType.Market;
                     vm.CurrentWindowModeEnum = EnumTradeWindowMode.FromMarketWatch;
                     vm.SelectedSymbol = selectedSymbol.SymbolName;
 
-                    _ = vm.LoadSymbolListAsync();
                 }
             );
         }

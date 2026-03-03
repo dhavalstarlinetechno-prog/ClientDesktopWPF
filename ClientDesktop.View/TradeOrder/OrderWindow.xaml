@@ -51,8 +51,8 @@
         <!-- ========================================== -->
         <!-- LEFT COLUMN: Information Panels -->
         <!-- ========================================== -->
-        <StackPanel Grid.Column="0" Margin="0,0,15,0" VerticalAlignment="Top">
-
+        <StackPanel Grid.Column="0" Margin="0,0,15,0" VerticalAlignment="Top" IsEnabled="{Binding IsFormEnabled}">
+            
             <!-- 1. Account Detail Group -->
             <GroupBox Header="Account Detail:" BorderBrush="#DDD" Padding="10">
                 <Grid>
@@ -126,7 +126,7 @@
         <StackPanel Grid.Column="1" Margin="10,5,0,0" VerticalAlignment="Top">
 
             <!-- 1. Unified Inputs Grid (Compacted Rows) -->
-            <Grid Margin="0,0,0,10">
+            <Grid Margin="0,0,0,10" IsEnabled="{Binding IsFormEnabled}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="70"/>
                     <!-- Labels Left -->
@@ -230,20 +230,36 @@
                     </Grid>
                 </Border>
 
-                <!-- Row 2: Quantity & Expiry -->
                 <TextBlock Text="Quantity :" Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
-                <TextBox x:Name="Quantitytextbox" Grid.Row="2" Grid.Column="1" Text="0.1"/>
+
+                <TextBox x:Name="Quantitytextbox" Grid.Row="2" Grid.Column="1" 
+                         Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" 
+                         PreviewTextInput="NumberValidationTextBox"/>
 
                 <TextBlock Text="Expiry :" Grid.Row="2" Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
                 <ComboBox x:Name="Cmbexpiry" Grid.Row="2" Grid.Column="4" Style="{StaticResource CustomComboBoxStyle}"
-          Visibility="{Binding IsExpiryVisible, Converter={StaticResource BoolToVis}}"
-          ItemsSource="{Binding ExpiryOptions}"
-          SelectedItem="{Binding SelectedExpiry, UpdateSourceTrigger=PropertyChanged}">
+                          Visibility="{Binding IsExpiryVisible, Converter={StaticResource BoolToVis}}"
+                          ItemsSource="{Binding ExpiryOptions}"
+                          SelectedItem="{Binding SelectedExpiry, UpdateSourceTrigger=PropertyChanged}">
                 </ComboBox>
 
-                <!-- Row 3: Rate & Specific Date -->
                 <TextBlock x:Name="lblRateLabel" Text="{Binding RateLabelText}" Grid.Row="3" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
-                <TextBox x:Name="txtLimitRate" Grid.Row="3" Grid.Column="1" Text="5056.18" Background="#F5F5F5"/>
+
+                <TextBox x:Name="txtLimitRate" Grid.Row="3" Grid.Column="1" 
+                         Text="{Binding LimitRate, UpdateSourceTrigger=PropertyChanged}" 
+                         IsReadOnly="{Binding IsMarketActive}"
+                         PreviewTextInput="NumberValidationTextBox">
+                    <TextBox.Style>
+                        <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                            <Setter Property="Background" Value="White"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsMarketActive}" Value="True">
+                                    <Setter Property="Background" Value="#F5F5F5"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBox.Style>
+                </TextBox>
 
                 <!-- DatePicker: Hidden by default -->
                 <DatePicker x:Name="ExpirydatemonthPicker" Grid.Row="3" Grid.Column="4" Style="{StaticResource CustomDatePickerStyle}"
@@ -256,7 +272,7 @@
             </Grid>
 
             <!-- 2. Price Display -->
-            <Grid Margin="0,0,0,15">
+            <Grid Margin="0,0,0,15" Visibility="{Binding ShowTradeActions, Converter={StaticResource BoolToVis}}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
@@ -273,7 +289,7 @@
             <Grid VerticalAlignment="Top">
 
                 <!-- A. Trading Buttons -->
-                <Grid x:Name="TradeActionPanel" Visibility="Visible">
+                <Grid x:Name="TradeActionPanel" Visibility="{Binding ShowTradeActions, Converter={StaticResource BoolToVis}}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="38"/>
                         <!-- Buy/Sell -->
@@ -291,7 +307,20 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <Button x:Name="btnSellOrder" Grid.Column="0" Content="{Binding SellButtonText}" Background="#DC3545" Foreground="White" FontSize="14" FontWeight="Bold" BorderThickness="0" Margin="0,-8,0,8">
+                        <Button x:Name="btnSellOrder" Grid.Column="0" 
+        Command="{Binding SellCommand}" 
+        Content="{Binding LeftActionText}" 
+        Foreground="White" FontSize="14" FontWeight="Bold" BorderThickness="0" Margin="0,-8,0,8">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="#DC3545"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsModifyDeleteMode}" Value="True">
+                                            <Setter Property="Background" Value="#2196F3"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
                             <Button.Resources>
                                 <Style TargetType="Border">
                                     <Setter Property="CornerRadius" Value="4"/>
@@ -299,7 +328,20 @@
                             </Button.Resources>
                         </Button>
 
-                        <Button x:Name="btnBuyOrder" Grid.Column="2" Content="{Binding BuyButtonText}" Background="#2196F3" Foreground="White" FontSize="14" FontWeight="Bold" BorderThickness="0" Margin="0,-8,0,8">
+                        <Button x:Name="btnBuyOrder" Grid.Column="2" 
+        Command="{Binding BuyCommand}" 
+        Content="{Binding RightActionText}" 
+        Foreground="White" FontSize="14" FontWeight="Bold" BorderThickness="0" Margin="0,-8,0,8">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="#2196F3"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsModifyDeleteMode}" Value="True">
+                                            <Setter Property="Background" Value="#DC3545"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
                             <Button.Resources>
                                 <Style TargetType="Border">
                                     <Setter Property="CornerRadius" Value="4"/>
@@ -309,8 +351,11 @@
                     </Grid>
 
                     <!-- Row 2: Close Button (Full Width) -->
-                    <Button x:Name="BtnClose" Content="Close Position" 
-                            Background="#FFC107" Foreground="Black" FontSize="14" FontWeight="Bold" BorderThickness="0" Margin="0,0,0,8" Grid.RowSpan="2" Grid.Row="1">
+                    <Button x:Name="BtnClose" Command="{Binding ClosePositionCommand}"
+        Content="{Binding CloseButtonText}" 
+        Visibility="{Binding IsCloseButtonVisible, Converter={StaticResource BoolToVis}}"
+        Background="#FFC107" Foreground="Black" FontSize="14"  
+        BorderThickness="0" Margin="0,0,0,8" Grid.RowSpan="2" Grid.Row="1">
                         <Button.Resources>
                             <Style TargetType="Border">
                                 <Setter Property="CornerRadius" Value="4"/>
@@ -320,7 +365,7 @@
                 </Grid>
 
                 <!-- B. Result/Confirmation Panel (Overlay) -->
-                <Grid x:Name="OkOrderPanel" Background="White" Visibility="Collapsed" Height="84">
+                <Grid x:Name="OkOrderPanel" Background="White" Visibility="{Binding ShowOkPanel, Converter={StaticResource BoolToVis}}" Height="84">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
@@ -330,7 +375,7 @@
                                HorizontalAlignment="Center" VerticalAlignment="Center" 
                                FontSize="14" Foreground="#333" TextWrapping="Wrap"/>
 
-                    <Button x:Name="btnOk" Grid.Row="1" Content="OK" Width="100" Height="28" Margin="0,5,0,0"
+                    <Button x:Name="btnOk" Grid.Row="1" Content="OK" Width="100" Height="28" Margin="0,5,0,0" Command="{Binding OkCommand}"
                             Background="#2196F3" Foreground="White" FontWeight="Bold" BorderThickness="0">
                         <Button.Resources>
                             <Style TargetType="Border">
