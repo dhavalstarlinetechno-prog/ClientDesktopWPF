@@ -1,4 +1,6 @@
-﻿using ClientDesktop.Core.Models;
+﻿using ClientDesktop.Core.Base;
+using ClientDesktop.Core.Interfaces;
+using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Services;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -7,7 +9,7 @@ using System.Windows;       // UI Dispatcher ke liye
 
 namespace ClientDesktop.ViewModel
 {
-    public class LedgerViewModel : INotifyPropertyChanged
+    public class LedgerViewModel : ViewModelBase, ICloseable
     {
         private readonly SessionService _sessionService;
         private readonly LedgerService _ledgerService;

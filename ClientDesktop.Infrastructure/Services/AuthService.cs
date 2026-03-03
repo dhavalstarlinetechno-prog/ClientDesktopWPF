@@ -2,6 +2,7 @@
 using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Helpers;
+using ClientDesktop.Infrastructure.Logger;
 
 namespace ClientDesktop.Infrastructure.Services
 {
@@ -72,29 +73,59 @@ namespace ClientDesktop.Infrastructure.Services
         /// <summary>
         /// Authenticates the user with the given credentials and license ID, and broadcasts the login signal on success.
         /// </summary>
-        public async Task<(bool Success, string Message, AuthResponseData Data)> LoginAsync(string user, string pass, string licenseId, bool isRemember)
+        public async Task<(bool Success, string Message)> LoginAsync(string user, string pass, string licenseId, bool isRemember)
         {
-            var formData = new Dictionary<string, string>
+            try
+            {
+                var formData = new Dictionary<string, string>
             {
                 { "username", user },
                 { "password", pass },
                 { "licenseId", licenseId }
             };
 
-            string url = CommonHelper.ToReplaceUrl(AppConfig.AuthURL, _sessionService.PrimaryDomain);
+                string url = CommonHelper.ToReplaceUrl(AppConfig.AuthURL, _sessionService.PrimaryDomain);
 
-            var result = await _apiService.PostFormAsync<AuthResponse>(url, formData);
+                var result = await _apiService.PostFormAsync<AuthResponse>(url, formData);
 
-            if (result != null && result.isSuccess && result.data != null)
-            {
-                SaveLoginHistory(user, pass, licenseId, isRemember);
+                if (result != null && result.isSuccess && result.data != null)
+                {
+                    var data = result.data;
 
-                return (true, "Success", result.data);
+                    DateTime? exp = DateTime.TryParse(data.expiration, out var dt) ? dt : null;
+                    _sessionService.SetSession(data.token, user, data.name, licenseId, exp, pass);
+                    this.SaveLoginHistory(user, pass, licenseId, isRemember);
+
+                    var profileResult = await this.GetUserProfileAsync();
+                    if (profileResult != null && profileResult.isSuccess && profileResult.data != null)
+                    {
+                        SocketLoginInfo socketInfo = new SocketLoginInfo
+                        {
+                            UserSubId = profileResult.data.sub,
+                            UserIss = profileResult.data.iss,
+                            LicenseId = _sessionService.LicenseId,
+                            Intime = profileResult.data.intime,
+                            Role = profileResult.data.role,
+                            IpAddress = profileResult.data.ip,
+                            Device = "Windows"
+                        };
+                        _sessionService.socketLoginInfos = socketInfo;
+                        _sessionService.IsPasswordReadOnly = profileResult.data.isreadonlypassword;
+                    }
+
+                    FileLogger.Log("Network", $"User '{user}' Authorized Successfully.");
+                    return (true, "Success");
+                }
+
+                string errorMessage = result?.successMessage ?? ((result?.exception as Newtonsoft.Json.Linq.JContainer)?.Last as Newtonsoft.Json.Linq.JProperty)?.Value?.ToString() ?? "Login Failed";
+
+                return (false, errorMessage);
             }
-
-            string errorMessage = result?.successMessage ?? ((result?.exception as Newtonsoft.Json.Linq.JContainer)?.Last as Newtonsoft.Json.Linq.JProperty)?.Value?.ToString() ?? "Login Failed";
-
-            return (false, errorMessage, null);
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(LoginAsync), ex);
+                return (false, string.Empty);
+            }
         }
 
         /// <summary>

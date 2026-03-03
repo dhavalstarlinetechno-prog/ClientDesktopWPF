@@ -135,7 +135,7 @@
                             <dock:LayoutAnchorablePane DockHeight="*">
                                 <dock:LayoutAnchorable x:Name="NavigatorPane" Title="Navigator" ContentId="Navigator" CanClose="False" CanAutoHide="False">
                                     <Grid>
-                                        <navigation:NavigationView />
+                                        <navigation:NavigationView DataContext="{Binding NavigationVM}"/>
                                     </Grid>
                                 </dock:LayoutAnchorable>
                             </dock:LayoutAnchorablePane>

@@ -212,8 +212,11 @@
         <TextBlock Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2"
                    Text="Disclaimer"
                    HorizontalAlignment="Center"
-                   Style="{StaticResource HyperlinkTextStyle}"
-                   MouseLeftButtonDown="Disclaimer_Click"/>
+                   Style="{StaticResource HyperlinkTextStyle}">
+            <TextBlock.InputBindings>
+                <MouseBinding MouseAction="LeftClick" Command="{Binding OpenDisclaimerCommand}"/>
+            </TextBlock.InputBindings>
+        </TextBlock>
 
     </Grid>
 </UserControl>

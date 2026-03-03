@@ -81,8 +81,9 @@ namespace ClientDesktop.Main
             services.AddSingleton<IDialogService, DialogService>();
 
             // ViewModels
-            services.AddTransient<LoginPageViewModel>();
             services.AddSingleton<MainWindowViewModel>();
+            services.AddTransient<LoginPageViewModel>();
+            services.AddTransient<DisclaimerViewModel>();
             services.AddSingleton<MarketWatchViewModel>();
             services.AddSingleton<HistoryViewModel>();
             services.AddSingleton<PositionViewModel>();
@@ -92,6 +93,7 @@ namespace ClientDesktop.Main
             services.AddSingleton<SymbolViewModel>();
             services.AddTransient<InvoiceViewModel>();
             services.AddTransient<TradeViewModel>();
+            services.AddSingleton<NavigationViewModel>();
 
             // Views (Windows)
             services.AddSingleton<MainWindow>();

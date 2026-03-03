@@ -21,10 +21,10 @@ namespace ClientDesktop.View.Details
 
         private void PositionView_Unloaded(object sender, System.Windows.RoutedEventArgs e)
         {
-            //if (this.DataContext is PositionViewModel vm)
-            //{
-            //    vm.Cleanup();
-            //}
+            if (this.DataContext is PositionViewModel vm)
+            {
+                vm.Cleanup();
+            }
         }
 
         private void DataGrid_Sorting(object sender, DataGridSortingEventArgs e)

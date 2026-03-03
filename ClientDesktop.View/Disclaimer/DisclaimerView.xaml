@@ -1,15 +1,10 @@
-﻿<Window x:Class="ClientDesktop.View.Disclaimer.DisclaimerView"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Disclaimer"
-        Width="460" Height="410"
-        WindowStartupLocation="CenterScreen"
-        ResizeMode="NoResize"
-        WindowStyle="None"
-        Background="Transparent"
-        ShowInTaskbar="False">
+﻿<UserControl x:Class="ClientDesktop.View.Disclaimer.DisclaimerView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Width="460" Height="410"
+             Background="Transparent">
 
-    <!-- Outer shadow -->
+    <!-- Outer shadow / Border -->
     <Border CornerRadius="6"
             Background="White"
             Padding="0"
@@ -39,7 +34,7 @@
                                VerticalAlignment="Center"
                                Foreground="#222"/>
 
-                    <!-- Close Button -->
+                    <!-- Close Button bound to ViewModel Command -->
                     <Button Grid.Column="1"
                             Content="✕"
                             Width="28"
@@ -51,7 +46,7 @@
                             Foreground="#555"
                             Cursor="Hand"
                             ToolTip="Close"
-                            Click="Close_Click"/>
+                            Command="{Binding CloseCommand}"/>
                 </Grid>
             </Border>
 
@@ -75,6 +70,7 @@
                     BorderThickness="1,0,0,0"
                     BorderBrush="#DDD"
                     Padding="12">
+                <!-- Acknowledge Button bound to ViewModel Command -->
                 <Button Content="I acknowledge"
                         Width="140"
                         Height="36"
@@ -82,8 +78,15 @@
                         Background="#4A78E4"
                         Foreground="White"
                         FontWeight="SemiBold"
-                        Click="Acknowledge_Click"/>
+                        Cursor="Hand"
+                        Command="{Binding AcknowledgeCommand}">
+                    <Button.Resources>
+                        <Style TargetType="Border">
+                            <Setter Property="CornerRadius" Value="3"/>
+                        </Style>
+                    </Button.Resources>
+                </Button>
             </Border>
         </Grid>
     </Border>
-</Window>
+</UserControl>

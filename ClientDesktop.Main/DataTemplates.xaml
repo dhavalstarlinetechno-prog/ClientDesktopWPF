@@ -1,0 +1,51 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:vm="clr-namespace:ClientDesktop.ViewModel;assembly=ClientDesktop.ViewModel"
+                    xmlns:view="clr-namespace:ClientDesktop.Main.Login"
+                    xmlns:dis="clr-namespace:ClientDesktop.View.Disclaimer;assembly=ClientDesktop.View"
+                    xmlns:spec="clr-namespace:ClientDesktop.View.Specification;assembly=ClientDesktop.View"
+                    xmlns:marketsymbols="clr-namespace:ClientDesktop.View.Symbol;assembly=ClientDesktop.View"
+                    xmlns:trade="clr-namespace:ClientDesktop.View.TradeOrder;assembly=ClientDesktop.View"
+                    xmlns:nav="clr-namespace:ClientDesktop.View.Navigation;assembly=ClientDesktop.View">
+
+    <!-- Login Page Template -->
+    <DataTemplate DataType="{x:Type vm:LoginPageViewModel}">
+        <view:LoginPage />
+    </DataTemplate>
+
+    <!-- Disclaimer Template -->
+    <DataTemplate DataType="{x:Type vm:DisclaimerViewModel}">
+        <dis:DisclaimerView />
+    </DataTemplate>
+
+    <!-- Symbol Specification Template -->
+    <DataTemplate DataType="{x:Type vm:SymbolSpecificationViewModel}">
+        <spec:SymbolSpecificationView />
+    </DataTemplate>
+
+    <!-- Symbol Template -->
+    <DataTemplate DataType="{x:Type vm:SymbolViewModel}">
+        <marketsymbols:SymbolView/>
+    </DataTemplate>
+
+    <!-- Trade Order Template -->
+    <DataTemplate DataType="{x:Type vm:TradeViewModel}">
+        <trade:OrderWindow />
+    </DataTemplate>
+
+    <!-- Ban Script Template -->
+    <DataTemplate DataType="{x:Type vm:BanScriptViewModel}">
+        <nav:BanScript />
+    </DataTemplate>
+
+    <!-- Invoice Template -->
+    <DataTemplate DataType="{x:Type vm:InvoiceViewModel}">
+        <nav:InvoiceView />
+    </DataTemplate>
+
+    <!-- Ledger Template -->
+    <DataTemplate DataType="{x:Type vm:LedgerViewModel}">
+        <nav:Ledger />
+    </DataTemplate>
+
+</ResourceDictionary>

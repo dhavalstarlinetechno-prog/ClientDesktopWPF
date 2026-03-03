@@ -2,7 +2,6 @@
 using ClientDesktop.Core.Enums;
 using ClientDesktop.Core.Events;
 using ClientDesktop.Core.Interfaces;
-using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Logger;
 using ClientDesktop.Infrastructure.Services;
 using CommunityToolkit.Mvvm.Messaging;
@@ -38,8 +37,7 @@ namespace ClientDesktop.ViewModel
         public bool IsLoggedIn { get => _isLoggedIn; set => SetProperty(ref _isLoggedIn, value); }
 
         public MarketWatchViewModel MarketWatchVM { get; }
-
-        public Func<bool>? OpenDisclaimerAction { get; set; }
+        public NavigationViewModel NavigationVM { get; }
 
         #endregion
 
@@ -63,7 +61,8 @@ namespace ClientDesktop.ViewModel
             AuthService authService,
             ClientService clientService,
             IDialogService dialogService,
-            MarketWatchViewModel marketWatchVM)
+            MarketWatchViewModel marketWatchVM,
+            NavigationViewModel navigationVM)
         {
             _sessionService = sessionService;
             _authService = authService;
@@ -71,6 +70,7 @@ namespace ClientDesktop.ViewModel
             _dialogService = dialogService;
 
             MarketWatchVM = marketWatchVM;
+            NavigationVM = navigationVM;
 
             DisconnectCommand = new RelayCommand(_ => Disconnect());
             ShowLoginCommand = new RelayCommand(_ => ShowLoginWindow());
@@ -102,7 +102,7 @@ namespace ClientDesktop.ViewModel
 
             SetRestrictedMode();
 
-            if (!System.Net.NetworkInformation.NetworkInterface.GetIsNetworkAvailable())
+            if (!_sessionService.IsInternetAvailable)
             {
                 FileLogger.Log("Network", "No Internet Connection detected at startup.");
                 return;
@@ -116,10 +116,12 @@ namespace ClientDesktop.ViewModel
             {
                 if (existingUser != null && !string.IsNullOrEmpty(existingUser.Password))
                 {
-                    bool loginSuccessful = await AutoLoginAsync(existingUser);
+                    // Attempts to automatically log in using saved credentials.
+                    var result = await _authService.LoginAsync(existingUser.UserId, existingUser.Password, existingUser.LicenseId, true);
 
-                    if (!loginSuccessful)
+                    if (!result.Success && !string.IsNullOrEmpty(result.Message))
                     {
+                        FileLogger.Log("Network", result.Message);
                         ShowLoginWindow();
                     }
                     else
@@ -159,60 +161,11 @@ namespace ClientDesktop.ViewModel
         {
             WeakReferenceMessenger.Default.Register<UserAuthEvent>(this, (recipient, message) =>
             {
-                // NAYA LOGIC: Yaha se async hata diya aur sirf Logout (false) ko listen karega
                 if (!message.IsLoggedIn)
                 {
                     HandleLogout();
                 }
             });
-        }
-
-        /// <summary>
-        /// Attempts to automatically log in using saved credentials.
-        /// </summary>
-        private async Task<bool> AutoLoginAsync(LoginInfo user)
-        {
-            try
-            {
-                // LoginAsync inside AuthService will broadcast the UserAuthSignal on success.
-                var result = await _authService.LoginAsync(user.UserId, user.Password, user.LicenseId, true);
-
-                if (result.Success)
-                {
-                    var data = result.Data;
-                    DateTime? exp = DateTime.TryParse(data.expiration, out var dt) ? dt : null;
-                    _sessionService.SetSession(data.token, user.UserId, data.name, user.LicenseId, exp, user.Password);
-
-                    var profileResult = await _authService.GetUserProfileAsync();
-                    if (profileResult != null && profileResult.isSuccess && profileResult.data != null)
-                    {
-                        SocketLoginInfo socketInfo = new SocketLoginInfo
-                        {
-                            UserSubId = profileResult.data.sub,
-                            UserIss = profileResult.data.iss,
-                            LicenseId = _sessionService.LicenseId,
-                            Intime = profileResult.data.intime,
-                            Role = profileResult.data.role,
-                            IpAddress = profileResult.data.ip,
-                            Device = "Windows"
-                        };
-                        _sessionService.socketLoginInfos = socketInfo;
-                        _sessionService.IsPasswordReadOnly = profileResult.data.isreadonlypassword;
-                    }
-
-                    FileLogger.Log("Network", $"User '{user.UserId}' Authorized Successfully.");
-                    return true;
-                }
-                else
-                {
-                    FileLogger.Log("Network", $"User '{user.UserId}' Disconnected");
-                }
-            }
-            catch
-            {
-                // Silently catch auto-login failures
-            }
-            return false;
         }
 
         /// <summary>
@@ -229,9 +182,9 @@ namespace ClientDesktop.ViewModel
                     try
                     {
                         var specificData = await _clientService.GetSpecificClientListAsync();
-                        var result1 = await _clientService.GetClientListAsync(specificData.Clients);
+                        var result = await _clientService.GetClientListAsync(specificData.Clients);
                         _sessionService.IsClientDataLoaded = true;
-                        _sessionService.SetClientList(result1.Clients);
+                        _sessionService.SetClientList(result.Clients);
                     }
                     catch (Exception ex)
                     {
@@ -241,7 +194,6 @@ namespace ClientDesktop.ViewModel
 
                 InitializeAfterLogin();
 
-                // THE GOLDEN FIX: Sab kuch 100% load hone ke baad hi signal fire karna hai!
                 WeakReferenceMessenger.Default.Send(new UserAuthEvent(true, _sessionService.UserId));
             }
             else
@@ -256,11 +208,24 @@ namespace ClientDesktop.ViewModel
         /// </summary>
         private bool ShowDisclaimerAndCheck()
         {
-            if (OpenDisclaimerAction != null)
+            bool isAcknowledged = false;
+
+            Application.Current.Dispatcher.Invoke(() =>
             {
-                return Application.Current.Dispatcher.Invoke(() => OpenDisclaimerAction.Invoke());
-            }
-            return false;
+                DisclaimerViewModel disclaimerVM = null;
+
+                _dialogService.ShowDialog<DisclaimerViewModel>(string.Empty, vm =>
+                {
+                    disclaimerVM = vm;
+                });
+
+                if (disclaimerVM != null)
+                {
+                    isAcknowledged = disclaimerVM.IsAcknowledged;
+                }
+            });
+
+            return isAcknowledged;
         }
 
         /// <summary>
@@ -270,7 +235,7 @@ namespace ClientDesktop.ViewModel
         {
             UserId = _sessionService.UserId;
             IsLoggedIn = true;
-            Title = _sessionService.ServerListData?.FirstOrDefault(q => q?.licenseId.ToString() == _sessionService.LicenseId)?.serverDisplayName ?? "Home";
+            Title = _sessionService.ServerListData?.FirstOrDefault(q => q?.licenseId.ToString() == _sessionService.LicenseId)?.serverDisplayName ?? "";
         }
 
         /// <summary>
@@ -306,17 +271,22 @@ namespace ClientDesktop.ViewModel
         /// </summary>
         private void Disconnect()
         {
+            _sessionService.LastSelectedLogin = (string.Empty, string.Empty, string.Empty);
             WeakReferenceMessenger.Default.Send(new UserAuthEvent(false, string.Empty));
         }
 
         /// <summary>
         /// Handles the actual logout logic when a logout signal is received.
         /// </summary>
-        private void HandleLogout()
+        private async void HandleLogout()
         {
             _sessionService.ClearSession();
             SetRestrictedMode();
+
             FileLogger.Log("Network", "Disconnected.");
+
+            await Application.Current.Dispatcher.InvokeAsync(() => { });
+
             ShowLoginWindow();
         }
 

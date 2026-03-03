@@ -51,7 +51,7 @@ namespace ClientDesktop.Core.Models
         public string DisplayClose => _close.ToString($"F{SymbolDigit}");
 
         public double Spread { get => _spread; set { if (SetProperty(ref _spread, value)) OnPropertyChanged(nameof(DisplaySpread)); } }
-        public string DisplaySpread => _spread.ToString($"F{SymbolDigit}");
+        public string DisplaySpread => _spread.ToString($"F2");
 
         public string Dcp { get => _dcp; set => SetProperty(ref _dcp, value); }
 

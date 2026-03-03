@@ -15,9 +15,9 @@ namespace ClientDesktop.ViewModel
     {
         #region Fields
 
-        private const int Threshold = 3;
         private readonly SessionService _sessionService;
         private readonly AuthService _authService;
+        private readonly IDialogService _dialogService;
 
         private ServerList _selectedServer;
         private string _username;
@@ -35,8 +35,6 @@ namespace ClientDesktop.ViewModel
         public ObservableCollection<ServerList> FilteredServers { get; } = new();
 
         public ObservableCollection<string> LoginHistory { get; } = new();
-
-        public bool IsBusy { get; set; }
 
         public ServerList SelectedServer
         {
@@ -85,8 +83,8 @@ namespace ClientDesktop.ViewModel
         #region Commands
 
         public ICommand LoginCommand { get; }
-
         public ICommand CancelCommand { get; }
+        public ICommand OpenDisclaimerCommand { get; }
 
         #endregion
 
@@ -95,13 +93,15 @@ namespace ClientDesktop.ViewModel
         /// <summary>
         /// Initializes a new instance of the LoginPageViewModel class.
         /// </summary>
-        public LoginPageViewModel(SessionService sessionService, AuthService authService)
+        public LoginPageViewModel(SessionService sessionService, AuthService authService, IDialogService dialogService)
         {
             _sessionService = sessionService;
             _authService = authService;
+            _dialogService = dialogService;
 
             LoginCommand = new AsyncRelayCommand(async _ => await LoginAsync());
             CancelCommand = new RelayCommand(_ => CloseAction?.Invoke());
+            OpenDisclaimerCommand = new RelayCommand(OpenDisclaimer);
 
             _ = LoadServerListAsync();
         }
@@ -147,32 +147,6 @@ namespace ClientDesktop.ViewModel
             catch (Exception ex)
             {
                 Console.WriteLine(ex);
-            }
-        }
-
-        /// <summary>
-        /// Filters the available server list based on the user's input.
-        /// </summary>
-        public void FilterServers(string input)
-        {
-            if (AllServers == null) return;
-
-            FilteredServers.Clear();
-
-            if (string.IsNullOrWhiteSpace(input) || input.Length < Threshold)
-            {
-                return;
-            }
-
-            var matches = AllServers
-                .Where(s => (s.companyName ?? string.Empty)
-                    .IndexOf(input.Trim(), StringComparison.OrdinalIgnoreCase) >= 0)
-                .Take(20)
-                .ToList();
-
-            foreach (var item in matches)
-            {
-                FilteredServers.Add(item);
             }
         }
 
@@ -252,33 +226,11 @@ namespace ClientDesktop.ViewModel
 
                 var result = await _authService.LoginAsync(Username, Password, licenseId, IsRememberMe);
 
-                if (result.Success)
+                if (!result.Success && !string.IsNullOrEmpty(result.Message))
                 {
-                    var d = result.Data;
-                    DateTime? exp = DateTime.TryParse(d.expiration, out var dt) ? dt : null;
-                    _sessionService.SetSession(d.token, Username, d.name ?? Username, licenseId, exp, Password);
-
-                    var profileResult = await _authService.GetUserProfileAsync();
-                    if (profileResult != null && profileResult.isSuccess && profileResult.data != null)
-                    {
-                        SocketLoginInfo socketInfo = new SocketLoginInfo
-                        {
-                            UserSubId = profileResult.data.sub,
-                            UserIss = profileResult.data.iss,
-                            LicenseId = _sessionService.LicenseId,
-                            Intime = profileResult.data.intime,
-                            Role = profileResult.data.role,
-                            IpAddress = profileResult.data.ip,
-                            Device = "Windows"
-                        };
-
-                        _sessionService.socketLoginInfos = socketInfo;
-                        _sessionService.IsPasswordReadOnly = profileResult.data.isreadonlypassword;
-                    }
-
-                    FileLogger.Log("Network", $"User '{Username}' Authorized Successfully.");
+                    FileLogger.Log("Network", result.Message);
                 }
-                else
+                else if (!result.Success)
                 {
                     LogDisconnect();
                 }
@@ -308,6 +260,14 @@ namespace ClientDesktop.ViewModel
             {
                 FileLogger.Log("Network", "Disconnected");
             }
+        }
+
+        /// <summary>
+        /// Opens the disclaimer dialog via the dialog service.
+        /// </summary>
+        private void OpenDisclaimer(object parameter)
+        {
+            _dialogService.ShowDialog<DisclaimerViewModel>(string.Empty);
         }
 
         #endregion

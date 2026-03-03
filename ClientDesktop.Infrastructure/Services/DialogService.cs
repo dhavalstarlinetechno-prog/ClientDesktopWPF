@@ -2,6 +2,7 @@
 using ClientDesktop.Core.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using System.Windows;
+using System.Windows.Media;
 
 namespace ClientDesktop.Infrastructure.Services
 {
@@ -50,6 +51,13 @@ namespace ClientDesktop.Infrastructure.Services
                 ShowInTaskbar = false,
                 Owner = Application.Current.MainWindow
             };
+
+            if (string.IsNullOrEmpty(title))
+            {
+                window.WindowStyle = WindowStyle.None;
+                window.AllowsTransparency = true;
+                window.Background = Brushes.Transparent;
+            }
 
             if (viewModel is ICloseable closeableVm)
             {

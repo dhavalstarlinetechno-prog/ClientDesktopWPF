@@ -36,12 +36,6 @@ namespace ClientDesktop.Main
             InitializeComponent();
             this.DataContext = viewModel;
 
-            viewModel.OpenDisclaimerAction = () =>
-            {
-                var disclaimer = new DisclaimerView();
-                return disclaimer.ShowDialog() == true;
-            };
-
             UpdateLoginState(false, null);
 
             viewModel.PropertyChanged += (s, e) =>

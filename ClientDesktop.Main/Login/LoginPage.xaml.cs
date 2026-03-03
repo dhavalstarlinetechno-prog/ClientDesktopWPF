@@ -102,16 +102,6 @@ namespace ClientDesktop.Main.Login
         }
 
         /// <summary>
-        /// Opens the disclaimer dialog window.
-        /// </summary>
-        private void Disclaimer_Click(object sender, MouseButtonEventArgs e)
-        {
-            var disclaimerView = new DisclaimerView();
-            disclaimerView.Owner = Window.GetWindow(this);
-            disclaimerView.ShowDialog();
-        }
-
-        /// <summary>
         /// Handles the text changed event to filter the server list and manage auto-selection based on user input.
         /// </summary>
         private void CmbServerName_TextChanged(object sender, TextChangedEventArgs e)
