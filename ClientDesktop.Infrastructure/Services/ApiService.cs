@@ -95,7 +95,6 @@ namespace ClientDesktop.Infrastructure.Services
                 if (!response.IsSuccessStatusCode)
                 {
                     FileLogger.ApplicationLog(nameof(PostAsync), $"URL: {url} failed with Status: {response.StatusCode}");
-                    return default;
                 }
 
                 var responseJson = await response.Content.ReadAsStringAsync();

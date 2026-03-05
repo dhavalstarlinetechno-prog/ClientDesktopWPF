@@ -96,6 +96,7 @@ namespace ClientDesktop.ViewModel
             }
         }
 
+        public SymbolData _currentSelectedSymbol { get; set; }
         public List<string> ExpiryOptions { get; } = new List<string> { "GTC", "Today", "Specific Date" };
 
         private string _selectedExpiry = "GTC";
@@ -153,6 +154,13 @@ namespace ClientDesktop.ViewModel
         public string BuyButtonText => CurrentOrderTypeEnum == EnumTradeOrderType.Market ? "BUY" : CurrentOrderTypeEnum == EnumTradeOrderType.Limit ? "BUY LIMIT" : "BUY STOPLIMIT";
         public string RateLabelText => CurrentOrderTypeEnum == EnumTradeOrderType.Market ? "Rate :" : "Limit Rate :";
 
+        private DateTime? _selectedExpiryDate = DateTime.Now; 
+        public DateTime? SelectedExpiryDate
+        {
+            get => _selectedExpiryDate;
+            set => SetProperty(ref _selectedExpiryDate, value);
+        }
+
         // Execution UI States
         private bool _isProcessingOrDone;
         public bool IsProcessingOrDone
@@ -172,8 +180,9 @@ namespace ClientDesktop.ViewModel
         public bool ShowTradeActions => !IsProcessingOrDone;
         public bool ShowOkPanel => IsProcessingOrDone;
 
-        private string _tradeResultMessage = "Order Placed Successfully!";
+        private string _tradeResultMessage = "Order Placed !";
         public string TradeResultMessage { get => _tradeResultMessage; set => SetProperty(ref _tradeResultMessage, value); }
         #endregion
     }
+
 }

@@ -16,6 +16,17 @@ namespace ClientDesktop.View.TradeOrder
         public OrderWindow()
         {
             InitializeComponent();
+
+            this.Loaded += (s, e) =>
+            {
+                if (this.DataContext is ViewModel.TradeViewModel vm)
+                {
+                    vm.CloseAction = () =>
+                    {
+                        Window.GetWindow(this)?.Close();
+                    };
+                }
+            };
         }
 
         private void UserControl_Unloaded(object sender, RoutedEventArgs e)

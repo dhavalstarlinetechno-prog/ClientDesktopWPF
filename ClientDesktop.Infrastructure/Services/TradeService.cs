@@ -3,6 +3,7 @@ using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Helpers;
 using ClientDesktop.Infrastructure.Logger;
+using ClosedXML;
 using DocumentFormat.OpenXml.Drawing.Charts;
 using Newtonsoft.Json;
 using System;
@@ -62,6 +63,39 @@ namespace ClientDesktop.Infrastructure.Services
             catch (Exception ex)
             {
                 return (true, ex.Message, null);
+            }
+        }
+
+        public async Task<(bool Success, string ErrorMessage, string TradeMessage)> PlaceOrModifyOrderAsync(object payload, bool isModify = false)
+        {
+            try
+            {
+                string json = JsonConvert.SerializeObject(payload, new JsonSerializerSettings
+                {
+                    NullValueHandling = NullValueHandling.Ignore,
+                    Formatting = Newtonsoft.Json.Formatting.Indented
+                });
+
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var url = CommonHelper.ToReplaceUrl(AppConfig.TradeOrderURL, _sessionService.PrimaryDomain);
+
+                TradeOrderResponse response = null;
+                if (isModify)
+                    response = await _apiService.PutAsync<TradeOrderResponse>(url, payload);
+                else
+                    response = await _apiService.PostAsync<TradeOrderResponse>(url, payload);
+
+                if (response.isSuccess)
+                {
+                    return (true, null, isModify ? "Order Modified Successfully!" : "Order Placed Successfully!");
+                }
+                return (false, response.exception.message, null);
+            }
+            catch (Exception ex)
+            {
+                FileLogger.Log("TradeService", $"Error: {ex.Message}");
+                return (false, ex.Message, null);
             }
         }
     }

@@ -3,11 +3,17 @@
     public class TradeOrderResponse
     {
         public TradeOrderData data { get; set; }
-        public object exception { get; set; }
+        public TradeException exception { get; set; }
         public string successMessage { get; set; }
         public int returnID { get; set; }
         public int action { get; set; }
         public bool isSuccess { get; set; }
+    }
+
+    public class TradeException
+    {
+        public string code { get; set; }
+        public string message { get; set; }
     }
 
     public class TradeOrderData

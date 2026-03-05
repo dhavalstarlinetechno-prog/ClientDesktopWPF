@@ -64,7 +64,7 @@ namespace ClientDesktop.ViewModel
 
             try
             {
-                var fromDate = new DateTime(1970, 1, 1);
+                var fromDate = _sessionService.LicenseId == "1" ? new DateTime(2025, 6, 1) : new DateTime(1970, 1, 1);
                 var toDate = DateTime.Now;
 
                 var historyTask = _historyService.FetchHistoryFromApiAsync(fromDate, toDate);

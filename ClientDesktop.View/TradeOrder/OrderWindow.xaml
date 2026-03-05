@@ -264,7 +264,7 @@
                 <!-- DatePicker: Hidden by default -->
                 <DatePicker x:Name="ExpirydatemonthPicker" Grid.Row="3" Grid.Column="4" Style="{StaticResource CustomDatePickerStyle}"
             VerticalAlignment="Center" 
-            Visibility="{Binding IsSpecificDateVisible, Converter={StaticResource BoolToVis}}"/>
+            Visibility="{Binding IsSpecificDateVisible, Converter={StaticResource BoolToVis}}" SelectedDate="{Binding SelectedExpiryDate, UpdateSourceTrigger=PropertyChanged}"/>
 
                 <!-- Row 4: Comment -->
                 <TextBlock Text="Comment :" Grid.Row="4" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
@@ -365,18 +365,18 @@
                 </Grid>
 
                 <!-- B. Result/Confirmation Panel (Overlay) -->
-                <Grid x:Name="OkOrderPanel" Background="White" Visibility="{Binding ShowOkPanel, Converter={StaticResource BoolToVis}}" Height="84">
+                <Grid x:Name="OkOrderPanel" Background="White" Visibility="{Binding ShowOkPanel, Converter={StaticResource BoolToVis}}" MinHeight="110">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <TextBlock x:Name="lblTradeMsg" Text="Order Placed Successfully!" 
-                               HorizontalAlignment="Center" VerticalAlignment="Center" 
-                               FontSize="14" Foreground="#333" TextWrapping="Wrap"/>
+                    <TextBlock x:Name="lblTradeMsg" Text="{Binding TradeResultMessage}" 
+               TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center" 
+               FontSize="14" Foreground="#333" TextWrapping="Wrap" Margin="10,10,10,15"/>
 
-                    <Button x:Name="btnOk" Grid.Row="1" Content="OK" Width="100" Height="28" Margin="0,5,0,0" Command="{Binding OkCommand}"
-                            Background="#2196F3" Foreground="White" FontWeight="Bold" BorderThickness="0">
+                    <Button x:Name="btnOk" Grid.Row="1" Content="OK" Width="120" Height="32" Margin="0,0,0,10" Command="{Binding OkCommand}"
+            Background="#2196F3" Foreground="White" FontWeight="Bold" BorderThickness="0" HorizontalAlignment="Center">
                         <Button.Resources>
                             <Style TargetType="Border">
                                 <Setter Property="CornerRadius" Value="4"/>

@@ -1,4 +1,5 @@
 ﻿using ClientDesktop.Core.Base;
+using ClientDesktop.Core.Config;
 using ClientDesktop.Core.Enums;
 using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
@@ -84,15 +85,24 @@ namespace ClientDesktop.ViewModel
 
         public async Task GetSymbolDataAsync(int symbolId)
         {
-            var result = await _tradeService.GetSymbolDataAsync(_sessionService.UserId, symbolId);
-            if (result.Success && result.SymbolData != null)
+            try
             {
-                MinValue = result.SymbolData.SymbolMinimumValue.ToString("F2");
-                StepValue = result.SymbolData.SymbolStepValue.ToString("F2");
-                OneValue = result.SymbolData.SymbolOneClickValue.ToString("F2");
-                TotalValue = result.SymbolData.SymbolTotalValue.ToString("F2");
-                LimitStopValue = result.SymbolData.SymbolLimitstoplevel.ToString("F2");
+                var result = await _tradeService.GetSymbolDataAsync(_sessionService.UserId, symbolId);
+                if (result.Success && result.SymbolData != null)
+                {
+                    _currentSelectedSymbol = result.SymbolData;
+                    MinValue = result.SymbolData.SymbolMinimumValue.ToString("F2");
+                    StepValue = result.SymbolData.SymbolStepValue.ToString("F2");
+                    OneValue = result.SymbolData.SymbolOneClickValue.ToString("F2");
+                    TotalValue = result.SymbolData.SymbolTotalValue.ToString("F2");
+                    LimitStopValue = result.SymbolData.SymbolLimitstoplevel.ToString("F2");
+                }
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching symbol data: {ex.Message}");
+            }
+
         }
 
         private void SetOrderType(EnumTradeOrderType newType)
@@ -112,15 +122,23 @@ namespace ClientDesktop.ViewModel
 
         private async Task ManageLiveTicksAsync(string newSymbol)
         {
-            if (string.IsNullOrWhiteSpace(newSymbol) || _currentTickSymbol == newSymbol) return;
-
-            if (!string.IsNullOrEmpty(_currentTickSymbol))
+            try
             {
-                await _liveTickService.UnsubscribeSymbolAsync(_currentTickSymbol);
+                if (string.IsNullOrWhiteSpace(newSymbol) || _currentTickSymbol == newSymbol) return;
+
+                if (!string.IsNullOrEmpty(_currentTickSymbol))
+                {
+                    await _liveTickService.UnsubscribeSymbolAsync(_currentTickSymbol);
+                }
+
+                _currentTickSymbol = newSymbol;
+                await _liveTickService.SubscribeSymbolAsync(_currentTickSymbol);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error managing live ticks: {ex.Message}");
             }
 
-            _currentTickSymbol = newSymbol;
-            await _liveTickService.SubscribeSymbolAsync(_currentTickSymbol);
         }
 
         private void HandleLiveTick(TickData tick)
@@ -147,6 +165,97 @@ namespace ClientDesktop.ViewModel
                 await _liveTickService.UnsubscribeSymbolAsync(_currentTickSymbol);
             }
             _liveTickService.OnTickReceived -= HandleLiveTick;
+        }
+
+        private bool ValidateTradeOrder(string orderType, string positionId, ClientDetails clientData)
+        {
+            string tradeValidateMsg = string.Empty;
+            var qty = double.TryParse(Quantity, out double tradeQty);
+            if (tradeQty <= 0)
+            {
+                tradeValidateMsg = CommonMessages.EnterVolume;
+                return false;
+            }
+
+            if ((EnumTradeOrderType.Limit == CurrentOrderTypeEnum || CurrentOrderTypeEnum == EnumTradeOrderType.StopLimit) &&
+                (string.IsNullOrEmpty(LimitRate) || !double.TryParse(LimitRate, out double price) || price <= 0))
+            {
+                tradeValidateMsg = CommonMessages.EnterPrice;
+                return false;
+            }
+
+            if (_currentSelectedSymbol == null)
+            {
+                tradeValidateMsg = CommonMessages.SelectSymbol;
+                return false;
+            }
+
+            if (!double.TryParse(LiveAsk, out double buyPrice) || !double.TryParse(LiveBid, out double sellPrice))
+            {
+                tradeValidateMsg = CommonMessages.PriceDataNotAvailable;
+                return false;
+            }
+
+            if (tradeQty > _currentSelectedSymbol.SymbolTotalValue)
+            {
+                tradeValidateMsg = $"{CommonMessages.MaxLimitExceed + " " + _currentSelectedSymbol.SymbolTotalValue.ToString("F2")}";
+                return false;
+            }
+
+            if (clientData == null)
+            {
+                tradeValidateMsg = CommonMessages.ClientDataNotFound;
+                return false;
+            }
+
+            if (!clientData.ClientStatus)
+            {
+                tradeValidateMsg = CommonMessages.AccountBlocked;
+                return false;
+            }
+
+            if (!clientData.EnableTrading)
+            {
+                tradeValidateMsg = CommonMessages.TradeDisabled;
+                return false;
+            }
+
+            bool isNewTrade = string.IsNullOrEmpty(positionId);
+            if (clientData.CloseOnlyTradeLock && isNewTrade)
+            {
+                tradeValidateMsg = CommonMessages.CloseOnly;
+                return false;
+            }
+
+            if (_currentSelectedSymbol.SymbolTrade == "Disabled")
+            {
+                tradeValidateMsg = CommonMessages.TradeDisabled;
+                return false;
+            }
+
+            if ((CurrentOrderTypeEnum == EnumTradeOrderType.Limit || CurrentOrderTypeEnum == EnumTradeOrderType.StopLimit) && _currentSelectedSymbol.SymbolLimitstoplevel > 0)
+            {
+                if (!double.TryParse(LimitRate, out double enteredPrice))
+                {
+                    return false;
+                }
+
+                double currentMarketPrice = orderType == "Buy" ?
+                    double.Parse(LiveAsk) : double.Parse(LiveBid);
+
+                double limitStopLevel = _currentSelectedSymbol.SymbolLimitstoplevel / Math.Pow(10, _currentSelectedSymbol.SymbolDigits);
+                double minAllowedPrice = currentMarketPrice - limitStopLevel;
+                double maxAllowedPrice = currentMarketPrice + limitStopLevel;
+
+                // Price should NOT be inside the restricted range
+                if (enteredPrice >= minAllowedPrice && enteredPrice <= maxAllowedPrice)
+                {
+                    tradeValidateMsg = CommonMessages.InvalidPrice;
+                    return false;
+                }
+            }
+
+            return true; 
         }
         #endregion
     }

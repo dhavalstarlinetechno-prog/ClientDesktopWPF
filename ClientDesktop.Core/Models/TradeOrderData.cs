@@ -50,4 +50,16 @@
         public string Username { get; set; }
         public string UserId { get; set; }
     }
+
+    public static class TradeConstants
+    {
+        public const string ActionBuy = "BUY";
+        public const string ActionSell = "SELL";
+        public const string ActionDelete = "DELETE";
+        public const string ActionModify = "MODIFY";
+        public const string ActionClose = "CLOSE";
+        public const string ExpiryGtc = "GTC";
+        public const string ExpiryToday = "Today";
+        public const string ExpirySpecificDate = "Specific Date";
+    }
 }
