@@ -280,6 +280,45 @@ namespace ClientDesktop.Infrastructure.Services
             }
         }
 
+        public async Task<T> DeleteAsync<T>(string url, object data)
+        {
+            if (!ValidateRequest(url)) return default;
+
+            try
+            {
+                AddAuthHeader();
+
+                var json = JsonConvert.SerializeObject(data);
+
+                var request = new HttpRequestMessage(HttpMethod.Delete, url)
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
+
+                var response = await _http.SendAsync(request);
+
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    HandleUnauthorizedAccess(url);
+                    return default;
+                }
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    FileLogger.ApplicationLog(nameof(DeleteAsync), $"URL: {url} failed with Status: {response.StatusCode}");
+                    return default;
+                }
+
+                var responseJson = await response.Content.ReadAsStringAsync();
+                return JsonConvert.DeserializeObject<T>(responseJson);
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(DeleteAsync), ex);
+                return default;
+            }
+        }
+
         #endregion
     }
 }

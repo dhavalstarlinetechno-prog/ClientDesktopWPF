@@ -18,6 +18,7 @@ namespace ClientDesktop.ViewModel
         private readonly SessionService _sessionService;
         private readonly TradeService _tradeService;
         private readonly LiveTickService _liveTickService;
+        private readonly IDialogService _dialogService;
 
         private Dictionary<string, (int Id, int Digits)> _symbolMap = new Dictionary<string, (int Id, int Digits)>();
         private string _currentTickSymbol;
@@ -25,7 +26,7 @@ namespace ClientDesktop.ViewModel
         #endregion
 
         #region 2. Constructor
-        public TradeViewModel(SessionService sessionService, TradeService tradeService, LiveTickService liveTickService)
+        public TradeViewModel(SessionService sessionService, TradeService tradeService, LiveTickService liveTickService, IDialogService dialogService   )
         {
             _sessionService = sessionService;
             _tradeService = tradeService;
@@ -33,6 +34,7 @@ namespace ClientDesktop.ViewModel
 
             SetUserAccountInfo();
             _liveTickService.OnTickReceived += HandleLiveTick;
+            _dialogService = dialogService;
         }
 
         private void SetUserAccountInfo()

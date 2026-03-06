@@ -6,7 +6,8 @@
                     xmlns:spec="clr-namespace:ClientDesktop.View.Specification;assembly=ClientDesktop.View"
                     xmlns:marketsymbols="clr-namespace:ClientDesktop.View.Symbol;assembly=ClientDesktop.View"
                     xmlns:trade="clr-namespace:ClientDesktop.View.TradeOrder;assembly=ClientDesktop.View"
-                    xmlns:nav="clr-namespace:ClientDesktop.View.Navigation;assembly=ClientDesktop.View">
+                    xmlns:nav="clr-namespace:ClientDesktop.View.Navigation;assembly=ClientDesktop.View"
+                    xmlns:del="clr-namespace:ClientDesktop.View.Delete;assembly=ClientDesktop.View">
 
     <!-- Login Page Template -->
     <DataTemplate DataType="{x:Type vm:LoginPageViewModel}">
@@ -46,6 +47,11 @@
     <!-- Ledger Template -->
     <DataTemplate DataType="{x:Type vm:LedgerViewModel}">
         <nav:Ledger />
+    </DataTemplate>
+
+    <!-- Delete Trade ViewModel Template -->
+    <DataTemplate DataType="{x:Type vm:DeleteTradeViewModel}">
+        <del:DeleteView />
     </DataTemplate>
 
 </ResourceDictionary>

@@ -13,5 +13,7 @@ namespace ClientDesktop.Core.Interfaces
         Task<HttpResponseMessage> PostRawAsync(string url, HttpContent content);
 
         Task<T> PutAsync<T>(string url, object data);
+
+        Task<T> DeleteAsync<T>(string url, object data);
     }
 }

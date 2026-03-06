@@ -94,6 +94,7 @@ namespace ClientDesktop.Main
             services.AddTransient<InvoiceViewModel>();
             services.AddTransient<TradeViewModel>();
             services.AddSingleton<NavigationViewModel>();
+            services.AddTransient<DeleteTradeViewModel>();
 
             // Views (Windows)
             services.AddSingleton<MainWindow>();

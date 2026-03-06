@@ -6,6 +6,7 @@ using ClientDesktop.Infrastructure.Logger;
 using ClosedXML;
 using DocumentFormat.OpenXml.Drawing.Charts;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -63,6 +64,36 @@ namespace ClientDesktop.Infrastructure.Services
             catch (Exception ex)
             {
                 return (true, ex.Message, null);
+            }
+        }
+
+        public async Task<bool> DeleteOrderAsync(string orderId)
+        {
+            try
+            {
+                var payload = new
+                {
+                    orderIds = new[] { orderId },
+                    deviceDetail = new
+                    {
+                        clientIP = CommonHelper.GetLocalIPAddress(),
+                        device = "web",
+                        reason = "Client"
+                    }
+                };
+
+                var result = await _apiService.DeleteAsync<JObject>(
+                    CommonHelper.ToReplaceUrl(AppConfig.DeleteOrderURL , _sessionService.PrimaryDomain),
+                    payload);
+
+                bool isSuccess = result?["isSuccess"]?.Value<bool>() ?? false;
+
+                return isSuccess;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(DeleteOrderAsync), ex);
+                return false;
             }
         }
 

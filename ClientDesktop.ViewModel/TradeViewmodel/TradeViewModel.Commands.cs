@@ -1,7 +1,10 @@
 ﻿using ClientDesktop.Core.Base;
+using ClientDesktop.Core.Config;
 using ClientDesktop.Core.Enums;
+using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Helpers;
+using DocumentFormat.OpenXml.Wordprocessing;
 using System;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -11,7 +14,6 @@ namespace ClientDesktop.ViewModel
     public partial class TradeViewModel : ViewModelBase
     {
         public Action CloseAction { get; set; }
-
         private bool _isLastTradeSuccessful = false;
 
         #region 4. Commands
@@ -43,8 +45,30 @@ namespace ClientDesktop.ViewModel
         #region 7. Trade Execution Logic
         private async Task ExecuteTradeOperation(string actionType)
         {
+            if (actionType.Equals("DELETE") && positionGridRow != null && positionGridRow.IsOrder)
+            {
+                DeleteTradeViewModel deleteTradeViewModel = null;
+                _dialogService.ShowDialog<DeleteTradeViewModel>(
+                "Delete Trade Order",
+                configureViewModel: vm =>
+                {
+                    deleteTradeViewModel = vm;
+                    vm._order = positionGridRow.Id;
+                }
+            );
+                if (deleteTradeViewModel != null)
+                {
+                    IsProcessingOrDone = deleteTradeViewModel.isDeleted.HasValue;
+
+                    _isLastTradeSuccessful = deleteTradeViewModel.isDeleted.HasValue ? deleteTradeViewModel.isDeleted.Value : false;
+                    TradeResultMessage = deleteTradeViewModel.deleteMessage;
+                }
+
+                return;
+            }
+
             IsProcessingOrDone = true;
-            _isLastTradeSuccessful = false; 
+            _isLastTradeSuccessful = false;
             TradeResultMessage = "Processing Order...";
 
             try
@@ -60,7 +84,7 @@ namespace ClientDesktop.ViewModel
                     if (!isValid)
                     {
                         TradeResultMessage = "Validation Failed! Please check your inputs.";
-                        return; 
+                        return;
                     }
                 }
 
@@ -112,7 +136,7 @@ namespace ClientDesktop.ViewModel
         private object BuildTradePayload(string actionType, double volume, double currentPrice, double limitPrice)
         {
             string baseAction = (actionType == TradeConstants.ActionBuy ||
-                               (actionType == TradeConstants.ActionModify && OriginalOrderType != null)) 
+                               (actionType == TradeConstants.ActionModify && OriginalOrderType != null))
                                ? "Buy" : "Sell";
 
             string apiOrderType = actionType;
@@ -134,7 +158,7 @@ namespace ClientDesktop.ViewModel
                     OrderFulfillment = "PENDING",
                     comment = "",
                     positionId = positionGridRow.Id,
-                    deviceDetail = new { clientIP = CommonHelper.GetLocalIPAddress(), device = "", reason = "Client" }, 
+                    deviceDetail = new { clientIP = CommonHelper.GetLocalIPAddress(), device = "", reason = "Client" },
                     marketInfo = new { symbolExpiry = symbolExpiry },
                     placeInstruction = new
                     {
@@ -182,7 +206,7 @@ namespace ClientDesktop.ViewModel
                     return SelectedExpiryDate.Value.ToString("yyyy-MM-ddTHH:mm:ss");
                 }
 
-                return "INVALID"; 
+                return "INVALID";
             }
 
             return null;
