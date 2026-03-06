@@ -105,7 +105,7 @@
 
     <Grid x:Name="RootGrid" Background="#F0F0F0">
         <Grid.RowDefinitions>
-            <RowDefinition Height="32"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
