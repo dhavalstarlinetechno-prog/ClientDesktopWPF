@@ -1,13 +1,10 @@
-﻿using System;
+﻿using AvalonDock.Layout;
+using AvalonDock.Layout.Serialization;
+using ClientDesktop.ViewModel;
 using System.IO;
-using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
-using AvalonDock.Layout;
-using AvalonDock.Layout.Serialization;
-using ClientDesktop.View.Disclaimer;
-using ClientDesktop.ViewModel;
 
 namespace ClientDesktop.Main
 {
@@ -87,6 +84,9 @@ namespace ClientDesktop.Main
         /// </summary>
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
+            this.WindowState = WindowState.Maximized;
+            Window_StateChanged(this, EventArgs.Empty);
+
             var serializer = new XmlLayoutSerializer(dockManager);
             serializer.LayoutSerializationCallback += (s, args) =>
             {
@@ -129,12 +129,10 @@ namespace ClientDesktop.Main
         {
             if (this.WindowState == WindowState.Maximized)
             {
-                BtnMaximize.Content = "❐";
                 RootGrid.Margin = new Thickness(8);
             }
             else
             {
-                BtnMaximize.Content = "☐";
                 RootGrid.Margin = new Thickness(0);
             }
         }

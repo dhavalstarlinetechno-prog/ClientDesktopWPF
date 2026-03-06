@@ -9,7 +9,8 @@
                 <ResourceDictionary Source="pack://application:,,,/ClientDesktop.UserControl;component/Themes/CustomGridStyle.xaml"/>
                 <ResourceDictionary Source="pack://application:,,,/ClientDesktop.UserControl;component/Themes/CustomTabStyle.xaml"/>
                 <ResourceDictionary Source="pack://application:,,,/ClientDesktop.UserControl;component/Themes/CustomStyles.xaml"/>
-                <ResourceDictionary Source="/ClientDesktop.UserControl;component/Themes/CustomScrollBarStyle.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/ClientDesktop.UserControl;component/Themes/CustomScrollBarStyle.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/ClientDesktop.UserControl;component/Themes/CustomButtonStyle.xaml"/>
 
                 <ResourceDictionary Source="DataTemplates.xaml"/>
             </ResourceDictionary.MergedDictionaries>

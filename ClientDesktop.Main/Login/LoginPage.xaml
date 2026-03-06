@@ -5,41 +5,12 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:ClientDesktop.Main.Login"
              mc:Ignorable="d" 
-             Height="270" 
-             Width="450" 
+             Height="200" 
+             Width="400" 
              Background="#F5F5F5"
              Loaded="UserControl_Loaded">
 
     <UserControl.Resources>
-        <!-- Flat Button Style -->
-        <Style x:Key="FlatButtonStyle" TargetType="Button">
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="border"
-                                Background="{TemplateBinding Background}"
-                                CornerRadius="3"
-                                BorderThickness="1"
-                                BorderBrush="{TemplateBinding Background}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Opacity" Value="0.9"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="border" Property="Opacity" Value="0.8"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
         <!-- Eye Button Style (Transparent) -->
         <Style x:Key="EyeButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
@@ -76,42 +47,40 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <!-- Header -->
-            <!-- Spacer -->
             <RowDefinition Height="Auto"/>
             <!-- Server -->
             <RowDefinition Height="Auto"/>
             <!-- Login -->
             <RowDefinition Height="Auto"/>
             <!-- Password -->
-            <!-- Spacer before buttons -->
             <RowDefinition Height="Auto"/>
             <!-- Buttons -->
-            <RowDefinition Height="15"/>
+            <RowDefinition Height="5"/>
             <!-- Spacer before disclaimer -->
             <RowDefinition Height="Auto"/>
             <!-- Disclaimer -->
         </Grid.RowDefinitions>
 
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="100"/>
-            <!-- Increased Label Width -->
-            <ColumnDefinition Width="320"/>
-            <!-- Increased Input Width to prevent cutting -->
+            <ColumnDefinition Width="80"/>
+            <!-- Label Width -->
+            <ColumnDefinition Width="280"/>
+            <!-- Input Width to prevent cutting -->
         </Grid.ColumnDefinitions>
 
         <!-- HEADER SECTION (Spans both columns) -->
-        <Grid Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,0,0,10">
+        <Grid Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,0,0,5">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
             <!-- Icon -->
-            <Border Grid.Column="0" Width="48" Height="48" CornerRadius="4" Background="#4CAF50" Margin="0,0,15,0">
+            <Border Grid.Column="0" Width="36" Height="36" CornerRadius="4" Background="#4CAF50" Margin="0,0,10,0">
                 <Grid>
-                    <TextBlock Text="***" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,5,0,0" FontSize="10"/>
-                    <Ellipse Width="20" Height="20" Fill="White" VerticalAlignment="Center" Margin="0,5,0,0"/>
-                    <Path Data="M 0,10 Q 10,0 20,10 L 20,20 L 0,20 Z" Fill="White" Width="24" Height="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,2" Stretch="Fill"/>
+                    <TextBlock Text="***" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,2,0,0" FontSize="8"/>
+                    <Ellipse Width="16" Height="16" Fill="White" VerticalAlignment="Center" Margin="0,3,0,0"/>
+                    <Path Data="M 0,10 Q 10,0 20,10 L 20,20 L 0,20 Z" Fill="White" Width="20" Height="10" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,2" Stretch="Fill"/>
                 </Grid>
             </Border>
 
@@ -120,7 +89,7 @@
                        Text="Please enter your Valid Credentials with valid Server Selection for Login."
                        TextWrapping="Wrap"
                        VerticalAlignment="Center"
-                       FontSize="13"
+                       FontSize="11"
                        Foreground="#333333"/>
         </Grid>
 
@@ -129,16 +98,16 @@
         <!-- Row: Server -->
         <TextBlock Text="Server :" Grid.Row="1" Grid.Column="0"
                    VerticalAlignment="Center" HorizontalAlignment="Right"
-                   Margin="0,0,15,15" FontSize="13"/>
+                   Margin="0,0,10,8" FontSize="12"/>
 
         <!-- Added SelectedItem Binding -->
         <ComboBox x:Name="cmbServerName" 
                   Grid.Row="1" Grid.Column="1"
                   Style="{StaticResource EditableComboBoxStyle}"
-                  Height="28"
-                  Margin="0,0,20,15"
+                  Height="24"
+                  Margin="0,0,10,8"
                   IsTextSearchEnabled="False"  
-                  FontSize="12"
+                  FontSize="11"
                   VerticalContentAlignment="Center"
                   ItemsSource="{Binding FilteredServers}"
                   SelectedItem="{Binding SelectedServer, Mode=TwoWay}"
@@ -153,59 +122,65 @@
         <!-- Row: Login -->
         <TextBlock Text="Login :" Grid.Row="2" Grid.Column="0"
                    VerticalAlignment="Center" HorizontalAlignment="Right"
-                   Margin="0,0,15,15" FontSize="13"/>
+                   Margin="0,0,10,8" FontSize="12"/>
 
         <!-- Added ItemsSource and Text Binding -->
         <ComboBox x:Name="cmbLogin" Grid.Row="2" Grid.Column="1" Style="{StaticResource EditableComboBoxStyle}"
-                  Height="28" HorizontalAlignment="Stretch"
-                  IsEditable="True" Margin="0,0,20,15" VerticalContentAlignment="Center"
-                  FontSize="12"
+                  Height="24" HorizontalAlignment="Stretch"
+                  IsEditable="True" Margin="0,0,10,8" VerticalContentAlignment="Center"
+                  FontSize="11"
                   ItemsSource="{Binding LoginHistory}"
                   Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"/>
 
         <!-- Row: Password -->
         <TextBlock Text="Password :" Grid.Row="3" Grid.Column="0"
                    VerticalAlignment="Center" HorizontalAlignment="Right"
-                   Margin="0,0,15,15" FontSize="13"/>
+                   Margin="0,0,10,8" FontSize="12"/>
 
         <!-- Password Row StackPanel -->
-        <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,15">
+        <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,8">
             <!-- Password Box Container -->
-            <Grid Width="160" Height="28">
+            <Grid Width="140" Height="24">
                 <!-- Added PasswordChanged Event -->
-                <PasswordBox x:Name="txtPassword" VerticalContentAlignment="Center" Padding="4,0,0,0" BorderBrush="#ABADB3" BorderThickness="1" FontSize="12"
+                <PasswordBox x:Name="txtPassword" VerticalContentAlignment="Center" Padding="4,0,0,0" BorderBrush="#ABADB3" BorderThickness="1" FontSize="11"
                              PasswordChanged="TxtPassword_PasswordChanged"/>
-                <TextBox x:Name="txtPasswordVisible" Visibility="Collapsed" VerticalContentAlignment="Center" Padding="4,0,0,0" BorderBrush="#ABADB3" BorderThickness="1" FontSize="12"/>
+                <TextBox x:Name="txtPasswordVisible" Visibility="Collapsed" VerticalContentAlignment="Center" Padding="4,0,0,0" BorderBrush="#ABADB3" BorderThickness="1" FontSize="11"/>
             </Grid>
 
             <!-- Eye Button -->
             <Button x:Name="btnEye" Style="{StaticResource EyeButtonStyle}"
-                    Margin="8,0,8,0" Click="BtnEye_Click" Width="24" Height="24">
+                    Margin="5,0,5,0" Click="BtnEye_Click" Width="20" Height="20">
                 <Grid>
                     <Path x:Name="pathEyeClosed" 
                           Data="M11.83,9L15,12.16C15,12.11 15,12.05 15,12A3,3 0 0,0 12,9C11.94,9 11.89,9 11.83,9M7.53,9.8L9.08,11.35C9.03,11.56 9,11.77 9,12A3,3 0 0,0 12,15C12.22,15 12.44,14.97 12.65,14.92L14.2,16.47C13.53,16.8 12.79,17 12,17A5,5 0 0,1 7,12C7,11.21 7.2,10.47 7.53,9.8M2,4.27L4.28,6.55L4.73,7C3.08,8.3 1.78,10.02 1,12C2.73,16.39 7,19.5 12,19.5C13.55,19.5 15.03,19.2 16.38,18.66L16.81,19.08L19.73,22L21,20.73L3.27,3M12,7A5,5 0 0,1 17,12C17,12.64 16.87,13.26 16.64,13.82L19.57,16.75C21.07,15.5 22.27,13.86 23,12C21.27,7.61 17,4.5 12,4.5C10.6,4.5 9.26,4.75 8,5.2L10.17,7.35C10.74,7.13 11.35,7 12,7Z" 
-                          Fill="#666666" Stretch="Uniform" Width="18" Height="18" Visibility="Visible"/>
+                          Fill="#666666" Stretch="Uniform" Width="14" Height="14" Visibility="Visible"/>
                     <Path x:Name="pathEyeOpen" 
                           Data="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,4.5C17,4.5 21.27,7.61 23,12C21.27,16.39 17,19.5 12,19.5C7,19.5 2.73,16.39 1,12C2.73,7.61 7,4.5 12,4.5M3.18,12C4.83,15.36 8.24,17.5 12,17.5C15.76,17.5 19.17,15.36 20.82,12C19.17,8.64 15.76,6.5 12,6.5C8.24,6.5 4.83,8.64 3.18,12Z" 
-                          Fill="#2196F3" Stretch="Uniform" Width="18" Height="18" Visibility="Collapsed"/>
+                          Fill="#2196F3" Stretch="Uniform" Width="14" Height="14" Visibility="Collapsed"/>
                 </Grid>
             </Button>
 
             <!-- Remember Me -->
             <CheckBox x:Name="checkBox1" Content="Remember Me"
                       IsChecked="{Binding IsRememberMe}"
-                      VerticalAlignment="Center" FontSize="13" Margin="0,0,0,0"/>
+                      VerticalAlignment="Center" FontSize="12" Margin="0,0,0,0"/>
         </StackPanel>
 
         <!-- BUTTONS SECTION (Centered across both columns) -->
-        <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Center">
-            <Button x:Name="loginButton" Content="Login" Width="100" Height="34"
-                    Background="#5D9CEC" Style="{StaticResource FlatButtonStyle}"
+        <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5,0,0">
+
+            <Button x:Name="loginButton" Content="Login" Width="80" Height="28"
+                    Background="#42A5F5" Foreground="White" 
+                    Style="{StaticResource CommonActionButtonStyle}"
+                    IsDefault="True"
                     Command="{Binding LoginCommand}"/>
 
-            <Button x:Name="cancelButton" Content="Cancel" Width="100" Height="34"
-                    Background="#EF5350" Style="{StaticResource FlatButtonStyle}" Margin="20,0,0,0"
+            <Button x:Name="cancelButton" Content="Cancel" Width="80" Height="28"
+                    Background="#EF5350" Foreground="White" Margin="15,0,0,0"
+                    Style="{StaticResource CommonActionButtonStyle}"
+                    IsCancel="True"
                     Command="{Binding CancelCommand}"/>
+
         </StackPanel>
 
         <!-- DISCLAIMER SECTION -->

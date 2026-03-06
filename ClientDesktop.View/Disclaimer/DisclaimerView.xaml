@@ -1,13 +1,14 @@
 ﻿<UserControl x:Class="ClientDesktop.View.Disclaimer.DisclaimerView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             Width="460" Height="410"
+             Width="350" Height="400"
              Background="Transparent">
 
     <!-- Outer shadow / Border -->
     <Border CornerRadius="6"
             Background="White"
             Padding="0"
+            Margin="5"
             SnapsToDevicePixels="True">
 
         <Grid>
@@ -20,42 +21,65 @@
             <!-- Custom Header -->
             <Border Grid.Row="0"
                     Background="#F5F5F5"
-                    Padding="12"
-                    CornerRadius="6,6,0,0">
-                <Grid>
+                    Padding="10"
+                    CornerRadius="6,6,0,0"
+                    MouseLeftButtonDown="Header_MouseLeftButtonDown">
+                <Grid Background="Transparent">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
                     <TextBlock Text="Disclaimer"
-                               FontSize="16"
+                               FontSize="14"
                                FontWeight="SemiBold"
                                VerticalAlignment="Center"
                                Foreground="#222"/>
 
                     <!-- Close Button bound to ViewModel Command -->
                     <Button Grid.Column="1"
-                            Content="✕"
-                            Width="28"
-                            Height="28"
-                            FontSize="14"
-                            FontWeight="Bold"
-                            Background="Transparent"
-                            BorderThickness="0"
-                            Foreground="#555"
-                            Cursor="Hand"
+                            Width="24" Height="24"
                             ToolTip="Close"
-                            Command="{Binding CloseCommand}"/>
+                            Cursor="Hand"
+                            Command="{Binding CloseCommand}">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="Foreground" Value="#555"/>
+                                <Setter Property="BorderThickness" Value="0"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{TemplateBinding Background}" CornerRadius="3">
+                                                <TextBlock Text="✕" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{TemplateBinding Foreground}"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <!-- Hover state - Windows Red -->
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#E81123"/>
+                                                    <Setter Property="Foreground" Value="White"/>
+                                                </Trigger>
+                                                <!-- Pressed state - Darker Red -->
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter Property="Background" Value="#C2111D"/>
+                                                    <Setter Property="Foreground" Value="White"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                    </Button>
                 </Grid>
             </Border>
 
             <!-- Content -->
             <ScrollViewer Grid.Row="1"
-                          Margin="16"
+                          Margin="12"
                           VerticalScrollBarVisibility="Auto">
                 <TextBlock TextWrapping="Wrap"
-                           FontSize="13"
+                           FontSize="12"
                            Foreground="#333" TextAlignment="Justify">
                     <Run Text="This application is developed solely for educational purposes. It is intended to provide users with a basic understanding of financial instruments, trading concepts, and market strategies. No real money is involved, and this app does not support or facilitate any real-world trading or financial transactions."/>
                     <LineBreak/><LineBreak/>
@@ -67,25 +91,19 @@
 
             <!-- Footer -->
             <Border Grid.Row="2"
-                    BorderThickness="1,0,0,0"
+                    BorderThickness="0,0,0,0"
                     BorderBrush="#DDD"
-                    Padding="12">
-                <!-- Acknowledge Button bound to ViewModel Command -->
+                    Padding="10">
+                <!-- Acknowledge Button updated to use CommonActionButtonStyle and trigger on Enter -->
                 <Button Content="I acknowledge"
-                        Width="140"
-                        Height="36"
+                        Width="120"
+                        Height="30"
                         HorizontalAlignment="Center"
-                        Background="#4A78E4"
+                        Background="#42A5F5"
                         Foreground="White"
-                        FontWeight="SemiBold"
-                        Cursor="Hand"
-                        Command="{Binding AcknowledgeCommand}">
-                    <Button.Resources>
-                        <Style TargetType="Border">
-                            <Setter Property="CornerRadius" Value="3"/>
-                        </Style>
-                    </Button.Resources>
-                </Button>
+                        Style="{StaticResource CommonActionButtonStyle}"
+                        IsDefault="True"
+                        Command="{Binding AcknowledgeCommand}"/>
             </Border>
         </Grid>
     </Border>
