@@ -26,7 +26,7 @@ namespace ClientDesktop.ViewModel
         #endregion
 
         #region 2. Constructor
-        public TradeViewModel(SessionService sessionService, TradeService tradeService, LiveTickService liveTickService, IDialogService dialogService   )
+        public TradeViewModel(SessionService sessionService, TradeService tradeService, LiveTickService liveTickService, IDialogService dialogService)
         {
             _sessionService = sessionService;
             _tradeService = tradeService;
@@ -98,6 +98,11 @@ namespace ClientDesktop.ViewModel
                     OneValue = result.SymbolData.SymbolOneClickValue.ToString("F2");
                     TotalValue = result.SymbolData.SymbolTotalValue.ToString("F2");
                     LimitStopValue = result.SymbolData.SymbolLimitstoplevel.ToString("F2");
+
+                    if (positionGridRow != null)
+                        Quantity = positionGridRow.Volume?.ToString();
+                    else
+                        Quantity = MinValue.ToString();
                 }
             }
             catch (Exception ex)

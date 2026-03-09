@@ -116,7 +116,9 @@ namespace ClientDesktop.ViewModel
         public string Quantity
         {
             get => _quantity;
-            set { if (SetProperty(ref _quantity, value)) UpdateCloseButtonCaption(); }
+            set { if (SetProperty(ref _quantity, value)) UpdateCloseButtonCaption();
+                System.Windows.Input.CommandManager.InvalidateRequerySuggested();
+            }
         }
 
         private string _limitRate = "0.00";

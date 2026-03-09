@@ -4,6 +4,7 @@ using ClientDesktop.Core.Enums;
 using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Helpers;
+using DocumentFormat.OpenXml.Vml.Wordprocessing;
 using DocumentFormat.OpenXml.Wordprocessing;
 using System;
 using System.Threading.Tasks;
@@ -37,7 +38,7 @@ namespace ClientDesktop.ViewModel
             else await ExecuteTradeOperation(TradeConstants.ActionSell);
         });
 
-        public ICommand ClosePositionCommand => new RelayCommand(async _ => await ExecuteTradeOperation(TradeConstants.ActionClose));
+        public ICommand ClosePositionCommand => new RelayCommand(async _ => await ExecuteTradeOperation(TradeConstants.ActionClose) , _ => CanClosePosition());
 
         public ICommand OkCommand => new RelayCommand(_ => ResetTradeWindow());
         #endregion
@@ -133,13 +134,29 @@ namespace ClientDesktop.ViewModel
             }
         }
 
+        private bool CanClosePosition()
+        {
+            if (positionGridRow == null)
+                return false;
+
+            if (!double.TryParse(Quantity, out double qty))
+                return false;
+
+            if (qty != positionGridRow.Volume) 
+            {
+                return false; 
+            }
+
+            return true; 
+        }
+
         private object BuildTradePayload(string actionType, double volume, double currentPrice, double limitPrice)
         {
             string baseAction = (actionType == TradeConstants.ActionBuy ||
                                (actionType == TradeConstants.ActionModify && OriginalOrderType != null))
                                ? "Buy" : "Sell";
 
-            string apiOrderType = actionType;
+            string apiOrderType = baseAction;
             if (CurrentOrderTypeEnum == EnumTradeOrderType.Limit) apiOrderType += "Limit";
             else if (CurrentOrderTypeEnum == EnumTradeOrderType.StopLimit) apiOrderType += "Stop";
             else apiOrderType = CurrentOrderTypeEnum.ToString();
@@ -150,7 +167,7 @@ namespace ClientDesktop.ViewModel
 
             if (actionType == TradeConstants.ActionClose && positionGridRow != null)
             {
-                string reversedSide = side == "ASK" ? "BID" : "ASK";
+                string reversedSide = positionGridRow.Side == "Buy" ? "BID" : "ASK";
                 return new
                 {
                     username = _sessionService.UserId,
@@ -166,6 +183,43 @@ namespace ClientDesktop.ViewModel
                         side = reversedSide,
                         limitMarketOrder = new { price = currentPrice, volume = volume, currentPrice = currentPrice }
                     }
+                };
+            }
+
+            if (actionType == TradeConstants.ActionModify && positionGridRow.IsOrder)
+            {
+                apiOrderType = positionGridRow.Side;
+                if (CurrentOrderTypeEnum == EnumTradeOrderType.Limit) apiOrderType += "Limit";
+                else if (CurrentOrderTypeEnum == EnumTradeOrderType.StopLimit) apiOrderType += "Stop";
+                else apiOrderType = CurrentOrderTypeEnum.ToString();
+                return  new
+                {
+                    orderId = positionGridRow.Id,
+                    username = _sessionService.UserId,
+                    symbolId = symbolId,
+                    placeInstruction = new
+                    {
+                        orderType = apiOrderType,
+                        side = positionGridRow.Side.ToUpper() == "SELL" ? "BID" : "ASK",
+                        limitMarketOrder = new
+                        {
+                            price = limitPrice,
+                            volume = volume,
+                            currentPrice = currentPrice
+                        }
+                    },
+                    marketInfo = new
+                    {
+                        symbolExpiry = symbolExpiry
+                    },
+                    deviceDetail = new
+                    {
+                        clientIP = CommonHelper.GetLocalIPAddress(),
+                        device = "",
+                        reason = "Client"
+                    },
+                    OrderFulfillment = "PENDING",
+                    comment = ""
                 };
             }
 
