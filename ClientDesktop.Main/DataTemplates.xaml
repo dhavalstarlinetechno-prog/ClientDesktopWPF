@@ -2,6 +2,7 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:vm="clr-namespace:ClientDesktop.ViewModel;assembly=ClientDesktop.ViewModel"
                     xmlns:view="clr-namespace:ClientDesktop.Main.Login"
+                    xmlns:cp="clr-namespace:ClientDesktop.View.ChangePassword;assembly=ClientDesktop.View"
                     xmlns:dis="clr-namespace:ClientDesktop.View.Disclaimer;assembly=ClientDesktop.View"
                     xmlns:spec="clr-namespace:ClientDesktop.View.Specification;assembly=ClientDesktop.View"
                     xmlns:marketsymbols="clr-namespace:ClientDesktop.View.Symbol;assembly=ClientDesktop.View"
@@ -12,6 +13,11 @@
     <!-- Login Page Template -->
     <DataTemplate DataType="{x:Type vm:LoginPageViewModel}">
         <view:LoginPage />
+    </DataTemplate>
+
+    <!-- Change Password Page Template -->
+    <DataTemplate DataType="{x:Type vm:ChangePasswordViewModel}">
+        <cp:ChangePasswordView />
     </DataTemplate>
 
     <!-- Disclaimer Template -->

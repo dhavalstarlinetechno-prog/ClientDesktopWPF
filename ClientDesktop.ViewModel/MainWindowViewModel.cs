@@ -25,6 +25,7 @@ namespace ClientDesktop.ViewModel
         private string _title = string.Empty;
         private string _userId;
         private bool _isLoggedIn;
+        private bool _isPasswordReadOnly;
 
         #endregion
 
@@ -35,6 +36,7 @@ namespace ClientDesktop.ViewModel
         public string UserId { get => _userId; set => SetProperty(ref _userId, value); }
 
         public bool IsLoggedIn { get => _isLoggedIn; set => SetProperty(ref _isLoggedIn, value); }
+        public bool IsPasswordReadonly { get => _isPasswordReadOnly; set => SetProperty(ref _isPasswordReadOnly, value); }
 
         public MarketWatchViewModel MarketWatchVM { get; }
         public NavigationViewModel NavigationVM { get; }
@@ -48,6 +50,7 @@ namespace ClientDesktop.ViewModel
         public ICommand ShowLoginCommand { get; }
 
         public ICommand OpenNewOrderCommand => new RelayCommand(param => OpenNewOrderWindow());
+        public ICommand ChangePasswordCommand => new RelayCommand(param => OpenChangePasswordWindow());
 
         #endregion
 
@@ -235,6 +238,7 @@ namespace ClientDesktop.ViewModel
         {
             UserId = _sessionService.UserId;
             IsLoggedIn = true;
+            IsPasswordReadonly = _sessionService.IsPasswordReadOnly;
             Title = _sessionService.ServerListData?.FirstOrDefault(q => q?.licenseId.ToString() == _sessionService.LicenseId)?.serverDisplayName ?? "";
         }
 
@@ -245,6 +249,7 @@ namespace ClientDesktop.ViewModel
         {
             Title = string.Empty;
             IsLoggedIn = false;
+            IsPasswordReadonly = true;
             UserId = string.Empty;
         }
 
@@ -263,6 +268,19 @@ namespace ClientDesktop.ViewModel
 
                     _ = vm.LoadSymbolListAsync();
                 }
+            );
+        }
+
+        /// <summary>
+        /// Opens a dialog window that allows the user to change their password.
+        /// </summary>
+        /// <remarks>This method displays a modal dialog for password change, typically using a view model
+        /// to manage the process. The dialog is intended to be used when a user needs to update their credentials
+        /// during an active session.</remarks>
+        private void OpenChangePasswordWindow()
+        {
+            _dialogService.ShowDialog<ChangePasswordViewModel>(
+                "Change Password"
             );
         }
 

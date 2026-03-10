@@ -42,6 +42,10 @@ namespace ClientDesktop.Main
                 {
                     UpdateLoginState(viewModel.IsLoggedIn, viewModel.UserId);
                 }
+                else if (e.PropertyName == nameof(MainWindowViewModel.IsPasswordReadonly))
+                {
+                    MenuNewOrder.Visibility = viewModel.IsPasswordReadonly ? Visibility.Collapsed : Visibility.Visible;
+                }
             };
 
             this.Loaded += MainWindow_Loaded;
@@ -64,6 +68,7 @@ namespace ClientDesktop.Main
                 UserIconPath.Fill = new SolidColorBrush(Colors.Green);
                 MenuConnect.Visibility = Visibility.Collapsed;
                 MenuDisconnect.Visibility = Visibility.Visible;
+                MenuChangePassword.Visibility = Visibility.Visible;
             }
             else
             {
@@ -72,6 +77,7 @@ namespace ClientDesktop.Main
                 UserIconPath.Fill = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#666666"));
                 MenuConnect.Visibility = Visibility.Visible;
                 MenuDisconnect.Visibility = Visibility.Collapsed;
+                MenuChangePassword.Visibility = Visibility.Collapsed;
             }
         }
 

@@ -61,6 +61,7 @@ namespace ClientDesktop.Main
             services.AddSingleton<SystemMonitorService>();
             services.AddSingleton<AuthService>();
             services.AddSingleton<ClientService>();
+            services.AddSingleton<ChangePasswordService>();
             services.AddSingleton<MarketWatchService>();
             services.AddSingleton<PositionService>();
             services.AddSingleton<HistoryService>();
@@ -83,6 +84,7 @@ namespace ClientDesktop.Main
             // ViewModels
             services.AddSingleton<MainWindowViewModel>();
             services.AddTransient<LoginPageViewModel>();
+            services.AddTransient<ChangePasswordViewModel>();
             services.AddTransient<DisclaimerViewModel>();
             services.AddSingleton<MarketWatchViewModel>();
             services.AddSingleton<HistoryViewModel>();

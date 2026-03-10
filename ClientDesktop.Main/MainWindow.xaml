@@ -118,7 +118,7 @@
             </Grid.ColumnDefinitions>
 
             <Menu Grid.Column="0" Background="Transparent" VerticalAlignment="Center" Padding="5,0,0,0" WindowChrome.IsHitTestVisibleInChrome="True">
-                <MenuItem Header="New Order" FontWeight="Bold" Command="{Binding OpenNewOrderCommand}"/>
+                <MenuItem x:Name="MenuNewOrder" Header="New Order" FontWeight="Bold" Command="{Binding OpenNewOrderCommand}" Visibility="Collapsed"/>
 
                 <MenuItem Header="Window">
                     <MenuItem Header="Market Watch" InputGestureText="Ctrl+M" Command="{x:Static local:MainWindow.ToggleMarketWatchCommand}">
@@ -150,7 +150,7 @@
                 </MenuItem>
             </Menu>
 
-            <TextBlock Grid.Column="1" Text="{Binding Title, FallbackValue='METAODDS TECHNOLOGY - LIVE'}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold"/>
+            <TextBlock Grid.Column="1" Text="{Binding Title, FallbackValue=''}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold"/>
 
             <StackPanel Grid.Column="2" Orientation="Horizontal" WindowChrome.IsHitTestVisibleInChrome="True">
 
@@ -161,7 +161,7 @@
                                 <Grid Width="20" Height="20">
                                     <Path x:Name="UserIconPath" Data="M12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z" Fill="#666666" Stretch="Uniform" Width="16" Height="16" VerticalAlignment="Center"/>
                                 </Grid>
-                                <TextBlock x:Name="TxtUserName" Text="100271" Margin="5,0,0,0" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="#333333"/>
+                                <TextBlock x:Name="TxtUserName" Text="" Margin="5,0,0,0" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="#333333"/>
                             </StackPanel>
                         </MenuItem.Header>
 
@@ -172,7 +172,13 @@
                         </MenuItem>
                         <MenuItem x:Name="MenuDisconnect" Header="Disconnect" Click="MenuDisconnect_Click" Visibility="Collapsed">
                             <MenuItem.Icon>
-                                <Path Data="M9,13V19H12V13M9,5V11H12V5M9,1V3H12V1" Fill="Red" Stretch="Uniform" Width="12" Height="12"/>
+                                <Path Data="M14 7 9 12 14 17V14H21V10H14V7M6 5H3V19H6V5Z" Fill="Red" Stretch="Uniform" Width="12" Height="12"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem x:Name="MenuChangePassword" Header="Change Password" Command="{Binding ChangePasswordCommand}" Visibility="Collapsed">
+                            <MenuItem.Icon>
+                                <Path Data="M4.5 15C5.9 15 7 13.9 7 12.5S5.9 10 4.5 10 2 11.1 2 12.5 3.1 15 4.5 15ZM11 7.4 8.3 10.1C8.7 10.8 9 11.6 9 12.5 9 15 7 17 4.5 17S0 15 0 12.5 2 8 4.5 8C5.4 8 6.2 8.3 6.9 8.7L15.3.3 16.7 1.7 16.4 2 19.7 5.3 18.3 6.7 15 3.4 14.4 4 16.7 6.3 15.3 7.7 13 5.4 12.4 6 15.7 9.3 14.3 10.7 11 7.4ZM18 20C19.1 20 20 19.1 20 18S19.1 16 18 16 16 16.9 16 18 16.9 20 18 20ZM24 19H21.8C21.8 19.4 21.6 19.7 21.4 20L22.9 21.5 21.5 23 20 21.4C19.7 21.6 19.4 21.8 19 21.9V24H17V21.8C16.6 21.8 16.3 21.6 16 21.4L14.5 22.9 13 21.5 14.6 20C14.4 19.7 14.2 19.4 14.1 19H12V17H14.2C14.2 16.6 14.4 16.3 14.6 16L13.1 14.5 14.5 13 16 14.6C16.3 14.4 16.6 14.2 17 14.1V12H19V14.2C19.4 14.2 19.7 14.4 20 14.6L21.5 13.1 23 14.5 21.4 16C21.6 16.3 21.8 16.6 21.9 17H24V19Z"
+                                      Fill="#0078D7" Stretch="Uniform" Width="12" Height="12"/>
                             </MenuItem.Icon>
                         </MenuItem>
                     </MenuItem>

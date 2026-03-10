@@ -8,7 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Chart\" />
+    <Compile Remove="Chart\**" />
+    <EmbeddedResource Remove="Chart\**" />
+    <None Remove="Chart\**" />
+    <Page Remove="Chart\**" />
   </ItemGroup>
 
   <ItemGroup>
