@@ -50,7 +50,16 @@ namespace ClientDesktop.Core.Models
         public string Id { get; set; }
         public int SymbolId { get; set; }
         public int SymbolDigit { get; set; }
-        public string SymbolName { get; set; }
+        private string _symbolName;
+        public string SymbolName
+        {
+            get => _symbolName;
+            set
+            {
+                _symbolName = value;
+                OnPropertyChanged(); 
+            }
+        }
         public DateTime? Time { get; set; }
         public string Side { get; set; }
         public string OrderType { get; set; }

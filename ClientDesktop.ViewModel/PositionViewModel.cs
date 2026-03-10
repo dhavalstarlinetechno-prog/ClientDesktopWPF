@@ -1,8 +1,9 @@
-using ClientDesktop.Core.Base;
+﻿using ClientDesktop.Core.Base;
 using ClientDesktop.Core.Enums;
 using ClientDesktop.Core.Events;
 using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
+using ClientDesktop.Infrastructure.Helpers;
 using ClientDesktop.Infrastructure.Services;
 using CommunityToolkit.Mvvm.Messaging;
 using System.Collections.ObjectModel;
@@ -22,6 +23,10 @@ namespace ClientDesktop.ViewModel
         private readonly IDialogService _dialogService;
         private readonly HashSet<string> _subscribedSymbols = new HashSet<string>();
         private Guid _currentLoadId = Guid.Empty;
+
+
+        private List<Position> _rawPositions = new List<Position>();
+        private List<OrderModel> _rawOrders = new List<OrderModel>();
 
         public ICommand DoubleClickCommand { get; }
         public ObservableCollection<PositionGridRow> GridRows
@@ -88,11 +93,11 @@ namespace ClientDesktop.ViewModel
 
                 var tempRows = new ObservableCollection<PositionGridRow>();
 
-                var positionsList = posResult.Positions ?? new List<Position>();
-                var ordersList = ordResult.Orders ?? new List<OrderModel>();
+                _rawPositions = posResult.Positions ?? new List<Position>();
+                _rawOrders = ordResult.Orders ?? new List<OrderModel>();
 
                 // --- A. ADD POSITIONS ---
-                foreach (var pos in positionsList)
+                foreach (var pos in _rawPositions)
                 {
                     string displaySide = pos.Side;
                     if (string.Equals(pos.Side, "Bid", StringComparison.OrdinalIgnoreCase)) displaySide = "Sell";
@@ -118,7 +123,7 @@ namespace ClientDesktop.ViewModel
                 }
 
                 // --- B. ADD FOOTER (Summary) ---
-                decimal totalPnl = positionsList.Sum(p => p.Pnl ?? 0);
+                decimal totalPnl = _rawPositions.Sum(p => p.Pnl ?? 0);
                 double balance = 50000.00;
                 double credit = 1000.00;
                 double equity = balance + credit + (double)totalPnl;
@@ -138,7 +143,7 @@ namespace ClientDesktop.ViewModel
                 });
 
                 // --- C. ADD ORDERS ---
-                foreach (var ord in ordersList)
+                foreach (var ord in _rawOrders)
                 {
                     string displaySide = ord.Side;
                     if (string.Equals(ord.Side, "Bid", StringComparison.OrdinalIgnoreCase)) displaySide = "Sell";
@@ -337,8 +342,8 @@ namespace ClientDesktop.ViewModel
                     priceDifference = row.AveragePrice.Value - newPrice;
                 }
 
-                decimal calculatedPnl = (decimal)(priceDifference * row.Volume.Value);
-                row.Pnl = Math.Round(calculatedPnl, 2);
+                double calculatedPnl = CalculateFloatingPnl(tick.Bid, tick.Ask, row);
+                row.Pnl = (decimal)Math.Round(calculatedPnl, 2);
 
                 // COLOR LOGIC FOR PNL
                 row.PnlColor = row.Pnl >= 0 ? "ForestGreen" : "Red";
@@ -360,14 +365,149 @@ namespace ClientDesktop.ViewModel
             // Footer PNL ka color bhi update karo
             footerRow.PnlColor = totalPnl >= 0 ? "ForestGreen" : "Red";
 
-            double balance = 50000.00;
-            double credit = 1000.00;
-            double equity = balance + credit + (double)totalPnl;
-            double margin = 2000.00;
-            double freeMargin = equity - margin;
+            string summaryText = CalculatePositionFooterSummary((double)totalPnl);
+            //string footerText = $"Balance: {balance:N2}   Eq: {equity:N2}   Credit: {credit:N2}   Margin: {margin:N2}   Free: {freeMargin:N2}";
+            footerRow.SymbolName = summaryText;
+        }
 
-            string footerText = $"Balance: {balance:N2}   Eq: {equity:N2}   Credit: {credit:N2}   Margin: {margin:N2}   Free: {freeMargin:N2}";
-            footerRow.SymbolName = footerText;
+        public double CalculateFloatingPnl(double newBid, double newAsk, PositionGridRow row)
+        {
+            var position = _rawPositions.Find(q => q.Id == row.Id);
+
+            if (position == null)
+                return 0.0;
+
+            // Safely extract values from position
+            double spreadBalance = position.SpreadBalance ?? 0.0;
+            double spreadValue = position.SpreadValue ?? 0.0;
+            string spreadType = position.SpreadType ?? "Default";
+            int digits = position.SymbolDigit;
+
+            // Apply spread logic
+            double bid = newBid;
+            double ask = newAsk;
+
+            switch (spreadType)
+            {
+                case "Default":
+                    bid = AddSpreadBalance(bid, digits, spreadBalance);
+                    ask = AddSpreadBalance(ask, digits, spreadBalance);
+                    break;
+
+                case "Fix":
+                    bid = AddSpreadBalance(bid, digits, spreadBalance);
+                    ask = AddSpreadBalance(bid, digits, spreadValue); // fixed distance from bid
+                    break;
+
+                case "Spread":
+                    bid = AddSpreadBalance(bid, digits, spreadBalance);
+                    ask = AddSpreadBalance(AddSpreadBalance(ask, digits, spreadBalance), digits, spreadValue);
+                    break;
+            }
+
+            // Determine which price to use based on side
+            double currentPrice = position.Side.Equals("ask", StringComparison.OrdinalIgnoreCase)
+                ? (bid > 0 ? bid : position.CurrentPrice)
+                : (ask > 0 ? ask : position.CurrentPrice);
+
+            // Calculate PnL
+            if (position.Side.Equals("ask", StringComparison.OrdinalIgnoreCase))
+            {
+                return (currentPrice - position.AveragePrice) *
+                       position.TotalVolume *
+                       position.SymbolContractSize;
+            }
+            else
+            {
+                return (position.AveragePrice - currentPrice) *
+                       position.TotalVolume *
+                       position.SymbolContractSize;
+            }
+        }
+
+        public static double AddSpreadBalance(double odds, int symbolDigits, double spreadBalance)
+        {
+            double multiplier = Math.Pow(10.0, symbolDigits);
+            return (odds * multiplier + spreadBalance) / multiplier;
+        }
+
+        private string CalculatePositionFooterSummary(double finalTotalPnl)
+        {
+            string tradeSummary = string.Empty;
+
+            int maxWaitMs = 3000;
+            int waited = 0;
+            //while (!SessionManager.IsClientDataLoaded && waited < maxWaitMs)
+            //{
+            //    System.Threading.Thread.Sleep(200);
+            //    waited += 200;
+            //}
+
+            var clientDetail = _sessionService.ClientListData.Where(q => q.ClientId == _sessionService.UserId).FirstOrDefault();
+            if (clientDetail == null)
+                return string.Empty;
+
+            //if (skt_ClientDetail != null)
+            //{
+            //    clientDetail.CreditAmount = skt_ClientDetail.CreditAmount;
+            //    clientDetail.UplineAmount = skt_ClientDetail.UplineAmount;
+            //    clientDetail.Balance = skt_ClientDetail.Balance;
+            //    clientDetail.OccupiedMarginAmount = skt_ClientDetail.OccupiedMarginAmount;
+            //    clientDetail.UplineCommission = skt_ClientDetail.UplineCommission;
+            //}
+
+            double uplineAmount = clientDetail.UplineAmount;
+            double uplineCommission = clientDetail.UplineCommission;
+            double balance = clientDetail.Balance;
+
+            //balanceForHistoryFooter = CalculateUplineBalance(clientDetail?.UplineAmount, clientDetail?.UplineCommission, clientDetail?.RealtimeCommission == true);
+
+            double creditAmount = clientDetail.CreditAmount;
+            var creditAmountForHistoryFooter = creditAmount;
+
+            double occupiedMarginAmount = clientDetail.OccupiedMarginAmount;
+            string freeMarginRule = clientDetail.FreeMargin?.ToLower() ?? "useopenpl";
+
+            // 🔹 Compute balances
+            double totalBalance = uplineAmount + uplineCommission + balance;
+            double pnlContribution = 0;
+
+            if (finalTotalPnl != 0)
+            {
+                if (freeMarginRule == "useopenpl")
+                    pnlContribution = finalTotalPnl;
+                else if (freeMarginRule == "useonlyopenprofit" && finalTotalPnl > 0)
+                    pnlContribution = finalTotalPnl;
+                else if (freeMarginRule == "useonlyopenloss" && finalTotalPnl < 0)
+                    pnlContribution = finalTotalPnl;
+            }
+
+            double equity = uplineAmount + creditAmount + uplineCommission + finalTotalPnl;
+
+            double freeMargin = uplineAmount + creditAmount + uplineCommission + pnlContribution - occupiedMarginAmount;
+            tradeSummary =
+                $"Balance: {CommonHelper.FormatAmount(totalBalance)}   " +
+                $"Eq: {CommonHelper.FormatAmount(equity)}   " +
+                $"Credit: {CommonHelper.FormatAmount(creditAmount)}   " +
+                $"OM: {CommonHelper.FormatAmount(occupiedMarginAmount)}   " +
+                $"FM: {CommonHelper.FormatAmount(freeMargin)}";
+
+            return tradeSummary;
+        }
+
+        public static double CalculateUplineBalance(double? uplineAmount, double? uplineCommission, bool realtimeCommission)
+        {
+            double value = 0d;
+
+            if (uplineAmount != null && uplineCommission != null)
+                value = uplineAmount.Value +
+                        (realtimeCommission ? uplineCommission.Value : 0d);
+            else if (uplineAmount != null)
+                value = uplineAmount.Value;
+            else if (uplineCommission != null && realtimeCommission)
+                value = uplineCommission.Value;
+
+            return value;
         }
 
         public async void Cleanup()
