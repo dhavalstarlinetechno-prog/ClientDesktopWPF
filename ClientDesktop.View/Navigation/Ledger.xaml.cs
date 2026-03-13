@@ -99,7 +99,7 @@ namespace ClientDesktop.View.Navigation
                 DgvLedgerRecord.Columns.Add(new DataGridTextColumn
                 {
                     Header = "Type",
-                    Width = 200,
+                    Width = 232,
                     Binding = new Binding("Type")
                 });
 
@@ -153,7 +153,7 @@ namespace ClientDesktop.View.Navigation
             DgvLedgerRecord.Columns.Add(new DataGridTextColumn
             {
                 Header = "Type",
-                Width = 200,
+                Width = 232,
                 Binding = new Binding("Type")
             });
 

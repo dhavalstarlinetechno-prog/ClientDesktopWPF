@@ -5,7 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:ClientDesktop.View.Navigation"
              mc:Ignorable="d" 
-             d:DesignHeight="1000" d:DesignWidth="653" Loaded="UserControl_Loaded">
+             Height="600" Width="1000" Loaded="UserControl_Loaded">
 
     <!-- ================= BUTTON STYLE (NO HOVER CHANGE) ================= -->
     <UserControl.Resources>

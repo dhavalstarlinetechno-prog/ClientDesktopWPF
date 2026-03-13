@@ -3,8 +3,6 @@ using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Services;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
 
 namespace ClientDesktop.ViewModel
 {
@@ -27,50 +25,23 @@ namespace ClientDesktop.ViewModel
                 OnPropertyChanged(nameof(IsNoDataVisible));
             }
         }
-        public bool IsNoDataVisible => IsDataLoaded && GridRows.Count == 0;
+
+        public bool IsNoDataVisible => IsDataLoaded && (GridRows?.Count ?? 0) == 0;
 
         public BanScriptViewModel(SessionService sessionService, BanScriptService banScriptService)
         {
             _sessionService = sessionService;
             _banScriptService = banScriptService;
+
             GridRows = new ObservableCollection<BanscriptGridRow>();
-            BanScipt_data();
         }
-        //public async void BanScipt_data()
-        //{
-        //    try
-        //    {
-        //        var bansctiptTask = _banScriptService.GetBanScript();
-        //        await Task.WhenAll(bansctiptTask);
 
-        //        var banResult = await bansctiptTask;
-        //        Application.Current.Dispatcher.Invoke(() =>
-        //        {
-        //            GridRows.Clear();
-        //            var BanscriptList = banResult.BanScripts ?? new List<BanScripts>();
-
-        //            foreach (var ban in BanscriptList)
-        //            {             
-        //                GridRows.Add(new BanscriptGridRow
-        //                {                           
-        //                    Symbol = ban.SymbolDisplayName,                           
-        //                });
-        //            }
-        //            IsDataLoaded = true;
-        //        });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        IsDataLoaded = true;
-        //        Console.WriteLine("Data Load Error: " + ex.Message);
-        //    }
-        //}
-
-        public async Task BanScipt_data()
+        public async Task LoadBanScriptData()
         {
             try
             {
                 IsDataLoaded = false;
+
                 GridRows.Clear();
 
                 var banResult = await _banScriptService.GetBanScript();
@@ -91,15 +62,8 @@ namespace ClientDesktop.ViewModel
             }
             finally
             {
-                IsDataLoaded = true; // 🔑 important
+                IsDataLoaded = true;
             }
-        }
-
-
-        public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged([CallerMemberName] string name = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
     }
 }

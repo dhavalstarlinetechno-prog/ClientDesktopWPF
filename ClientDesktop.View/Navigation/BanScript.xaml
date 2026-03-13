@@ -5,8 +5,8 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:ClientDesktop.View.Navigation"
              mc:Ignorable="d" 
-             d:DesignHeight="240" d:DesignWidth="320">
-            <Border BorderBrush="Gray"
+             Height="240" Width="320">
+    <Border BorderBrush="Gray"
             BorderThickness="1"
             Padding="6">
 
@@ -26,12 +26,22 @@
                     Stretch="Uniform"/>-->
 
                 <Viewbox Width="24" Height="24">
-                    <Path
-                    Data="M4 2C2.9 2 2 2.9 2 4V20C2 21.1 2.9 22 4 22H20C21.1 22 22 21.1 22 20V8L16 2H4Z
-                    M14 3.5L20.5 10H14V3.5Z
-                    M8.7 12.3L11 14.6L13.3 12.3L14.7 13.7L12.4 16L14.7 18.3L13.3 19.7L11 17.4L8.7 19.7L7.3 18.3L9.6 16L7.3 13.7L8.7 12.3Z"
-                    Fill="CornflowerBlue"
-                    Stretch="Uniform"/>
+                    <Canvas Width="100" Height="100">
+                        <Path Fill="#00ADEF" Stroke="#002B5B" StrokeThickness="3"
+                                Data="M20 15C20 12.2386 22.2386 10 25 10H60L80 30V85C80 87.7614 77.7614 90 75 90H25C22.2386 90 20 87.7614 20 85V15Z" />
+
+                        <Path Fill="#00F2FF" Stroke="#002B5B" StrokeThickness="2"
+                                Data="M60 10V25C60 27.7614 62.2386 30 65 30H80L60 10Z" />
+
+                        <Path Stroke="#002B5B" StrokeThickness="4" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                Data="M35 50H65 M35 60H55 M35 70H45" />
+
+                        <Path Fill="#FFD700" Stroke="#002B5B" StrokeThickness="2"
+                                Data="M70,48 A22,22 0 1,1 70,92 A22,22 0 1,1 70,48 Z" />
+
+                        <Path Stroke="#002B5B" StrokeThickness="5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                Data="M62 62L78 78 M78 62L62 78" />
+                    </Canvas>
                 </Viewbox>
 
                 <TextBlock Text="Ban Script"
@@ -69,7 +79,7 @@
                        CanUserDeleteRows="False"                      
                        VerticalScrollBarVisibility="Auto"
                        IsHitTestVisible="False">
-                                                                            
+
                     <DataGrid.Columns>
                         <DataGridTextColumn
                             Header="Symbol" FontFamily="Microsoft Sans Serif"
@@ -77,31 +87,32 @@
                             Width="*"/>
                     </DataGrid.Columns>
 
-                    <DataGrid.ColumnHeaderStyle>
+                    <!--<DataGrid.ColumnHeaderStyle>
                         <Style TargetType="DataGridColumnHeader">
                             <Setter Property="Background" Value="CornflowerBlue"/>
                             <Setter Property="Foreground" Value="White"/>
                             <Setter Property="FontWeight" Value="Regular"/>
                             <Setter Property="FontSize" Value="13"/>
                         </Style>
-                    </DataGrid.ColumnHeaderStyle>
+                    </DataGrid.ColumnHeaderStyle>-->
                 </DataGrid>
 
                 <!-- No Data -->
                 <TextBlock x:Name="LblNoData"
                         Text="No Data Available"
                         FontSize="15"                                   
-                        FontWeight="Bold"   
+                        Foreground="Gray"  
                         HorizontalAlignment="Center"
-                        VerticalAlignment="Center" 
-                        FontFamily="Microsoft Sans Serif">
+                        VerticalAlignment="Top" 
+                        FontFamily="Microsoft Sans Serif" Margin="0,34,0,0"
+                        Visibility="Collapsed">
 
-                    <TextBlock.Style>
+                    <!--<TextBlock.Style>
                         <Style TargetType="TextBlock">
                             <Setter Property="Visibility" Value="Collapsed"/>
                             <Style.Triggers>
 
-                                <!-- Show only after data loaded AND no rows -->
+                                --><!-- Show only after data loaded AND no rows --><!--
                                 <MultiDataTrigger>
                                     <MultiDataTrigger.Conditions>
                                         <Condition Binding="{Binding IsDataLoaded}" Value="True"/>
@@ -112,7 +123,7 @@
 
                             </Style.Triggers>
                         </Style>
-                    </TextBlock.Style>
+                    </TextBlock.Style>-->
                 </TextBlock>
 
             </Grid>
