@@ -182,7 +182,8 @@ namespace ClientDesktop.View.Symbol
 
         private void SortTreeViewItems(ItemCollection items)
         {
-            var sorted = items.Cast<TreeViewItem>().OrderBy(i => {
+            var sorted = items.Cast<TreeViewItem>().OrderBy(i =>
+            {
                 string header = i.Header.ToString();
                 int idx = header.IndexOf('(');
                 if (idx > 0) header = header.Substring(0, idx).Trim();
@@ -218,7 +219,7 @@ namespace ClientDesktop.View.Symbol
             // Focus set karvo pan default selection blue na aave e dhyan rakhvu
             _lastSelectedTreeViewItem = item;
         }
-        
+
         private void ClearAllHighlights(ItemCollection items)
         {
             foreach (TreeViewItem item in items)
@@ -604,6 +605,59 @@ namespace ClientDesktop.View.Symbol
             if (parentWindow != null)
             {
                 parentWindow.Close();
+            }
+        }
+
+        private async void BtnShow_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var selectedItem = DgvSymbols.SelectedItem as SymbolDisplayModel;
+
+                if (selectedItem == null)
+                {
+                    return;
+                }
+
+                if (int.TryParse(selectedItem.ParentId, out int parentIdInt))
+                {
+                    var marketWatchVM = AppServiceLocator.GetService<MarketWatchViewModel>();
+                    if (marketWatchVM != null)
+                    {
+                        await marketWatchVM.UpdateSymbolVisibility(true, parentIdInt);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error showing symbol: " + ex.Message);
+            }
+
+        }
+
+        private async void Btnhide_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var selectedItem = DgvSymbols.SelectedItem as SymbolDisplayModel;
+
+                if (selectedItem == null)
+                {
+                    return;
+                }
+
+                if (int.TryParse(selectedItem.ParentId, out int parentIdInt))
+                {
+                    var marketWatchVM = AppServiceLocator.GetService<MarketWatchViewModel>();
+                    if (marketWatchVM != null)
+                    {
+                        await marketWatchVM.UpdateSymbolVisibility(false, parentIdInt);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error showing symbol: " + ex.Message);
             }
         }
     }

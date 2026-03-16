@@ -428,7 +428,7 @@ namespace ClientDesktop.ViewModel
         private async void LoadData(bool forceSync)
         {
             var data = await _marketWatchService.GetMarketWatchDataAsync(forceSync);
-
+           
             if (data != null && data.symbols != null && data.symbols.Any())
             {
                 Application.Current.Dispatcher.Invoke(() => UpdateMarketData(data));
@@ -867,6 +867,57 @@ namespace ClientDesktop.ViewModel
         /// Calculates the daily change value difference.
         /// </summary>
         private decimal GetDailyChangeValue(decimal bid, decimal close) => bid - close;
+
+        public async Task UpdateSymbolVisibility(bool isShow,int symbolId)
+        {
+            if (symbolId == 0) return;
+            
+            try
+            {
+                if (isShow) // Symbol show (Unhide)
+                {
+                    await Application.Current.Dispatcher.InvokeAsync(async () =>
+                    {
+                       
+                        var symbol = HiddenSymbolsCollection.FirstOrDefault(s => s.SymbolId == symbolId);
+
+                        if (symbol == null)
+                        {                          
+                            return;
+                        }
+
+                        int insertPosition = MarketWatchSymbolsCollection.Count - 1;
+                        if (insertPosition < 0) insertPosition = 0;
+
+                        MarketWatchSymbolsCollection.Insert(insertPosition, symbol);
+                        HiddenSymbolsCollection.Remove(symbol);                        
+                        SelectedMarketItem = symbol;
+                      
+                        EnsureEmptyRow();
+                       
+                        await Task.Delay(100);
+                                              
+                        UpdateSymbolCount();
+                    });
+                }
+                else // Symbol hide 
+                {
+                    var targetSymbol = MarketWatchSymbolsCollection.FirstOrDefault(x => x.SymbolId == symbolId);
+                    if (targetSymbol != null)
+                    {
+                        await ProcessHideOperationAsync(new List<int> { targetSymbol.SymbolId }, "Hide");
+                    }
+                    else
+                    {
+                        FileLogger.Log("MarketWatch", CommonMessages.SymbolNotFound);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog("SymbolButtonClick", ex);               
+            }            
+        }
 
         #endregion
     }
