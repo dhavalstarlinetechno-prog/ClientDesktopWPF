@@ -1,6 +1,7 @@
 ﻿using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Infrastructure.Helpers;
 using ClientDesktop.Infrastructure.Services;
+using ClientDesktop.Services;
 using ClientDesktop.ViewModel;
 using Microsoft.Extensions.DependencyInjection;
 using System.Windows;
@@ -74,6 +75,7 @@ namespace ClientDesktop.Main
 
             // Api Service
             services.AddSingleton<IApiService, ApiService>();
+            services.AddSingleton<ISocketService, SocketService>();
 
             // SignalR Service
             services.AddSingleton<LiveTickService>();

@@ -5,6 +5,7 @@ using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Helpers;
 using ClientDesktop.Infrastructure.Services;
+using ClientDesktop.Services;
 using CommunityToolkit.Mvvm.Messaging;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -19,6 +20,7 @@ namespace ClientDesktop.ViewModel
         private readonly SessionService _sessionService;
         private readonly PositionService _positionService;
         private readonly LiveTickService _liveTickService;
+        private readonly ISocketService _socketService;
         private ObservableCollection<PositionGridRow> _gridRows;
         private readonly IDialogService _dialogService;
         private readonly HashSet<string> _subscribedSymbols = new HashSet<string>();
@@ -35,12 +37,14 @@ namespace ClientDesktop.ViewModel
             set { _gridRows = value; OnPropertyChanged(); }
         }
 
-        public PositionViewModel(SessionService sessionService, PositionService positionService, IDialogService dialogService, LiveTickService liveTickService)
+        public PositionViewModel(SessionService sessionService, PositionService positionService, IDialogService dialogService, LiveTickService liveTickService , ISocketService socketService)
         {
             _sessionService = sessionService;
             _positionService = positionService;
             _dialogService = dialogService;
             _liveTickService = liveTickService;
+            _socketService = socketService;
+
             GridRows = new ObservableCollection<PositionGridRow>();
 
             DoubleClickCommand = new RelayCommand(row => PositionGridDoubleClick((PositionGridRow?)row));
@@ -49,6 +53,11 @@ namespace ClientDesktop.ViewModel
             _liveTickService.OnTickReceived += HandleLiveTick;
             _liveTickService.OnReconnected += HandleLiveReconnected;
             _liveTickService.OnConnected += HandleLiveConnected;
+
+            _socketService.OnPositionUpdated += HandlePositionUpdated;
+            _socketService.OnOrderUpdated += HandleOrderUpdated;
+            _socketService.OnUpdateUserBalance += HandleUserBalance;
+            _socketService.OnSocketReconnected += HandleSocketReconnection;
         }
 
         /// <summary>
@@ -509,6 +518,166 @@ namespace ClientDesktop.ViewModel
 
             return value;
         }
+
+        #region Socket Specific Event Handlers
+
+        private void HandleSocketReconnection()
+        {
+            // Jab socket reconnect ho, toh API se poora data wapas fetch aur refresh karlo
+            Application.Current.Dispatcher.Invoke(() => LoadDataAsync());
+        }
+
+        private void HandlePositionUpdated(Position updatedPosition, bool isDeleted)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                if (isDeleted)
+                {
+                    // Memory se remove
+                    _rawPositions.RemoveAll(p => p.Id == updatedPosition.Id);
+
+                    // UI List se remove
+                    var rowToRemove = GridRows.FirstOrDefault(r => r.Type == RowType.Position && r.Id == updatedPosition.Id);
+                    if (rowToRemove != null) GridRows.Remove(rowToRemove);
+                }
+                else
+                {
+                    var existingRaw = _rawPositions.FirstOrDefault(p => p.Id == updatedPosition.Id);
+                    if (existingRaw != null)
+                    {
+                        // Update Data in memory
+                        int index = _rawPositions.IndexOf(existingRaw);
+                        _rawPositions[index] = updatedPosition;
+
+                        // Update Row in UI
+                        var row = GridRows.FirstOrDefault(r => r.Type == RowType.Position && r.Id == updatedPosition.Id);
+                        if (row != null)
+                        {
+                            row.AveragePrice = updatedPosition.AveragePrice;
+                            row.AveragePriceDisplay = updatedPosition.AveragePrice.ToString($"F{updatedPosition.SymbolDigit}");
+                            row.Volume = updatedPosition.TotalVolume;
+                            // Note: CurrentPrice & Pnl will be handled naturally by the Next Live Tick
+                        }
+                    }
+                    else
+                    {
+                        // Add New Position Row
+                        _rawPositions.Add(updatedPosition);
+                        string displaySide = string.Equals(updatedPosition.Side, "Bid", StringComparison.OrdinalIgnoreCase) ? "Sell" : "Buy";
+
+                        var newRow = new PositionGridRow
+                        {
+                            Id = updatedPosition.Id,
+                            SymbolId = updatedPosition.SymbolId,
+                            SymbolDigit = updatedPosition.SymbolDigit,
+                            SymbolName = updatedPosition.SymbolName,
+                            Time = updatedPosition.CreatedAt ?? updatedPosition.LastInAt,
+                            Side = displaySide,
+                            OrderType = "Market",
+                            Volume = updatedPosition.TotalVolume,
+                            AveragePrice = updatedPosition.AveragePrice,
+                            AveragePriceDisplay = updatedPosition.AveragePrice.ToString($"F{updatedPosition.SymbolDigit}"),
+                            CurrentPrice = updatedPosition.CurrentPrice,
+                            CurrentPriceDisplay = updatedPosition.CurrentPrice.ToString($"F{updatedPosition.SymbolDigit}"),
+                            Pnl = updatedPosition.Pnl,
+                            Type = RowType.Position
+                        };
+
+                        // Position ko Footer ke upar insert karna hai
+                        var footerRow = GridRows.FirstOrDefault(r => r.Type == RowType.Footer);
+                        int insertIndex = footerRow != null ? GridRows.IndexOf(footerRow) : GridRows.Count;
+                        GridRows.Insert(insertIndex, newRow);
+
+                        // SignalR ko bhi naye symbol ke liye subscribe kardo
+                        _ = _liveTickService.SubscribeSymbolAsync(updatedPosition.SymbolName);
+                    }
+                }
+                UpdateFooterPnl();
+            });
+        }
+
+        private void HandleOrderUpdated(OrderModel updatedOrder, bool isDeleted, string orderId)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                if (isDeleted)
+                {
+                    _rawOrders.RemoveAll(o => o.OrderId == orderId);
+                    var rowToRemove = GridRows.FirstOrDefault(r => r.Type == RowType.Order && r.Id == orderId);
+                    if (rowToRemove != null) GridRows.Remove(rowToRemove);
+                }
+                else
+                {
+                    var existingRaw = _rawOrders.FirstOrDefault(o => o.OrderId == updatedOrder.OrderId);
+                    if (existingRaw != null)
+                    {
+                        // Update Data
+                        int index = _rawOrders.IndexOf(existingRaw);
+                        _rawOrders[index] = updatedOrder;
+
+                        // Update Row
+                        var row = GridRows.FirstOrDefault(r => r.Type == RowType.Order && r.Id == updatedOrder.OrderId);
+                        if (row != null)
+                        {
+                            row.AveragePrice = updatedOrder.Price;
+                            row.AveragePriceDisplay = updatedOrder.Price.ToString($"F{updatedOrder.SymbolDigit}");
+                            row.Volume = updatedOrder.Volume;
+                            row.OrderType = updatedOrder.OrderType;
+                            row.Time = DateTime.Now; // Update local time
+                        }
+                    }
+                    else
+                    {
+                        // Add New Order
+                        _rawOrders.Add(updatedOrder);
+                        string displaySide = string.Equals(updatedOrder.Side, "Ask", StringComparison.OrdinalIgnoreCase) ? "Buy" : "Sell";
+
+                        var newRow = new PositionGridRow
+                        {
+                            Id = updatedOrder.OrderId,
+                            SymbolId = updatedOrder.SymbolId,
+                            SymbolDigit = updatedOrder.SymbolDigit,
+                            SymbolName = updatedOrder.SymbolName,
+                            Time = DateTime.Now,
+                            Side = displaySide,
+                            OrderType = updatedOrder.OrderType,
+                            Volume = updatedOrder.Volume,
+                            AveragePrice = updatedOrder.Price,
+                            AveragePriceDisplay = updatedOrder.Price.ToString($"F{updatedOrder.SymbolDigit}"),
+                            CurrentPrice = updatedOrder.CurrentPrice,
+                            CurrentPriceDisplay = updatedOrder.CurrentPrice.ToString($"F{updatedOrder.SymbolDigit}"),
+                            Pnl = null,
+                            Type = RowType.Order
+                        };
+
+                        // Orders grid ke bottom mein add honge
+                        GridRows.Add(newRow);
+                        _ = _liveTickService.SubscribeSymbolAsync(updatedOrder.SymbolName);
+                    }
+                }
+            });
+        }
+
+        private void HandleUserBalance(ClientDetails details)
+        {
+            if (details == null) return;
+
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                var clientDetail = _sessionService.ClientListData.FirstOrDefault(q => q.ClientId == _sessionService.UserId);
+                if (clientDetail != null)
+                {
+                    clientDetail.CreditAmount = details.CreditAmount;
+                    clientDetail.UplineAmount = details.UplineAmount;
+                    clientDetail.Balance = details.Balance;
+                    clientDetail.OccupiedMarginAmount = details.OccupiedMarginAmount;
+                    clientDetail.UplineCommission = details.UplineCommission;
+                }
+                UpdateFooterPnl(); // Session update hote hi footer refresh hoga
+            });
+        }
+
+        #endregion
 
         public async void Cleanup()
         {

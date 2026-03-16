@@ -195,20 +195,20 @@ namespace ClientDesktop.Infrastructure.Services
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 var response = await _http.PutAsync(url, content);
+                var responseJson = await response.Content.ReadAsStringAsync();
 
                 if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
                     HandleUnauthorizedAccess(url);
-                    return default;
+                    return JsonConvert.DeserializeObject<T>(responseJson);
                 }
 
                 if (!response.IsSuccessStatusCode)
                 {
                     FileLogger.ApplicationLog(nameof(PutAsync), $"URL: {url} failed with Status: {response.StatusCode}");
-                    return default;
+                    return JsonConvert.DeserializeObject<T>(responseJson);
                 }
 
-                var responseJson = await response.Content.ReadAsStringAsync();
                 return JsonConvert.DeserializeObject<T>(responseJson);
             }
             catch (Exception ex)

@@ -4,6 +4,7 @@ using ClientDesktop.Core.Events;
 using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Infrastructure.Logger;
 using ClientDesktop.Infrastructure.Services;
+using ClientDesktop.Services;
 using CommunityToolkit.Mvvm.Messaging;
 using System.Windows;
 using System.Windows.Input;
@@ -19,6 +20,7 @@ namespace ClientDesktop.ViewModel
 
         private readonly SessionService _sessionService;
         private readonly AuthService _authService;
+        private readonly ISocketService _socketService;
         private readonly ClientService _clientService;
         private readonly IDialogService _dialogService;
 
@@ -62,6 +64,7 @@ namespace ClientDesktop.ViewModel
         public MainWindowViewModel(
             SessionService sessionService,
             AuthService authService,
+            ISocketService socketService,
             ClientService clientService,
             IDialogService dialogService,
             MarketWatchViewModel marketWatchVM,
@@ -69,6 +72,7 @@ namespace ClientDesktop.ViewModel
         {
             _sessionService = sessionService;
             _authService = authService;
+            _socketService = socketService;
             _clientService = clientService;
             _dialogService = dialogService;
 
@@ -196,8 +200,8 @@ namespace ClientDesktop.ViewModel
                 }
 
                 InitializeAfterLogin();
-
-                WeakReferenceMessenger.Default.Send(new UserAuthEvent(true, _sessionService.UserId));
+                WeakReferenceMessenger.Default.Send(new UserAuthEvent(true, _sessionService.UserId));   
+                _socketService.Start();
             }
             else
             {
@@ -276,7 +280,7 @@ namespace ClientDesktop.ViewModel
         /// </summary>
         /// <remarks>This method displays a modal dialog for password change, typically using a view model
         /// to manage the process. The dialog is intended to be used when a user needs to update their credentials
-        /// during an active session.</remarks>
+        /// during an active session.</remarks> 
         private void OpenChangePasswordWindow()
         {
             _dialogService.ShowDialog<ChangePasswordViewModel>(
