@@ -18,12 +18,8 @@
         </Style>
     </UserControl.Resources>
 
-    <d:UserControl.DataContext>
-        <vm:PositionViewModel />
-    </d:UserControl.DataContext>
-
     <Grid Background="White">
-        <DataGrid ItemsSource="{Binding GridRows}"
+        <DataGrid ItemsSource="{Binding PositionCollectionView}"
                   Style="{StaticResource CustomDataGrid}"  
                   HeadersVisibility="Column"
                   GridLinesVisibility="All"
@@ -60,7 +56,7 @@
                                                                 ItemsPanel="{TemplateBinding ItemsPanel}"
                                                                 SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
 
-                                        <Grid x:Name="FooterPanel" Visibility="Collapsed">
+                                        <Grid x:Name="FooterPanel" Visibility="Collapsed" Height="25">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="100"/>
@@ -73,7 +69,7 @@
                                                        FontWeight="Bold"/>
 
                                             <TextBlock x:Name="FooterPnlText"
-                                                       Text="{Binding Pnl}" 
+                                                       Text="{Binding Pnl, StringFormat=F2}" 
                                                        Grid.Column="1"
                                                        HorizontalAlignment="Right"
                                                        VerticalAlignment="Center"
@@ -89,14 +85,12 @@
                                         <Setter TargetName="DGR_Border" Property="Background" Value="#EEEEEE"/>
                                     </Trigger>
 
-                                    <!-- Your existing FOOTER trigger -->
                                     <DataTrigger Binding="{Binding RefId}" Value="FOOTER">
                                         <Setter TargetName="CellsPresenter" Property="Visibility" Value="Collapsed"/>
                                         <Setter TargetName="FooterPanel" Property="Visibility" Value="Visible"/>
                                         <Setter TargetName="DGR_Border" Property="Background" Value="#D3D3D3"/>
                                     </DataTrigger>
 
-                                    <!-- Your existing selection trigger -->
                                     <Trigger Property="IsSelected" Value="True">
                                         <Setter TargetName="DGR_Border" Property="Background" Value="#0078D7"/>
                                         <Setter Property="Foreground" Value="White"/>
@@ -114,8 +108,7 @@
                                             <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource Self}}" Value="True"/>
                                         </MultiDataTrigger.Conditions>
                                         <Setter TargetName="DGR_Border" Property="Background" Value="#E0E0E0"/>
-                                        <Setter Property="Foreground" Value="White"/>
-                                        <Setter TargetName="FooterPnlText" Property="Foreground" Value="White"/>
+                                        <Setter Property="Foreground" Value="Black"/>
                                     </MultiDataTrigger>
 
                                     <MultiDataTrigger>
@@ -144,7 +137,7 @@
             </DataGrid.RowStyle>
 
             <DataGrid.Columns>
-                <DataGridTemplateColumn Header="Symbol" Width="2.5*" SortMemberPath="SymbolName">
+                <DataGridTemplateColumn Header="Symbol" Width="2.5*" SortMemberPath="SymbolName" CanUserSort="True">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding SymbolName}" VerticalAlignment="Center" FontWeight="SemiBold" Margin="5,0,0,0"/>
@@ -152,22 +145,16 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
 
-                <DataGridTextColumn Header="Time" Binding="{Binding Time, StringFormat='{}{0:yyyy.MM.dd HH:mm}'}" ElementStyle="{StaticResource RightAlignCell}" Width="1.5*" SortMemberPath="Time"/>
+                <DataGridTextColumn Header="Time" Binding="{Binding Time, StringFormat='{}{0:yyyy.MM.dd HH:mm}'}" ElementStyle="{StaticResource RightAlignCell}" Width="1.5*" SortMemberPath="Time" CanUserSort="True"/>
 
-                <DataGridTemplateColumn Header="Type" Width="0.8*" SortMemberPath="Side">
+                <DataGridTemplateColumn Header="Type" Width="0.8*" SortMemberPath="Side" CanUserSort="False">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding Side}" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,5,0">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
-                                        <Setter Property="Foreground" Value="Black"/>
+                                        <Setter Property="Foreground" Value="{Binding Side, Converter={StaticResource OrderTypeColorConverter}}"/>
                                         <Style.Triggers>
-                                            <DataTrigger Binding="{Binding Side}" Value="Buy">
-                                                <Setter Property="Foreground" Value="#007ACC"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding Side}" Value="Sell">
-                                                <Setter Property="Foreground" Value="#FF3B30"/>
-                                            </DataTrigger>
                                             <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected}" Value="True">
                                                 <Setter Property="Foreground" Value="White"/>
                                             </DataTrigger>
@@ -179,14 +166,10 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
 
-                <DataGridTextColumn Header="Order Type" Binding="{Binding OrderType}" ElementStyle="{StaticResource RightAlignCell}" Width="1*" SortMemberPath="OrderType"/>
-                <DataGridTextColumn Header="Volume" Binding="{Binding Volume}" ElementStyle="{StaticResource RightAlignCell}" Width="0.8*" SortMemberPath="Volume"/>
+                <DataGridTextColumn Header="Order Type" Binding="{Binding OrderType}" ElementStyle="{StaticResource RightAlignCell}" Width="1*" SortMemberPath="OrderType" CanUserSort="False"/>
+                <DataGridTextColumn Header="Volume" Binding="{Binding Volume}" ElementStyle="{StaticResource RightAlignCell}" Width="0.8*" SortMemberPath="Volume" CanUserSort="False"/>
 
-                <!-- AVG PRICE FIX (AveragePriceDisplay Bind Kiya) -->
-                <DataGridTextColumn Header="Avg Price" Binding="{Binding AveragePriceDisplay}" ElementStyle="{StaticResource RightAlignCell}" Width="1*" SortMemberPath="AveragePrice"/>
-
-                <!-- CURRENT PRICE FIX (DataTriggers + Right Align + Style) -->
-                <DataGridTextColumn Header="Price" Binding="{Binding CurrentPriceDisplay}" Width="1*">
+                <DataGridTextColumn Header="Price" Binding="{Binding CurrentPriceDisplay}" Width="1*" CanUserSort="False">
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="Foreground" Value="{Binding PriceColor, FallbackValue=Black}"/>
@@ -202,8 +185,7 @@
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
-                <!-- PNL FIX (DataTriggers + Right Align + Style) -->
-                <DataGridTextColumn Header="Floating P/L" Binding="{Binding Pnl}" Width="1.2*">
+                <DataGridTextColumn Header="Floating P/L" Binding="{Binding Pnl, StringFormat=F2}" Width="1.2*" SortMemberPath="Pnl" CanUserSort="True">
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="Foreground" Value="{Binding PnlColor, FallbackValue=Black}"/>

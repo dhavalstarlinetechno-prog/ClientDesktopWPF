@@ -20,16 +20,19 @@ namespace ClientDesktop.View.Converters
         /// </summary>
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
+            SolidColorBrush greenBrush = new SolidColorBrush(Color.FromRgb(0, 153, 0));
+            SolidColorBrush redBrush = new SolidColorBrush(Color.FromRgb(255, 59, 48));
+
             if (value is double profit)
             {
-                if (profit > 0) return Brushes.Blue;
-                if (profit < 0) return Brushes.Red;
+                if (profit > 0) return greenBrush;
+                if (profit < 0) return redBrush;
             }
 
             if (value is decimal profitDec)
             {
-                if (profitDec > 0) return Brushes.Blue;
-                if (profitDec < 0) return Brushes.Red;
+                if (profitDec > 0) return greenBrush;
+                if (profitDec < 0) return redBrush;
             }
 
             return Brushes.Black;
@@ -68,12 +71,12 @@ namespace ClientDesktop.View.Converters
 
                 if (lowerSide.Contains("buy"))
                 {
-                    return new SolidColorBrush(Color.FromRgb(0, 114, 188));
+                    return new SolidColorBrush(Color.FromRgb(0, 153, 0));
                 }
 
                 if (lowerSide.Contains("sell"))
                 {
-                    return new SolidColorBrush(Color.FromRgb(220, 53, 69));
+                    return new SolidColorBrush(Color.FromRgb(255, 59, 48));
                 }
             }
 

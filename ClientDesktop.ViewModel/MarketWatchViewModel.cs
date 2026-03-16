@@ -40,6 +40,8 @@ namespace ClientDesktop.ViewModel
         private string _newSymbolSearchText;
         private string _symbolCountText;
         private bool _isSuggestionOpen;
+        private bool _isSignalRConnected = false;
+        private bool _isMarketWatchDataUpdated = false;
         private ICollectionView _marketView;
         private MarketWatchSymbols _selectedMarketItem;
 
@@ -152,6 +154,7 @@ namespace ClientDesktop.ViewModel
             _liveTickService = liveTickService;
             _liveTickService.OnTickReceived += HandleLiveTick;
             _liveTickService.OnReconnected += HandleLiveReconnected;
+            _liveTickService.OnConnected += () => { _isSignalRConnected = true; };
 
             MarketWatchSymbolsCollection = new ObservableCollection<MarketWatchSymbols>();
             HiddenSymbolsCollection = new ObservableCollection<MarketWatchSymbols>();
@@ -182,7 +185,6 @@ namespace ClientDesktop.ViewModel
             CurrentTime = DateTime.Now.ToString("HH:mm:ss");
 
             _marketWatchService.OnDataUpdated += UpdateMarketData;
-
             RegisterMessenger();
         }
 
@@ -223,7 +225,7 @@ namespace ClientDesktop.ViewModel
         /// </summary>
         public void SetSymbolVisibility(string symbolName, bool isVisible)
         {
-            if (!_sessionService.IsLoggedIn || !_sessionService.IsInternetAvailable || string.IsNullOrWhiteSpace(symbolName)) return;
+            if (!_sessionService.IsLoggedIn || !_sessionService.IsInternetAvailable || !_isSignalRConnected || !_isMarketWatchDataUpdated || string.IsNullOrWhiteSpace(symbolName)) return;
 
             lock (_nativeVisibleSymbols)
             {
@@ -262,6 +264,8 @@ namespace ClientDesktop.ViewModel
                 }
                 else
                 {
+                    _isMarketWatchDataUpdated = false;
+                    _isSignalRConnected = false;
                     lock (_currentlySubscribed) _currentlySubscribed.Clear();
                     lock (_nativeVisibleSymbols) _nativeVisibleSymbols.Clear();
                     await _liveTickService.StopConnectionAsync();
@@ -431,8 +435,12 @@ namespace ClientDesktop.ViewModel
            
             if (data != null && data.symbols != null && data.symbols.Any())
             {
-                Application.Current.Dispatcher.Invoke(() => UpdateMarketData(data));
-            }
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    UpdateMarketData(data);
+                    _isMarketWatchDataUpdated = forceSync;
+                });
+        }
         }
 
         /// <summary>

@@ -3,7 +3,7 @@
 
     <!-- Compact Tab Control Style -->
     <Style x:Key="CustomTabControl" TargetType="TabControl">
-        <Setter Property="Background" Value="White"/>
+        <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderBrush" Value="#D0D0D0"/>
         <Setter Property="BorderThickness" Value="1,1,1,0"/>
         <Setter Property="Padding" Value="0"/>
@@ -11,7 +11,7 @@
 
     <!-- MT5 Style Compact Tab Item -->
     <Style x:Key="CustomTabItem" TargetType="TabItem">
-        <Setter Property="Background" Value="#F5F5F5"/>
+        <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderBrush" Value="#D0D0D0"/>
         <Setter Property="Foreground" Value="#333333"/>
         <Setter Property="FontSize" Value="10"/>
@@ -63,21 +63,6 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
-    </Style>
-
-    <!-- DataGrid Column Header Style -->
-    <Style x:Key="WhiteColumnHeaderStyle" TargetType="DataGridColumnHeader">
-
-        <Setter Property="Background" Value="White"/>
-        <Setter Property="Foreground" Value="Black"/>
-        <Setter Property="BorderBrush" Value="#D0D0D0"/>
-        <Setter Property="BorderThickness" Value="0,0,1,1"/>
-        <Setter Property="Padding" Value="5,2"/>
-        <Setter Property="FontSize" Value="11"/>
-        <Setter Property="FontFamily" Value="Segoe UI"/>
-        <Setter Property="HorizontalContentAlignment" Value="Center"/>
-        <Setter Property="VerticalContentAlignment" Value="Center"/>
-
     </Style>
 
 

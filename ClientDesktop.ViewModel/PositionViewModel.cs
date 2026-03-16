@@ -5,27 +5,29 @@ using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Helpers;
 using ClientDesktop.Infrastructure.Services;
-using ClientDesktop.Services;
 using CommunityToolkit.Mvvm.Messaging;
+using System.Collections;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Runtime.CompilerServices;
+using System.Globalization;
 using System.Windows;
+using System.Windows.Data;
 using System.Windows.Input;
 
 namespace ClientDesktop.ViewModel
 {
-    public class PositionViewModel : INotifyPropertyChanged
+    public class PositionViewModel : ViewModelBase
     {
         private readonly SessionService _sessionService;
         private readonly PositionService _positionService;
         private readonly LiveTickService _liveTickService;
-        private readonly ISocketService _socketService;
         private ObservableCollection<PositionGridRow> _gridRows;
+
+        private ListCollectionView _positionCollectionView;
+
         private readonly IDialogService _dialogService;
         private readonly HashSet<string> _subscribedSymbols = new HashSet<string>();
         private Guid _currentLoadId = Guid.Empty;
-
 
         private List<Position> _rawPositions = new List<Position>();
         private List<OrderModel> _rawOrders = new List<OrderModel>();
@@ -37,15 +39,21 @@ namespace ClientDesktop.ViewModel
             set { _gridRows = value; OnPropertyChanged(); }
         }
 
-        public PositionViewModel(SessionService sessionService, PositionService positionService, IDialogService dialogService, LiveTickService liveTickService , ISocketService socketService)
+        public ListCollectionView PositionCollectionView
+        {
+            get { return _positionCollectionView; }
+            set { _positionCollectionView = value; OnPropertyChanged(); }
+        }
+
+        public PositionViewModel(SessionService sessionService, PositionService positionService, IDialogService dialogService, LiveTickService liveTickService)
         {
             _sessionService = sessionService;
             _positionService = positionService;
             _dialogService = dialogService;
             _liveTickService = liveTickService;
-            _socketService = socketService;
 
             GridRows = new ObservableCollection<PositionGridRow>();
+            PositionCollectionView = new ListCollectionView(GridRows);
 
             DoubleClickCommand = new RelayCommand(row => PositionGridDoubleClick((PositionGridRow?)row));
 
@@ -53,24 +61,21 @@ namespace ClientDesktop.ViewModel
             _liveTickService.OnTickReceived += HandleLiveTick;
             _liveTickService.OnReconnected += HandleLiveReconnected;
             _liveTickService.OnConnected += HandleLiveConnected;
-
-            _socketService.OnPositionUpdated += HandlePositionUpdated;
-            _socketService.OnOrderUpdated += HandleOrderUpdated;
-            _socketService.OnUpdateUserBalance += HandleUserBalance;
-            _socketService.OnSocketReconnected += HandleSocketReconnection;
         }
 
-        /// <summary>
-        /// Registers listeners for application-wide signals using the Event Aggregator.
-        /// </summary>
         private void RegisterMessenger()
         {
-            WeakReferenceMessenger.Default.Register<UserAuthEvent>(this, async (recipient, message) =>
+            WeakReferenceMessenger.Default.Register<UserAuthEvent>(this, (recipient, message) =>
             {
                 if (message.IsLoggedIn)
                 {
+                    LoadCachedDataAsync();
                     _currentLoadId = Guid.Empty;
-                    Application.Current.Dispatcher.Invoke(() => GridRows?.Clear());
+                    Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        GridRows?.Clear();
+                        PositionCollectionView?.Refresh();
+                    });
                     _subscribedSymbols.Clear();
                 }
                 else
@@ -80,114 +85,295 @@ namespace ClientDesktop.ViewModel
             });
         }
 
+        public async void LoadCachedDataAsync()
+        {
+            await Task.Run(() =>
+            {
+                var localPos = _positionService.GetCachedPositions();
+                var localOrd = _positionService.GetCachedOrders();
+
+                if (localPos.Any() || localOrd.Any())
+                {
+                    var list = BuildGridRows(localPos, localOrd);
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        _rawPositions = localPos;
+                        _rawOrders = localOrd;
+                        UpdateGridSilently(list);
+                    });
+                }
+            });
+        }
+
         public async void LoadDataAsync()
         {
             Guid thisLoadId = Guid.NewGuid();
             _currentLoadId = thisLoadId;
 
-            try
+            if (_currentLoadId != thisLoadId || !_sessionService.IsLoggedIn) return;
+
+            await Task.Run(async () =>
             {
-                var positionTask = _positionService.GetPositionsAsync();
-                var orderTask = _positionService.GetOrdersAsync();
-
-                await Task.WhenAll(positionTask, orderTask);
-
-                if (_currentLoadId != thisLoadId || !_sessionService.IsLoggedIn)
+                try
                 {
-                    return;
-                }
+                    var posResult = await _positionService.GetPositionsAsync().ConfigureAwait(false);
+                    var ordResult = await _positionService.GetOrdersAsync().ConfigureAwait(false);
 
-                var posResult = await positionTask;
-                var ordResult = await orderTask;
-
-                var tempRows = new ObservableCollection<PositionGridRow>();
-
-                _rawPositions = posResult.Positions ?? new List<Position>();
-                _rawOrders = ordResult.Orders ?? new List<OrderModel>();
-
-                // --- A. ADD POSITIONS ---
-                foreach (var pos in _rawPositions)
-                {
-                    string displaySide = pos.Side;
-                    if (string.Equals(pos.Side, "Bid", StringComparison.OrdinalIgnoreCase)) displaySide = "Sell";
-                    else if (string.Equals(pos.Side, "Ask", StringComparison.OrdinalIgnoreCase)) displaySide = "Buy";
-
-                    tempRows.Add(new PositionGridRow
+                    if (_currentLoadId != thisLoadId || !_sessionService.IsLoggedIn)
                     {
-                        Id = pos.Id,
-                        SymbolId = pos.SymbolId,
-                        SymbolDigit = pos.SymbolDigit,
-                        SymbolName = pos.SymbolName,
-                        Time = pos.LastInAt,
-                        Side = displaySide,
-                        OrderType = "Market",
-                        Volume = pos.TotalVolume,
-                        AveragePrice = pos.AveragePrice,
-                        AveragePriceDisplay = pos.AveragePrice.ToString($"F{pos.SymbolDigit}"),
-                        CurrentPrice = pos.CurrentPrice,
-                        CurrentPriceDisplay = pos.CurrentPrice.ToString($"F{pos.SymbolDigit}"),
-                        Pnl = pos.Pnl,
-                        Type = RowType.Position
-                    });
-                }
+                        return;
+                    }
 
-                // --- B. ADD FOOTER (Summary) ---
-                decimal totalPnl = _rawPositions.Sum(p => p.Pnl ?? 0);
-                double balance = 50000.00;
-                double credit = 1000.00;
-                double equity = balance + credit + (double)totalPnl;
-                double margin = 2000.00;
-                double freeMargin = equity - margin;
+                    var apiPos = posResult.Positions ?? new List<Position>();
+                    var apiOrd = ordResult.Orders ?? new List<OrderModel>();
 
-                string footerText = $"Balance: {balance:N2}   Eq: {equity:N2}   Credit: {credit:N2}   Margin: {margin:N2}   Free: {freeMargin:N2}";
+                    var list = BuildGridRows(apiPos, apiOrd);
 
-                tempRows.Add(new PositionGridRow
-                {
-                    SymbolName = footerText,
-                    Type = RowType.Footer,
-                    Pnl = totalPnl,
-                    Volume = null,
-                    AveragePrice = null,
-                    CurrentPrice = null
-                });
-
-                // --- C. ADD ORDERS ---
-                foreach (var ord in _rawOrders)
-                {
-                    string displaySide = ord.Side;
-                    if (string.Equals(ord.Side, "Bid", StringComparison.OrdinalIgnoreCase)) displaySide = "Sell";
-                    else if (string.Equals(ord.Side, "Ask", StringComparison.OrdinalIgnoreCase)) displaySide = "Buy";
-
-                    tempRows.Add(new PositionGridRow
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
                     {
-                        Id = ord.OrderId,
-                        SymbolId = ord.SymbolId,
-                        SymbolDigit = ord.SymbolDigit,
-                        SymbolName = ord.SymbolName,
-                        Time = ord.UpdatedAt,
-                        Side = displaySide,
-                        OrderType = ord.OrderType,
-                        Volume = ord.Volume,
-                        AveragePrice = ord.Price,
-                        AveragePriceDisplay = ord.Price.ToString($"F{ord.SymbolDigit}"),
-                        CurrentPrice = ord.CurrentPrice,
-                        CurrentPriceDisplay = ord.CurrentPrice.ToString($"F{ord.SymbolDigit}"),
-                        Pnl = null,
-                        Type = RowType.Order
-                    });
-                }
+                        _rawPositions = apiPos;
+                        _rawOrders = apiOrd;
+                        UpdateGridSilently(list);
+                    }, System.Windows.Threading.DispatcherPriority.Background);
 
-                Application.Current.Dispatcher.Invoke(() =>
+                    await SubscribeToSymbolAsync().ConfigureAwait(false);
+                }
+                catch (Exception ex)
                 {
-                    GridRows = tempRows;
-                });
-                await SubscribeToSymbolAsync();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Data Load Error: " + ex.Message);
-            }
+                    Console.WriteLine("Data Load Error: " + ex.Message);
+                }
+            });
         }
+
+        private ObservableCollection<PositionGridRow> BuildGridRows(List<Position> positions, List<OrderModel> orders)
+        {
+            var list = new ObservableCollection<PositionGridRow>();
+
+            // --- A. ADD POSITIONS ---
+            foreach (var pos in positions)
+            {
+                string displaySide = pos.Side;
+                if (string.Equals(pos.Side, "Bid", StringComparison.OrdinalIgnoreCase)) displaySide = "Sell";
+                else if (string.Equals(pos.Side, "Ask", StringComparison.OrdinalIgnoreCase)) displaySide = "Buy";
+
+                var date = pos.LastInAt.HasValue ? CommonHelper.ConvertUtcToIst(pos.LastInAt.Value).ToString("dd/MM/yy HH:mm:ss", CultureInfo.InvariantCulture) : string.Empty;
+
+                list.Add(new PositionGridRow
+                {
+                    Id = pos.Id,
+                    SymbolId = pos.SymbolId,
+                    SymbolDigit = pos.SymbolDigit,
+                    SymbolName = pos.SymbolName,
+                    Time = date,
+                    Side = displaySide,
+                    OrderType = "Market",
+                    Volume = pos.TotalVolume,
+                    AveragePrice = pos.AveragePrice,
+                    AveragePriceDisplay = pos.AveragePrice.ToString($"F{pos.SymbolDigit}"),
+                    CurrentPrice = pos.CurrentPrice,
+                    CurrentPriceDisplay = pos.CurrentPrice.ToString($"F{pos.SymbolDigit}"),
+                    Pnl = pos.Pnl,
+                    Type = RowType.Position
+                });
+            }
+
+            // --- B. ADD FOOTER (Summary) ---
+            decimal totalPnl = positions.Sum(p => p.Pnl ?? 0);
+            double balance = 0;
+            double credit = 0;
+            double equity = balance + credit + (double)totalPnl;
+            double margin = 0;
+            double freeMargin = equity - margin;
+
+            string footerText = $"Balance: {balance:N2}   Eq: {equity:N2}   Credit: {credit:N2}   Margin: {margin:N2}   Free: {freeMargin:N2}";
+
+            list.Add(new PositionGridRow
+            {
+                SymbolName = footerText,
+                Type = RowType.Footer,
+                Pnl = totalPnl,
+                Volume = null,
+                AveragePrice = null,
+                CurrentPrice = null
+            });
+
+            // --- C. ADD ORDERS ---
+            foreach (var ord in orders)
+            {
+                string displaySide = ord.Side;
+                if (string.Equals(ord.Side, "Bid", StringComparison.OrdinalIgnoreCase)) displaySide = "Sell";
+                else if (string.Equals(ord.Side, "Ask", StringComparison.OrdinalIgnoreCase)) displaySide = "Buy";
+
+                list.Add(new PositionGridRow
+                {
+                    Id = ord.OrderId,
+                    SymbolId = ord.SymbolId,
+                    SymbolDigit = ord.SymbolDigit,
+                    SymbolName = ord.SymbolName,
+                    Time = CommonHelper.ConvertUtcToIst(ord.UpdatedAt).ToString("dd/MM/yy HH:mm:ss", CultureInfo.InvariantCulture),
+                    Side = displaySide,
+                    OrderType = ord.OrderType,
+                    Volume = ord.Volume,
+                    AveragePrice = ord.Price,
+                    AveragePriceDisplay = ord.Price.ToString($"F{ord.SymbolDigit}"),
+                    CurrentPrice = ord.CurrentPrice,
+                    CurrentPriceDisplay = ord.CurrentPrice.ToString($"F{ord.SymbolDigit}"),
+                    Pnl = null,
+                    Type = RowType.Order
+                });
+            }
+
+            return list;
+        }
+
+        private void UpdateGridSilently(ObservableCollection<PositionGridRow> newList)
+        {
+            var currentSort = PositionCollectionView?.CustomSort;
+
+            GridRows = newList;
+            PositionCollectionView = new ListCollectionView(GridRows);
+
+            if (currentSort != null)
+            {
+                PositionCollectionView.CustomSort = currentSort;
+            }
+            OnPropertyChanged(nameof(PositionCollectionView));
+        }
+
+        #region Socket Handlers for Updating Local & UI
+
+        public void HandlePositionUpdated(Position updatedPosition, bool isDeleted)
+        {
+            if (updatedPosition == null) return;
+
+            Task.Run(() => _positionService.UpdateLocalPosition(updatedPosition, isDeleted));
+
+            Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                if (isDeleted)
+                {
+                    _rawPositions.RemoveAll(p => p.Id == updatedPosition.Id);
+                    var rowToRemove = GridRows.FirstOrDefault(r => r.Type == RowType.Position && r.Id == updatedPosition.Id);
+                    if (rowToRemove != null) GridRows.Remove(rowToRemove);
+                }
+                else
+                {
+                    var existingPos = _rawPositions.FirstOrDefault(p => p.Id == updatedPosition.Id);
+                    if (existingPos != null)
+                    {
+                        var index = _rawPositions.IndexOf(existingPos);
+                        _rawPositions[index] = updatedPosition;
+
+                        var row = GridRows.FirstOrDefault(r => r.Type == RowType.Position && r.Id == updatedPosition.Id);
+                        if (row != null)
+                        {
+                            row.AveragePrice = updatedPosition.AveragePrice;
+                            row.AveragePriceDisplay = updatedPosition.AveragePrice.ToString($"F{updatedPosition.SymbolDigit}");
+                            row.Volume = updatedPosition.TotalVolume;
+                            row.CurrentPrice = updatedPosition.CurrentPrice;
+                            row.CurrentPriceDisplay = updatedPosition.CurrentPrice.ToString($"F{updatedPosition.SymbolDigit}");
+                        }
+                    }
+                    else
+                    {
+                        _rawPositions.Insert(0, updatedPosition);
+                        string displaySide = updatedPosition.Side;
+                        if (string.Equals(updatedPosition.Side, "Bid", StringComparison.OrdinalIgnoreCase)) displaySide = "Sell";
+                        else if (string.Equals(updatedPosition.Side, "Ask", StringComparison.OrdinalIgnoreCase)) displaySide = "Buy";
+
+                        var newRow = new PositionGridRow
+                        {
+                            Id = updatedPosition.Id,
+                            SymbolId = updatedPosition.SymbolId,
+                            SymbolDigit = updatedPosition.SymbolDigit,
+                            SymbolName = updatedPosition.SymbolName,
+                            Time = updatedPosition.LastInAt?.ToString("yyyy.MM.dd HH:mm:ss") ?? "",
+                            Side = displaySide,
+                            OrderType = "Market",
+                            Volume = updatedPosition.TotalVolume,
+                            AveragePrice = updatedPosition.AveragePrice,
+                            AveragePriceDisplay = updatedPosition.AveragePrice.ToString($"F{updatedPosition.SymbolDigit}"),
+                            CurrentPrice = updatedPosition.CurrentPrice,
+                            CurrentPriceDisplay = updatedPosition.CurrentPrice.ToString($"F{updatedPosition.SymbolDigit}"),
+                            Pnl = updatedPosition.Pnl,
+                            Type = RowType.Position
+                        };
+                        GridRows.Add(newRow); 
+                    }
+                }
+
+                UpdateFooterPnl();
+                _ = SubscribeToSymbolAsync();
+            });
+        }
+
+        public void HandleOrderUpdated(OrderModel updatedOrder, bool isDeleted)
+        {
+            if (updatedOrder == null) return;
+
+            Task.Run(() => _positionService.UpdateLocalOrder(updatedOrder, isDeleted));
+
+            Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                if (isDeleted)
+                {
+                    _rawOrders.RemoveAll(o => o.OrderId == updatedOrder.OrderId);
+                    var rowToRemove = GridRows.FirstOrDefault(r => r.Type == RowType.Order && r.Id == updatedOrder.OrderId);
+                    if (rowToRemove != null) GridRows.Remove(rowToRemove);
+                }
+                else
+                {
+                    var existingOrder = _rawOrders.FirstOrDefault(o => o.OrderId == updatedOrder.OrderId);
+                    if (existingOrder != null)
+                    {
+                        var index = _rawOrders.IndexOf(existingOrder);
+                        _rawOrders[index] = updatedOrder;
+
+                        var row = GridRows.FirstOrDefault(r => r.Type == RowType.Order && r.Id == updatedOrder.OrderId);
+                        if (row != null)
+                        {
+                            row.Time = updatedOrder.UpdatedAt.ToString("yyyy.MM.dd HH:mm:ss");
+                            row.OrderType = updatedOrder.OrderType;
+                            row.Volume = updatedOrder.Volume;
+                            row.AveragePrice = updatedOrder.Price;
+                            row.AveragePriceDisplay = updatedOrder.Price.ToString($"F{updatedOrder.SymbolDigit}");
+                            row.CurrentPrice = updatedOrder.CurrentPrice;
+                            row.CurrentPriceDisplay = updatedOrder.CurrentPrice.ToString($"F{updatedOrder.SymbolDigit}");
+                        }
+                    }
+                    else
+                    {
+                        _rawOrders.Insert(0, updatedOrder);
+                        string displaySide = updatedOrder.Side;
+                        if (string.Equals(updatedOrder.Side, "Bid", StringComparison.OrdinalIgnoreCase)) displaySide = "Sell";
+                        else if (string.Equals(updatedOrder.Side, "Ask", StringComparison.OrdinalIgnoreCase)) displaySide = "Buy";
+
+                        var newRow = new PositionGridRow
+                        {
+                            Id = updatedOrder.OrderId,
+                            SymbolId = updatedOrder.SymbolId,
+                            SymbolDigit = updatedOrder.SymbolDigit,
+                            SymbolName = updatedOrder.SymbolName,
+                            Time = updatedOrder.UpdatedAt.ToString("yyyy.MM.dd HH:mm:ss"),
+                            Side = displaySide,
+                            OrderType = updatedOrder.OrderType,
+                            Volume = updatedOrder.Volume,
+                            AveragePrice = updatedOrder.Price,
+                            AveragePriceDisplay = updatedOrder.Price.ToString($"F{updatedOrder.SymbolDigit}"),
+                            CurrentPrice = updatedOrder.CurrentPrice,
+                            CurrentPriceDisplay = updatedOrder.CurrentPrice.ToString($"F{updatedOrder.SymbolDigit}"),
+                            Pnl = null,
+                            Type = RowType.Order
+                        };
+                        GridRows.Add(newRow);
+                    }
+                }
+
+                _ = SubscribeToSymbolAsync();
+            });
+        }
+
+        #endregion
 
         private void PositionGridDoubleClick(PositionGridRow selectedRow)
         {
@@ -216,32 +402,10 @@ namespace ClientDesktop.ViewModel
 
         public void SortData(string sortBy, ListSortDirection direction)
         {
-            var positions = GridRows.Where(r => r.Type == RowType.Position).ToList();
-            var footer = GridRows.FirstOrDefault(r => r.Type == RowType.Footer);
-            var orders = GridRows.Where(r => r.Type == RowType.Order).ToList();
-
-            Func<PositionGridRow, object> keySelector = sortBy switch
+            if (PositionCollectionView != null)
             {
-                "SymbolName" => r => r.SymbolName,
-                "Time" => r => r.Time,
-                "Side" => r => r.Side,
-                "OrderType" => r => r.OrderType,
-                "Volume" => r => r.Volume,
-                "AveragePrice" => r => r.AveragePrice,
-                "CurrentPrice" => r => r.CurrentPrice,
-                "Pnl" => r => r.Pnl,
-                _ => r => r.Id
-            };
-
-            if (direction == ListSortDirection.Ascending)
-                positions = positions.OrderBy(keySelector).ToList();
-            else
-                positions = positions.OrderByDescending(keySelector).ToList();
-
-            GridRows.Clear();
-            foreach (var p in positions) GridRows.Add(p);
-            if (footer != null) GridRows.Add(footer);
-            foreach (var o in orders) GridRows.Add(o);
+                PositionCollectionView.CustomSort = new PositionGridSorter(sortBy, direction);
+            }
         }
 
         private async Task SubscribeToSymbolAsync()
@@ -280,28 +444,24 @@ namespace ClientDesktop.ViewModel
 
             Application.Current.Dispatcher.InvokeAsync(() =>
             {
-                // Yahan Ab Position AUR Order dono ko filter karenge
                 var rowsToUpdate = GridRows.Where(r =>
                     (r.Type == RowType.Position || r.Type == RowType.Order)
                     && r.SymbolName == tick.SymbolName).ToList();
 
                 foreach (var row in rowsToUpdate)
                 {
-                    UpdateRowPrice(row, tick); // Naya method call kiya
+                    UpdateRowPrice(row, tick);
                 }
 
                 UpdateFooterPnl();
-            });
+            }, System.Windows.Threading.DispatcherPriority.DataBind);
         }
 
-        private async void HandleLiveConnected()
+        private void HandleLiveConnected()
         {
             LoadDataAsync();
         }
 
-        /// <summary>
-        /// Handles the automatic re-subscription of symbols when SignalR reconnects after a network drop.
-        /// </summary>
         private async void HandleLiveReconnected()
         {
             await SubscribeToSymbolAsync();
@@ -310,10 +470,8 @@ namespace ClientDesktop.ViewModel
         private void UpdateRowPrice(PositionGridRow row, TickData tick)
         {
             int digits = row.SymbolDigit;
-
             double newPrice;
 
-            // LOGIC 1: Buy = Ask, Sell = Bid
             if (string.Equals(row.Side, "Buy", StringComparison.OrdinalIgnoreCase))
             {
                 newPrice = tick.Ask;
@@ -323,22 +481,19 @@ namespace ClientDesktop.ViewModel
                 newPrice = tick.Bid;
             }
 
-            // COLOR LOGIC FOR PRICE (Purana price compare karo)
             double oldPrice = row.CurrentPrice ?? newPrice;
             if (newPrice > oldPrice)
             {
-                row.PriceColor = "DodgerBlue"; 
+                row.PriceColor = "#009900";
             }
             else if (newPrice < oldPrice)
             {
-                row.PriceColor = "Red";
+                row.PriceColor = "#EF5350";
             }
 
-            // LOGIC 3: Decimal places strict formatting
             row.CurrentPrice = Math.Round(newPrice, digits);
-            row.CurrentPriceDisplay = newPrice.ToString($"F{digits}"); // UI ko directly format de diya
+            row.CurrentPriceDisplay = newPrice.ToString($"F{digits}");
 
-            // LOGIC 2: Sirf Positions ka PNL calculate karo, Orders ka nahi
             if (row.Type == RowType.Position && row.AveragePrice.HasValue && row.Volume.HasValue)
             {
                 double priceDifference;
@@ -354,7 +509,6 @@ namespace ClientDesktop.ViewModel
                 double calculatedPnl = CalculateFloatingPnl(tick.Bid, tick.Ask, row);
                 row.Pnl = (decimal)Math.Round(calculatedPnl, 2);
 
-                // COLOR LOGIC FOR PNL
                 row.PnlColor = row.Pnl >= 0 ? "ForestGreen" : "Red";
             }
         }
@@ -370,12 +524,9 @@ namespace ClientDesktop.ViewModel
                 .Sum(r => r.Pnl ?? 0);
 
             footerRow.Pnl = totalPnl;
-
-            // Footer PNL ka color bhi update karo
             footerRow.PnlColor = totalPnl >= 0 ? "ForestGreen" : "Red";
 
             string summaryText = CalculatePositionFooterSummary((double)totalPnl);
-            //string footerText = $"Balance: {balance:N2}   Eq: {equity:N2}   Credit: {credit:N2}   Margin: {margin:N2}   Free: {freeMargin:N2}";
             footerRow.SymbolName = summaryText;
         }
 
@@ -386,13 +537,11 @@ namespace ClientDesktop.ViewModel
             if (position == null)
                 return 0.0;
 
-            // Safely extract values from position
             double spreadBalance = position.SpreadBalance ?? 0.0;
             double spreadValue = position.SpreadValue ?? 0.0;
             string spreadType = position.SpreadType ?? "Default";
             int digits = position.SymbolDigit;
 
-            // Apply spread logic
             double bid = newBid;
             double ask = newAsk;
 
@@ -402,24 +551,20 @@ namespace ClientDesktop.ViewModel
                     bid = AddSpreadBalance(bid, digits, spreadBalance);
                     ask = AddSpreadBalance(ask, digits, spreadBalance);
                     break;
-
                 case "Fix":
                     bid = AddSpreadBalance(bid, digits, spreadBalance);
-                    ask = AddSpreadBalance(bid, digits, spreadValue); // fixed distance from bid
+                    ask = AddSpreadBalance(bid, digits, spreadValue);
                     break;
-
                 case "Spread":
                     bid = AddSpreadBalance(bid, digits, spreadBalance);
                     ask = AddSpreadBalance(AddSpreadBalance(ask, digits, spreadBalance), digits, spreadValue);
                     break;
             }
 
-            // Determine which price to use based on side
             double currentPrice = position.Side.Equals("ask", StringComparison.OrdinalIgnoreCase)
                 ? (bid > 0 ? bid : position.CurrentPrice)
                 : (ask > 0 ? ask : position.CurrentPrice);
 
-            // Calculate PnL
             if (position.Side.Equals("ask", StringComparison.OrdinalIgnoreCase))
             {
                 return (currentPrice - position.AveragePrice) *
@@ -444,40 +589,17 @@ namespace ClientDesktop.ViewModel
         {
             string tradeSummary = string.Empty;
 
-            int maxWaitMs = 3000;
-            int waited = 0;
-            //while (!SessionManager.IsClientDataLoaded && waited < maxWaitMs)
-            //{
-            //    System.Threading.Thread.Sleep(200);
-            //    waited += 200;
-            //}
-
             var clientDetail = _sessionService.ClientListData.Where(q => q.ClientId == _sessionService.UserId).FirstOrDefault();
             if (clientDetail == null)
                 return string.Empty;
 
-            //if (skt_ClientDetail != null)
-            //{
-            //    clientDetail.CreditAmount = skt_ClientDetail.CreditAmount;
-            //    clientDetail.UplineAmount = skt_ClientDetail.UplineAmount;
-            //    clientDetail.Balance = skt_ClientDetail.Balance;
-            //    clientDetail.OccupiedMarginAmount = skt_ClientDetail.OccupiedMarginAmount;
-            //    clientDetail.UplineCommission = skt_ClientDetail.UplineCommission;
-            //}
-
             double uplineAmount = clientDetail.UplineAmount;
             double uplineCommission = clientDetail.UplineCommission;
             double balance = clientDetail.Balance;
-
-            //balanceForHistoryFooter = CalculateUplineBalance(clientDetail?.UplineAmount, clientDetail?.UplineCommission, clientDetail?.RealtimeCommission == true);
-
             double creditAmount = clientDetail.CreditAmount;
-            var creditAmountForHistoryFooter = creditAmount;
-
             double occupiedMarginAmount = clientDetail.OccupiedMarginAmount;
             string freeMarginRule = clientDetail.FreeMargin?.ToLower() ?? "useopenpl";
 
-            // 🔹 Compute balances
             double totalBalance = uplineAmount + uplineCommission + balance;
             double pnlContribution = 0;
 
@@ -492,8 +614,8 @@ namespace ClientDesktop.ViewModel
             }
 
             double equity = uplineAmount + creditAmount + uplineCommission + finalTotalPnl;
-
             double freeMargin = uplineAmount + creditAmount + uplineCommission + pnlContribution - occupiedMarginAmount;
+
             tradeSummary =
                 $"Balance: {CommonHelper.FormatAmount(totalBalance)}   " +
                 $"Eq: {CommonHelper.FormatAmount(equity)}   " +
@@ -519,175 +641,74 @@ namespace ClientDesktop.ViewModel
             return value;
         }
 
-        #region Socket Specific Event Handlers
-
-        private void HandleSocketReconnection()
-        {
-            // Jab socket reconnect ho, toh API se poora data wapas fetch aur refresh karlo
-            Application.Current.Dispatcher.Invoke(() => LoadDataAsync());
-        }
-
-        private void HandlePositionUpdated(Position updatedPosition, bool isDeleted)
-        {
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                if (isDeleted)
-                {
-                    // Memory se remove
-                    _rawPositions.RemoveAll(p => p.Id == updatedPosition.Id);
-
-                    // UI List se remove
-                    var rowToRemove = GridRows.FirstOrDefault(r => r.Type == RowType.Position && r.Id == updatedPosition.Id);
-                    if (rowToRemove != null) GridRows.Remove(rowToRemove);
-                }
-                else
-                {
-                    var existingRaw = _rawPositions.FirstOrDefault(p => p.Id == updatedPosition.Id);
-                    if (existingRaw != null)
-                    {
-                        // Update Data in memory
-                        int index = _rawPositions.IndexOf(existingRaw);
-                        _rawPositions[index] = updatedPosition;
-
-                        // Update Row in UI
-                        var row = GridRows.FirstOrDefault(r => r.Type == RowType.Position && r.Id == updatedPosition.Id);
-                        if (row != null)
-                        {
-                            row.AveragePrice = updatedPosition.AveragePrice;
-                            row.AveragePriceDisplay = updatedPosition.AveragePrice.ToString($"F{updatedPosition.SymbolDigit}");
-                            row.Volume = updatedPosition.TotalVolume;
-                            // Note: CurrentPrice & Pnl will be handled naturally by the Next Live Tick
-                        }
-                    }
-                    else
-                    {
-                        // Add New Position Row
-                        _rawPositions.Add(updatedPosition);
-                        string displaySide = string.Equals(updatedPosition.Side, "Bid", StringComparison.OrdinalIgnoreCase) ? "Sell" : "Buy";
-
-                        var newRow = new PositionGridRow
-                        {
-                            Id = updatedPosition.Id,
-                            SymbolId = updatedPosition.SymbolId,
-                            SymbolDigit = updatedPosition.SymbolDigit,
-                            SymbolName = updatedPosition.SymbolName,
-                            Time = updatedPosition.CreatedAt ?? updatedPosition.LastInAt,
-                            Side = displaySide,
-                            OrderType = "Market",
-                            Volume = updatedPosition.TotalVolume,
-                            AveragePrice = updatedPosition.AveragePrice,
-                            AveragePriceDisplay = updatedPosition.AveragePrice.ToString($"F{updatedPosition.SymbolDigit}"),
-                            CurrentPrice = updatedPosition.CurrentPrice,
-                            CurrentPriceDisplay = updatedPosition.CurrentPrice.ToString($"F{updatedPosition.SymbolDigit}"),
-                            Pnl = updatedPosition.Pnl,
-                            Type = RowType.Position
-                        };
-
-                        // Position ko Footer ke upar insert karna hai
-                        var footerRow = GridRows.FirstOrDefault(r => r.Type == RowType.Footer);
-                        int insertIndex = footerRow != null ? GridRows.IndexOf(footerRow) : GridRows.Count;
-                        GridRows.Insert(insertIndex, newRow);
-
-                        // SignalR ko bhi naye symbol ke liye subscribe kardo
-                        _ = _liveTickService.SubscribeSymbolAsync(updatedPosition.SymbolName);
-                    }
-                }
-                UpdateFooterPnl();
-            });
-        }
-
-        private void HandleOrderUpdated(OrderModel updatedOrder, bool isDeleted, string orderId)
-        {
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                if (isDeleted)
-                {
-                    _rawOrders.RemoveAll(o => o.OrderId == orderId);
-                    var rowToRemove = GridRows.FirstOrDefault(r => r.Type == RowType.Order && r.Id == orderId);
-                    if (rowToRemove != null) GridRows.Remove(rowToRemove);
-                }
-                else
-                {
-                    var existingRaw = _rawOrders.FirstOrDefault(o => o.OrderId == updatedOrder.OrderId);
-                    if (existingRaw != null)
-                    {
-                        // Update Data
-                        int index = _rawOrders.IndexOf(existingRaw);
-                        _rawOrders[index] = updatedOrder;
-
-                        // Update Row
-                        var row = GridRows.FirstOrDefault(r => r.Type == RowType.Order && r.Id == updatedOrder.OrderId);
-                        if (row != null)
-                        {
-                            row.AveragePrice = updatedOrder.Price;
-                            row.AveragePriceDisplay = updatedOrder.Price.ToString($"F{updatedOrder.SymbolDigit}");
-                            row.Volume = updatedOrder.Volume;
-                            row.OrderType = updatedOrder.OrderType;
-                            row.Time = DateTime.Now; // Update local time
-                        }
-                    }
-                    else
-                    {
-                        // Add New Order
-                        _rawOrders.Add(updatedOrder);
-                        string displaySide = string.Equals(updatedOrder.Side, "Ask", StringComparison.OrdinalIgnoreCase) ? "Buy" : "Sell";
-
-                        var newRow = new PositionGridRow
-                        {
-                            Id = updatedOrder.OrderId,
-                            SymbolId = updatedOrder.SymbolId,
-                            SymbolDigit = updatedOrder.SymbolDigit,
-                            SymbolName = updatedOrder.SymbolName,
-                            Time = DateTime.Now,
-                            Side = displaySide,
-                            OrderType = updatedOrder.OrderType,
-                            Volume = updatedOrder.Volume,
-                            AveragePrice = updatedOrder.Price,
-                            AveragePriceDisplay = updatedOrder.Price.ToString($"F{updatedOrder.SymbolDigit}"),
-                            CurrentPrice = updatedOrder.CurrentPrice,
-                            CurrentPriceDisplay = updatedOrder.CurrentPrice.ToString($"F{updatedOrder.SymbolDigit}"),
-                            Pnl = null,
-                            Type = RowType.Order
-                        };
-
-                        // Orders grid ke bottom mein add honge
-                        GridRows.Add(newRow);
-                        _ = _liveTickService.SubscribeSymbolAsync(updatedOrder.SymbolName);
-                    }
-                }
-            });
-        }
-
-        private void HandleUserBalance(ClientDetails details)
-        {
-            if (details == null) return;
-
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                var clientDetail = _sessionService.ClientListData.FirstOrDefault(q => q.ClientId == _sessionService.UserId);
-                if (clientDetail != null)
-                {
-                    clientDetail.CreditAmount = details.CreditAmount;
-                    clientDetail.UplineAmount = details.UplineAmount;
-                    clientDetail.Balance = details.Balance;
-                    clientDetail.OccupiedMarginAmount = details.OccupiedMarginAmount;
-                    clientDetail.UplineCommission = details.UplineCommission;
-                }
-                UpdateFooterPnl(); // Session update hote hi footer refresh hoga
-            });
-        }
-
-        #endregion
-
         public async void Cleanup()
         {
             await UnsubscribeAllSymbolsAsync();
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged([CallerMemberName] string name = null)
+        private class PositionGridSorter : IComparer
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+            private readonly string _sortBy;
+            private readonly ListSortDirection _direction;
+
+            public PositionGridSorter(string sortBy, ListSortDirection direction)
+            {
+                _sortBy = sortBy;
+                _direction = direction;
+            }
+
+            public int Compare(object x, object y)
+            {
+                var row1 = x as PositionGridRow;
+                var row2 = y as PositionGridRow;
+
+                if (row1 == null || row2 == null) return 0;
+
+                if (row1.IsOrder && !row2.IsOrder) return 1;
+                if (!row1.IsOrder && row2.IsOrder) return -1;
+                if (row1.IsOrder && row2.IsOrder) return 0;
+
+                if (row1.IsFooter && !row2.IsFooter) return 1;
+                if (!row1.IsFooter && row2.IsFooter) return -1;
+                if (row1.IsFooter && row2.IsFooter) return 0;
+
+                int result = 0;
+                switch (_sortBy)
+                {
+                    case "SymbolName":
+                        result = string.Compare(row1.SymbolName, row2.SymbolName, StringComparison.OrdinalIgnoreCase);
+                        break;
+                    case "Time":
+                        result = string.Compare(row1.Time, row2.Time);
+                        break;
+                    case "Side":
+                        result = string.Compare(row1.Side, row2.Side, StringComparison.OrdinalIgnoreCase);
+                        break;
+                    case "OrderType":
+                        result = string.Compare(row1.OrderType, row2.OrderType, StringComparison.OrdinalIgnoreCase);
+                        break;
+                    case "Volume":
+                        result = Nullable.Compare(row1.Volume, row2.Volume);
+                        break;
+                    case "AveragePrice":
+                        result = Nullable.Compare(row1.AveragePrice, row2.AveragePrice);
+                        break;
+                    case "CurrentPrice":
+                        result = Nullable.Compare(row1.CurrentPrice, row2.CurrentPrice);
+                        break;
+                    case "Pnl":
+                        result = Nullable.Compare(row1.Pnl, row2.Pnl);
+                        break;
+                    default:
+                        result = string.Compare(row1.Id, row2.Id, StringComparison.OrdinalIgnoreCase);
+                        break;
+                }
+
+                if (_direction == ListSortDirection.Descending)
+                    result = -result;
+
+                return result;
+            }
         }
     }
 }

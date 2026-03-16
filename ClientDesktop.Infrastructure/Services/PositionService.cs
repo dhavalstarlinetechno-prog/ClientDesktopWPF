@@ -54,7 +54,7 @@ namespace ClientDesktop.Infrastructure.Services
             }
             catch (Exception ex)
             {
-                FileLogger.Log("PositionService", $"GetPositions Error: {ex.Message}");
+                FileLogger.ApplicationLog(nameof(GetPositionsAsync), $"GetPositions Error: {ex.Message}");
 
                 // Fallback to Cache on Exception
                 if (cachedPositions != null && cachedPositions.Count > 0)
@@ -95,7 +95,7 @@ namespace ClientDesktop.Infrastructure.Services
             }
             catch (Exception ex)
             {
-                FileLogger.Log("PositionService", $"GetOrders Error: {ex.Message}");
+                FileLogger.ApplicationLog(nameof(GetOrdersAsync), $"GetOrders Error: {ex.Message}");
 
                 // Fallback to Cache on Exception
                 if (cachedOrders != null && cachedOrders.Count > 0)
@@ -107,19 +107,80 @@ namespace ClientDesktop.Infrastructure.Services
 
         #endregion
 
+        #region Local Cache Specific Methods
+
+        public List<Position> GetCachedPositions()
+        {
+            return LoadStoredPositions() ?? new List<Position>();
+        }
+
+        public List<OrderModel> GetCachedOrders()
+        {
+            return LoadStoredOrders() ?? new List<OrderModel>();
+        }
+
+        public void UpdateLocalPosition(Position position, bool isDeleted)
+        {
+            try
+            {
+                var list = GetCachedPositions();
+                if (isDeleted)
+                {
+                    list.RemoveAll(p => p.Id == position.Id);
+                }
+                else
+                {
+                    var existingIndex = list.FindIndex(p => p.Id == position.Id);
+                    if (existingIndex >= 0)
+                        list[existingIndex] = position; // Update
+                    else
+                        list.Insert(0, position);       // Add
+                }
+                SaveStoredPositions(list);
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(UpdateLocalPosition), $"UpdateLocalPosition Error: {ex.Message}");
+            }
+        }
+
+        public void UpdateLocalOrder(OrderModel order, bool isDeleted)
+        {
+            try
+            {
+                var list = GetCachedOrders();
+                if (isDeleted)
+                {
+                    list.RemoveAll(o => o.OrderId == order.OrderId);
+                }
+                else
+                {
+                    var existingIndex = list.FindIndex(o => o.OrderId == order.OrderId);
+                    if (existingIndex >= 0)
+                        list[existingIndex] = order;    // Update
+                    else
+                        list.Insert(0, order);          // Add
+                }
+                SaveStoredOrders(list);
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(UpdateLocalOrder), $"UpdateLocalOrder Error: {ex.Message}");
+            }
+        }
+
+        #endregion
+
         #region Private Helpers (Separated Logic)
 
-        // Common Path Generator (Logic ek jagah)
+        // Common Path Generator
         private string GetStoragePath()
         {
-            string domain = _sessionService.ServerListData
-                .FirstOrDefault(w => w.licenseId.ToString() == _sessionService.LicenseId)?
-                .serverDisplayName;
+            string folderName = AESHelper.ToBase64UrlSafe(_sessionService.LicenseId);
+            string fileName = AESHelper.ToBase64UrlSafe(_sessionService.UserId);
+            string relativePath = Path.Combine(folderName, fileName);
 
-            return Path.Combine(
-                AESHelper.ToBase64UrlSafe(domain),
-                AESHelper.ToBase64UrlSafe(_sessionService.UserId)
-            );
+            return relativePath;
         }
 
         // --- POSITION METHODS ---
