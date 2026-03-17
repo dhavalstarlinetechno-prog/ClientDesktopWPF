@@ -71,11 +71,6 @@ namespace ClientDesktop.ViewModel
                 {
                     LoadCachedDataAsync();
                     _currentLoadId = Guid.Empty;
-                    Application.Current.Dispatcher.InvokeAsync(() =>
-                    {
-                        GridRows?.Clear();
-                        PositionCollectionView?.Refresh();
-                    });
                     _subscribedSymbols.Clear();
                 }
                 else
@@ -92,16 +87,13 @@ namespace ClientDesktop.ViewModel
                 var localPos = _positionService.GetCachedPositions();
                 var localOrd = _positionService.GetCachedOrders();
 
-                if (localPos.Any() || localOrd.Any())
+                var list = BuildGridRows(localPos, localOrd);
+                Application.Current.Dispatcher.Invoke(() =>
                 {
-                    var list = BuildGridRows(localPos, localOrd);
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        _rawPositions = localPos;
-                        _rawOrders = localOrd;
-                        UpdateGridSilently(list);
-                    });
-                }
+                    _rawPositions = localPos;
+                    _rawOrders = localOrd;
+                    UpdateGridSilently(list);
+                });
             });
         }
 
@@ -298,7 +290,7 @@ namespace ClientDesktop.ViewModel
                             Pnl = updatedPosition.Pnl,
                             Type = RowType.Position
                         };
-                        GridRows.Add(newRow); 
+                        GridRows.Add(newRow);
                     }
                 }
 
@@ -509,7 +501,7 @@ namespace ClientDesktop.ViewModel
                 double calculatedPnl = CalculateFloatingPnl(tick.Bid, tick.Ask, row);
                 row.Pnl = (decimal)Math.Round(calculatedPnl, 2);
 
-                row.PnlColor = row.Pnl >= 0 ? "ForestGreen" : "Red";
+                row.PnlColor = row.Pnl >= 0 ? "#009900" : "#EF5350";
             }
         }
 
@@ -524,7 +516,7 @@ namespace ClientDesktop.ViewModel
                 .Sum(r => r.Pnl ?? 0);
 
             footerRow.Pnl = totalPnl;
-            footerRow.PnlColor = totalPnl >= 0 ? "ForestGreen" : "Red";
+            footerRow.PnlColor = totalPnl >= 0 ? "#009900" : "#EF5350";
 
             string summaryText = CalculatePositionFooterSummary((double)totalPnl);
             footerRow.SymbolName = summaryText;
