@@ -12,6 +12,7 @@ namespace ClientDesktop.Core.Models
     public class PositionGridRow : ViewModelBase
     {
         private double? _currentPrice;
+        private double? _volume;
         private string _currentPriceDisplay;
         private decimal? _pnl;
 
@@ -67,7 +68,12 @@ namespace ClientDesktop.Core.Models
 
         public string Side { get; set; }
         public string OrderType { get; set; }
-        public double? Volume { get; set; }
+        public double? Volume
+        {
+            get => _volume;
+            set { if (_volume != value) { _volume = value; OnPropertyChanged(); } }
+        }
+
         public double? AveragePrice { get; set; }
         public string AveragePriceDisplay { get; set; }
         // --------------------------------

@@ -5,6 +5,7 @@ using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Helpers;
 using ClientDesktop.Infrastructure.Services;
+using ClientDesktop.Services; 
 using CommunityToolkit.Mvvm.Messaging;
 using System.Collections;
 using System.Collections.ObjectModel;
@@ -22,6 +23,7 @@ namespace ClientDesktop.ViewModel
         private readonly PositionService _positionService;
         private readonly LiveTickService _liveTickService;
         private ObservableCollection<PositionGridRow> _gridRows;
+        private readonly ISocketService _socketService; // 1. Socket Service added
 
         private ListCollectionView _positionCollectionView;
 
@@ -45,12 +47,14 @@ namespace ClientDesktop.ViewModel
             set { _positionCollectionView = value; OnPropertyChanged(); }
         }
 
-        public PositionViewModel(SessionService sessionService, PositionService positionService, IDialogService dialogService, LiveTickService liveTickService)
+        // 2. ISocketService Injected in Constructor
+        public PositionViewModel(SessionService sessionService, PositionService positionService, IDialogService dialogService, LiveTickService liveTickService, ISocketService socketService)
         {
             _sessionService = sessionService;
             _positionService = positionService;
             _dialogService = dialogService;
             _liveTickService = liveTickService;
+            _socketService = socketService;
 
             GridRows = new ObservableCollection<PositionGridRow>();
             PositionCollectionView = new ListCollectionView(GridRows);
@@ -58,9 +62,17 @@ namespace ClientDesktop.ViewModel
             DoubleClickCommand = new RelayCommand(row => PositionGridDoubleClick((PositionGridRow?)row));
 
             RegisterMessenger();
+
+            // Live Tick Events
             _liveTickService.OnTickReceived += HandleLiveTick;
             _liveTickService.OnReconnected += HandleLiveReconnected;
             _liveTickService.OnConnected += HandleLiveConnected;
+
+            // 3. Socket Events Wired
+            _socketService.OnPositionUpdated += HandlePositionUpdated;
+            _socketService.OnOrderUpdated += HandleOrderUpdated;
+            _socketService.OnUpdateUserBalance += HandleUserBalance;
+            _socketService.OnSocketReconnected += HandleSocketReconnection;
         }
 
         private void RegisterMessenger()
@@ -129,6 +141,12 @@ namespace ClientDesktop.ViewModel
                     }, System.Windows.Threading.DispatcherPriority.Background);
 
                     await SubscribeToSymbolAsync().ConfigureAwait(false);
+
+                    // 4. Start Socket connection if not already connected
+                    if (!_socketService.IsConnected)
+                    {
+                        _socketService.Start();
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -234,8 +252,13 @@ namespace ClientDesktop.ViewModel
 
         #region Socket Handlers for Updating Local & UI
 
-        public void HandlePositionUpdated(Position updatedPosition, bool isDeleted)
+        private void HandleSocketReconnection()
         {
+            Application.Current.Dispatcher.InvokeAsync(() => LoadDataAsync());
+        }
+
+        private void HandlePositionUpdated(Position updatedPosition, bool isDeleted)
+        {   
             if (updatedPosition == null) return;
 
             Task.Run(() => _positionService.UpdateLocalPosition(updatedPosition, isDeleted));
@@ -268,7 +291,7 @@ namespace ClientDesktop.ViewModel
                     }
                     else
                     {
-                        _rawPositions.Insert(0, updatedPosition);
+                        _rawPositions.Add(updatedPosition);
                         string displaySide = updatedPosition.Side;
                         if (string.Equals(updatedPosition.Side, "Bid", StringComparison.OrdinalIgnoreCase)) displaySide = "Sell";
                         else if (string.Equals(updatedPosition.Side, "Ask", StringComparison.OrdinalIgnoreCase)) displaySide = "Buy";
@@ -279,7 +302,7 @@ namespace ClientDesktop.ViewModel
                             SymbolId = updatedPosition.SymbolId,
                             SymbolDigit = updatedPosition.SymbolDigit,
                             SymbolName = updatedPosition.SymbolName,
-                            Time = updatedPosition.LastInAt?.ToString("yyyy.MM.dd HH:mm:ss") ?? "",
+                            Time = updatedPosition.CreatedAt?.ToString("yyyy.MM.dd HH:mm:ss") ?? updatedPosition.LastInAt?.ToString("yyyy.MM.dd HH:mm:ss"),
                             Side = displaySide,
                             OrderType = "Market",
                             Volume = updatedPosition.TotalVolume,
@@ -290,7 +313,9 @@ namespace ClientDesktop.ViewModel
                             Pnl = updatedPosition.Pnl,
                             Type = RowType.Position
                         };
-                        GridRows.Add(newRow);
+                        var footerRow = GridRows.FirstOrDefault(r => r.Type == RowType.Footer);
+                        int insertIndex = footerRow != null ? GridRows.IndexOf(footerRow) : GridRows.Count;
+                        GridRows.Insert(insertIndex, newRow);
                     }
                 }
 
@@ -299,7 +324,7 @@ namespace ClientDesktop.ViewModel
             });
         }
 
-        public void HandleOrderUpdated(OrderModel updatedOrder, bool isDeleted)
+        public void HandleOrderUpdated(OrderModel updatedOrder, bool isDeleted , string orderId)
         {
             if (updatedOrder == null) return;
 
@@ -309,7 +334,7 @@ namespace ClientDesktop.ViewModel
             {
                 if (isDeleted)
                 {
-                    _rawOrders.RemoveAll(o => o.OrderId == updatedOrder.OrderId);
+                    _rawOrders.RemoveAll(o => o.OrderId == orderId);
                     var rowToRemove = GridRows.FirstOrDefault(r => r.Type == RowType.Order && r.Id == updatedOrder.OrderId);
                     if (rowToRemove != null) GridRows.Remove(rowToRemove);
                 }
@@ -346,7 +371,7 @@ namespace ClientDesktop.ViewModel
                             SymbolId = updatedOrder.SymbolId,
                             SymbolDigit = updatedOrder.SymbolDigit,
                             SymbolName = updatedOrder.SymbolName,
-                            Time = updatedOrder.UpdatedAt.ToString("yyyy.MM.dd HH:mm:ss"),
+                            Time = DateTime.Now.ToString("yyyy.MM.dd HH:mm:ss"),
                             Side = displaySide,
                             OrderType = updatedOrder.OrderType,
                             Volume = updatedOrder.Volume,
@@ -362,6 +387,25 @@ namespace ClientDesktop.ViewModel
                 }
 
                 _ = SubscribeToSymbolAsync();
+            });
+        }
+
+        private void HandleUserBalance(ClientDetails details)
+        {
+            if (details == null) return;
+
+            Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                var clientDetail = _sessionService.ClientListData.FirstOrDefault(q => q.ClientId == _sessionService.UserId);
+                if (clientDetail != null)
+                {
+                    clientDetail.CreditAmount = details.CreditAmount;
+                    clientDetail.UplineAmount = details.UplineAmount;
+                    clientDetail.Balance = details.Balance;
+                    clientDetail.OccupiedMarginAmount = details.OccupiedMarginAmount;
+                    clientDetail.UplineCommission = details.UplineCommission;
+                }
+                UpdateFooterPnl();
             });
         }
 
@@ -488,16 +532,6 @@ namespace ClientDesktop.ViewModel
 
             if (row.Type == RowType.Position && row.AveragePrice.HasValue && row.Volume.HasValue)
             {
-                double priceDifference;
-                if (string.Equals(row.Side, "Buy", StringComparison.OrdinalIgnoreCase))
-                {
-                    priceDifference = newPrice - row.AveragePrice.Value;
-                }
-                else
-                {
-                    priceDifference = row.AveragePrice.Value - newPrice;
-                }
-
                 double calculatedPnl = CalculateFloatingPnl(tick.Bid, tick.Ask, row);
                 row.Pnl = (decimal)Math.Round(calculatedPnl, 2);
 
@@ -635,6 +669,16 @@ namespace ClientDesktop.ViewModel
 
         public async void Cleanup()
         {
+            // Memory Leak se bachne ke liye Unsubscribe karna zaroori hai
+            _socketService.OnPositionUpdated -= HandlePositionUpdated;
+            _socketService.OnOrderUpdated -= HandleOrderUpdated;
+            _socketService.OnUpdateUserBalance -= HandleUserBalance;
+            _socketService.OnSocketReconnected -= HandleSocketReconnection;
+
+            _liveTickService.OnTickReceived -= HandleLiveTick;
+            _liveTickService.OnReconnected -= HandleLiveReconnected;
+            _liveTickService.OnConnected -= HandleLiveConnected;
+
             await UnsubscribeAllSymbolsAsync();
         }
 
