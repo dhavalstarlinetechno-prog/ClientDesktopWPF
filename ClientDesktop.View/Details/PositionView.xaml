@@ -168,7 +168,7 @@
 
                 <DataGridTextColumn Header="Order Type" Binding="{Binding OrderType}" ElementStyle="{StaticResource RightAlignCell}" Width="1*" SortMemberPath="OrderType" CanUserSort="False"/>
                 <DataGridTextColumn Header="Volume" Binding="{Binding Volume}" ElementStyle="{StaticResource RightAlignCell}" Width="0.8*" SortMemberPath="Volume" CanUserSort="False"/>
-
+                <DataGridTextColumn Header="Avg Price" Binding="{Binding AveragePriceDisplay}" ElementStyle="{StaticResource RightAlignCell}" Width="1*" SortMemberPath="AveragePrice"/>
                 <DataGridTextColumn Header="Price" Binding="{Binding CurrentPriceDisplay}" Width="1*" CanUserSort="False">
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">

@@ -11,45 +11,39 @@ namespace ClientDesktop.Core.Models
 
     public class PositionGridRow : ViewModelBase
     {
+        // =========================
+        // ?? BACKING FIELDS
+        // =========================
+
         private double? _currentPrice;
         private double? _volume;
         private string _currentPriceDisplay;
         private decimal? _pnl;
+        private string _averagePriceDisplay;
+        private string _symbolName;
 
-        // --- COLOUR LOGIC PROPERTIES ---
         private string _priceColor = "Black";
-        public string PriceColor
-        {
-            get => _priceColor;
-            set
-            {
-                if (_priceColor != value)
-                {
-                    _priceColor = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-
         private string _pnlColor = "Black";
-        public string PnlColor
-        {
-            get => _pnlColor;
-            set
-            {
-                if (_pnlColor != value)
-                {
-                    _pnlColor = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
+
+        // =========================
+        // ?? BASIC PROPERTIES
+        // =========================
 
         public string Id { get; set; }
         public int SymbolId { get; set; }
         public int SymbolDigit { get; set; }
 
-        private string _symbolName;
+        public string Time { get; set; }
+        public string Side { get; set; }
+        public string OrderType { get; set; }
+        public string Comment { get; set; }
+
+        public RowType Type { get; set; }
+
+        // =========================
+        // ?? NOTIFY PROPERTIES
+        // =========================
+
         public string SymbolName
         {
             get => _symbolName;
@@ -63,20 +57,33 @@ namespace ClientDesktop.Core.Models
             }
         }
 
-        // Base Properties
-        public string Time { get; set; }
-
-        public string Side { get; set; }
-        public string OrderType { get; set; }
         public double? Volume
         {
             get => _volume;
-            set { if (_volume != value) { _volume = value; OnPropertyChanged(); } }
+            set
+            {
+                if (_volume != value)
+                {
+                    _volume = value;
+                    OnPropertyChanged();
+                }
+            }
         }
 
         public double? AveragePrice { get; set; }
-        public string AveragePriceDisplay { get; set; }
-        // --------------------------------
+
+        public string AveragePriceDisplay
+        {
+            get => _averagePriceDisplay;
+            set
+            {
+                if (_averagePriceDisplay != value)
+                {
+                    _averagePriceDisplay = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         public double? CurrentPrice
         {
@@ -117,9 +124,39 @@ namespace ClientDesktop.Core.Models
             }
         }
 
-        public string Comment { get; set; }
+        // =========================
+        // ?? COLOR PROPERTIES
+        // =========================
 
-        public RowType Type { get; set; }
+        public string PriceColor
+        {
+            get => _priceColor;
+            set
+            {
+                if (_priceColor != value)
+                {
+                    _priceColor = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public string PnlColor
+        {
+            get => _pnlColor;
+            set
+            {
+                if (_pnlColor != value)
+                {
+                    _pnlColor = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        // =========================
+        // ?? HELPER FLAGS
+        // =========================
 
         public bool IsFooter => Type == RowType.Footer;
         public bool IsOrder => Type == RowType.Order;
