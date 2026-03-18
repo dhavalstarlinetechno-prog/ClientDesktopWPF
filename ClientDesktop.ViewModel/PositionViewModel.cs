@@ -23,7 +23,7 @@ namespace ClientDesktop.ViewModel
         private readonly PositionService _positionService;
         private readonly LiveTickService _liveTickService;
         private ObservableCollection<PositionGridRow> _gridRows;
-        private readonly ISocketService _socketService; // 1. Socket Service added
+        private readonly ISocketService _socketService; 
 
         private ListCollectionView _positionCollectionView;
 
@@ -302,7 +302,7 @@ namespace ClientDesktop.ViewModel
                             SymbolId = updatedPosition.SymbolId,
                             SymbolDigit = updatedPosition.SymbolDigit,
                             SymbolName = updatedPosition.SymbolName,
-                            Time = updatedPosition.CreatedAt?.ToString("yyyy.MM.dd HH:mm:ss") ?? updatedPosition.LastInAt?.ToString("yyyy.MM.dd HH:mm:ss"),
+                            Time = updatedPosition.CreatedAt?.ToString("dd/MM/yyyy HH:mm") ?? updatedPosition.LastInAt?.ToString("dd/MM/yyyy HH:mm"),
                             Side = displaySide,
                             OrderType = "Market",
                             Volume = updatedPosition.TotalVolume,
@@ -349,7 +349,7 @@ namespace ClientDesktop.ViewModel
                         var row = GridRows.FirstOrDefault(r => r.Type == RowType.Order && r.Id == updatedOrder.OrderId);
                         if (row != null)
                         {
-                            row.Time = updatedOrder.UpdatedAt.ToString("yyyy.MM.dd HH:mm:ss");
+                            row.Time = updatedOrder.UpdatedAt.ToString("dd/MM/yyyy HH:mm");
                             row.OrderType = updatedOrder.OrderType;
                             row.Volume = updatedOrder.Volume;
                             row.AveragePrice = updatedOrder.Price;
@@ -371,7 +371,7 @@ namespace ClientDesktop.ViewModel
                             SymbolId = updatedOrder.SymbolId,
                             SymbolDigit = updatedOrder.SymbolDigit,
                             SymbolName = updatedOrder.SymbolName,
-                            Time = DateTime.Now.ToString("yyyy.MM.dd HH:mm:ss"),
+                            Time = DateTime.Now.ToString("dd/MM/yyyy HH:mm"),
                             Side = displaySide,
                             OrderType = updatedOrder.OrderType,
                             Volume = updatedOrder.Volume,
@@ -432,6 +432,7 @@ namespace ClientDesktop.ViewModel
                               selectedRow.OrderType?.Contains("Stop", StringComparison.OrdinalIgnoreCase) == true ? EnumTradeOrderType.StopLimit :
                               selectedRow.OrderType?.Contains("Limit", StringComparison.OrdinalIgnoreCase) == true ? EnumTradeOrderType.Limit :
                               null;
+                        vm.LimitRate = selectedRow.AveragePrice.ToString();
                     }
                 );
         }
@@ -669,16 +670,6 @@ namespace ClientDesktop.ViewModel
 
         public async void Cleanup()
         {
-            // Memory Leak se bachne ke liye Unsubscribe karna zaroori hai
-            _socketService.OnPositionUpdated -= HandlePositionUpdated;
-            _socketService.OnOrderUpdated -= HandleOrderUpdated;
-            _socketService.OnUpdateUserBalance -= HandleUserBalance;
-            _socketService.OnSocketReconnected -= HandleSocketReconnection;
-
-            _liveTickService.OnTickReceived -= HandleLiveTick;
-            _liveTickService.OnReconnected -= HandleLiveReconnected;
-            _liveTickService.OnConnected -= HandleLiveConnected;
-
             await UnsubscribeAllSymbolsAsync();
         }
 
