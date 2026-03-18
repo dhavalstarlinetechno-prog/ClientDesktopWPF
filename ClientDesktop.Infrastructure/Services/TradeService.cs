@@ -3,31 +3,34 @@ using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Helpers;
 using ClientDesktop.Infrastructure.Logger;
-using ClosedXML;
-using DocumentFormat.OpenXml.Drawing.Charts;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace ClientDesktop.Infrastructure.Services
 {
-    public class TradeService
+    /// <summary>
+    /// Handles all trade-related HTTP operations and local market-watch data retrieval.
+    /// </summary>
+    public class TradeService : ITradeService
     {
         private readonly IApiService _apiService;
         private readonly SessionService _sessionService;
-        private readonly IRepository<MarketWatchData> _repo;
+        private readonly IRepository<MarketWatchData> _marketWatchRepo;
 
+        /// <param name="apiService">HTTP abstraction for API calls.</param>
+        /// <param name="sessionService">Provides session context (userId, domain, licenseId).</param>
         public TradeService(IApiService apiService, SessionService sessionService)
         {
             _apiService = apiService;
             _sessionService = sessionService;
-            _repo = new FileRepository<MarketWatchData>();
+            _marketWatchRepo = new FileRepository<MarketWatchData>();
         }
 
+        /// <inheritdoc/>
         public async Task<MarketWatchData> GetMarketWatchDataAsync()
         {
             try
@@ -36,37 +39,40 @@ namespace ClientDesktop.Infrastructure.Services
                 string fileName = AESHelper.ToBase64UrlSafe(_sessionService.UserId);
                 string relativePath = Path.Combine(folderName, fileName);
 
-                var cachedData = _repo.Load(relativePath, "marketwatch");
-
+                var cachedData = _marketWatchRepo.Load(relativePath, "marketwatch");
                 return cachedData ?? new MarketWatchData();
             }
             catch (Exception ex)
             {
-                FileLogger.Log("MarketWatchService", $"Error: {ex.Message}");
+                FileLogger.Log(nameof(TradeService), $"GetMarketWatchDataAsync error: {ex.Message}");
                 return new MarketWatchData();
             }
         }
 
-        public async Task<(bool Success, string ErrorMessage, SymbolData SymbolData)> GetSymbolDataAsync(string clientId, int symbolId)
+        /// <inheritdoc/>
+        public async Task<(bool Success, string ErrorMessage, SymbolData SymbolData)> GetSymbolDataAsync(
+            string clientId, int symbolId)
         {
             try
             {
-                var url = CommonHelper.ToReplaceUrl($"{AppConfig.GetSymbolDataForTrade}/{clientId}/{symbolId}", _sessionService.PrimaryDomain);
+                var url = CommonHelper.ToReplaceUrl(
+                    $"{AppConfig.GetSymbolDataForTrade}/{clientId}/{symbolId}",
+                    _sessionService.PrimaryDomain);
+
                 var responseData = await _apiService.GetAsync<SymbolDataResponse>(url);
 
-                if (responseData == null || responseData.Data == null)
-                {
-                    return (true, "Failed to get Symbol details", null);
-                }
+                if (responseData?.Data == null)
+                    return (false, "Failed to retrieve symbol details.", null); // ← was incorrectly (true, ...)
 
                 return (true, null, responseData.Data.FirstOrDefault());
             }
             catch (Exception ex)
             {
-                return (true, ex.Message, null);
+                return (false, ex.Message, null);
             }
         }
 
+        /// <inheritdoc/>
         public async Task<bool> DeleteOrderAsync(string orderId)
         {
             try
@@ -83,12 +89,10 @@ namespace ClientDesktop.Infrastructure.Services
                 };
 
                 var result = await _apiService.DeleteAsync<JObject>(
-                    CommonHelper.ToReplaceUrl(AppConfig.DeleteOrderURL , _sessionService.PrimaryDomain),
+                    CommonHelper.ToReplaceUrl(AppConfig.DeleteOrderURL, _sessionService.PrimaryDomain),
                     payload);
 
-                bool isSuccess = result?["isSuccess"]?.Value<bool>() ?? false;
-
-                return isSuccess;
+                return result?["isSuccess"]?.Value<bool>() ?? false;
             }
             catch (Exception ex)
             {
@@ -97,35 +101,27 @@ namespace ClientDesktop.Infrastructure.Services
             }
         }
 
-        public async Task<(bool Success, string ErrorMessage, string TradeMessage)> PlaceOrModifyOrderAsync(object payload, bool isModify = false)
+        /// <inheritdoc/>
+        public async Task<(bool Success, string ErrorMessage, string TradeMessage)> PlaceOrModifyOrderAsync(
+            object payload, bool isModify = false)
         {
             try
             {
-                string json = JsonConvert.SerializeObject(payload, new JsonSerializerSettings
-                {
-                    NullValueHandling = NullValueHandling.Ignore,
-                    Formatting = Newtonsoft.Json.Formatting.Indented
-                });
-
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-
                 var url = CommonHelper.ToReplaceUrl(AppConfig.TradeOrderURL, _sessionService.PrimaryDomain);
 
-                TradeOrderResponse response = null;
-                if (isModify)
-                    response = await _apiService.PutAsync<TradeOrderResponse>(url, payload);
-                else
-                    response = await _apiService.PostAsync<TradeOrderResponse>(url, payload);
+                // Removed dead StringContent — _apiService serialises payload internally
+                TradeOrderResponse response = isModify
+                    ? await _apiService.PutAsync<TradeOrderResponse>(url, payload)
+                    : await _apiService.PostAsync<TradeOrderResponse>(url, payload);
 
                 if (response.isSuccess)
-                {
                     return (true, null, isModify ? "Order Modified Successfully!" : "Order Placed Successfully!");
-                }
+
                 return (false, response.exception.message, null);
             }
             catch (Exception ex)
             {
-                FileLogger.Log("TradeService", $"Error: {ex.Message}");
+                FileLogger.Log(nameof(TradeService), $"PlaceOrModifyOrderAsync error: {ex.Message}");
                 return (false, ex.Message, null);
             }
         }

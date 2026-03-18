@@ -1,11 +1,8 @@
 ﻿using ClientDesktop.Core.Base;
 using ClientDesktop.Core.Config;
 using ClientDesktop.Core.Enums;
-using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Helpers;
-using DocumentFormat.OpenXml.Vml.Wordprocessing;
-using DocumentFormat.OpenXml.Wordprocessing;
 using System;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -14,57 +11,93 @@ namespace ClientDesktop.ViewModel
 {
     public partial class TradeViewModel : ViewModelBase
     {
+        /// <summary>Callback invoked to close the host window on success.</summary>
         public Action CloseAction { get; set; }
-        private bool _isLastTradeSuccessful = false;
 
-        #region 4. Commands
-        public ICommand ChangeOrderTypeCommand => new AsyncRelayCommand(async param =>
-        {
-            if (param is string typeString && Enum.TryParse<EnumTradeOrderType>(typeString, true, out var newType))
+        private bool _isLastTradeSuccessful;
+
+        #region Commands (Lazy-Initialised)
+
+        private ICommand _changeOrderTypeCommand;
+        private ICommand _buyCommand;
+        private ICommand _sellCommand;
+        private ICommand _closePositionCommand;
+        private ICommand _okCommand;
+
+        /// <summary>Switches between Market / Limit / StopLimit. Expects the enum name as string parameter.</summary>
+        public ICommand ChangeOrderTypeCommand
+            => _changeOrderTypeCommand ??= new AsyncRelayCommand(async param =>
             {
-                SetOrderType(newType);
-            }
-        });
+                if (param is string typeString &&
+                    Enum.TryParse<EnumTradeOrderType>(typeString, ignoreCase: true, out var newType))
+                {
+                    SetOrderType(newType);
+                }
+            });
 
-        public ICommand BuyCommand => new RelayCommand(async _ =>
-        {
-            if (IsModifyDeleteMode) await ExecuteTradeOperation(TradeConstants.ActionDelete);
-            else await ExecuteTradeOperation(TradeConstants.ActionBuy);
-        });
+        /// <summary>
+        /// In normal mode: places a BUY order.
+        /// In Modify/Delete mode (right button = DELETE): deletes the existing order.
+        /// </summary>
+        public ICommand BuyCommand
+            => _buyCommand ??= new RelayCommand(async _ =>
+            {
+                string action = IsModifyDeleteMode
+                    ? TradeConstants.ActionDelete
+                    : TradeConstants.ActionBuy;
 
-        public ICommand SellCommand => new RelayCommand(async _ =>
-        {
-            if (IsModifyDeleteMode) await ExecuteTradeOperation(TradeConstants.ActionModify);
-            else await ExecuteTradeOperation(TradeConstants.ActionSell);
-        });
+                await ExecuteTradeOperation(action);
+            });
 
-        public ICommand ClosePositionCommand => new RelayCommand(async _ => await ExecuteTradeOperation(TradeConstants.ActionClose) , _ => CanClosePosition());
+        /// <summary>
+        /// In normal mode: places a SELL order.
+        /// In Modify/Delete mode (left button = MODIFY): modifies the existing order.
+        /// </summary>
+        public ICommand SellCommand
+            => _sellCommand ??= new RelayCommand(async _ =>
+            {
+                string action = IsModifyDeleteMode
+                    ? TradeConstants.ActionModify
+                    : TradeConstants.ActionSell;
 
-        public ICommand OkCommand => new RelayCommand(_ => ResetTradeWindow());
+                await ExecuteTradeOperation(action);
+            });
+
+        /// <summary>Closes an open position. Only enabled when quantity matches the position volume exactly.</summary>
+        public ICommand ClosePositionCommand
+            => _closePositionCommand ??= new RelayCommand(
+                async _ => await ExecuteTradeOperation(TradeConstants.ActionClose),
+                _ => CanClosePosition());
+
+        /// <summary>Closes the result panel. Dismisses the window on success, resets form on failure.</summary>
+        public ICommand OkCommand
+            => _okCommand ??= new RelayCommand(_ => ResetTradeWindow());
+
         #endregion
 
-        #region 7. Trade Execution Logic
+        #region Trade Execution
+
         private async Task ExecuteTradeOperation(string actionType)
         {
-            if (actionType.Equals("DELETE") && positionGridRow != null && positionGridRow.IsOrder)
+            // Delete is handled through the dedicated DeleteTradeViewModel dialog
+            if (actionType == TradeConstants.ActionDelete &&
+                positionGridRow != null && positionGridRow.IsOrder)
             {
-                DeleteTradeViewModel deleteTradeViewModel = null;
+                DeleteTradeViewModel deleteVm = null;
                 _dialogService.ShowDialog<DeleteTradeViewModel>(
-                "Delete Trade Order",
-                configureViewModel: vm =>
-                {
-                    deleteTradeViewModel = vm;
-                    vm._order = positionGridRow.Id;
-                }
-            );
-                if (deleteTradeViewModel != null)
-                {
-                    IsProcessingOrDone = deleteTradeViewModel.isDeleted.HasValue;
+                    "Delete Trade Order",
+                    configureViewModel: vm =>
+                    {
+                        deleteVm = vm;
+                        vm.OrderId = positionGridRow.Id;
+                    });
 
-                    _isLastTradeSuccessful = deleteTradeViewModel.isDeleted.HasValue ? deleteTradeViewModel.isDeleted.Value : false;
-                    TradeResultMessage = deleteTradeViewModel.deleteMessage;
+                if (deleteVm != null)
+                {
+                    IsProcessingOrDone = deleteVm.isDeleted.HasValue;
+                    _isLastTradeSuccessful = deleteVm.isDeleted ?? false;
+                    TradeResultMessage = deleteVm.deleteMessage;
                 }
-
                 return;
             }
 
@@ -75,86 +108,68 @@ namespace ClientDesktop.ViewModel
             try
             {
                 var clientData = _sessionService.ClientListData?.Find(c => c.ClientId == _sessionService.UserId);
-                string positionId = positionGridRow?.Id ?? "";
+                string positionId = positionGridRow?.Id ?? string.Empty;
+                string baseAction = (actionType == TradeConstants.ActionBuy ||
+                                      actionType == TradeConstants.ActionModify)
+                                      ? "Buy" : "Sell";
 
-                string baseAction = (actionType == "BUY" || actionType == "MODIFY") ? "Buy" : "Sell";
-
-                if (actionType != "CLOSE")
+                if (actionType != TradeConstants.ActionClose)
                 {
-                    bool isValid = ValidateTradeOrder(baseAction, positionId, clientData);
+                    var (isValid, errorMessage) = ValidateTradeOrder(baseAction, positionId, clientData);
                     if (!isValid)
                     {
-                        TradeResultMessage = "Validation Failed! Please check your inputs.";
+                        TradeResultMessage = errorMessage; // ← now shows the specific message
                         return;
                     }
                 }
 
-                // 3. Price and Volume nikal
                 double.TryParse(Quantity, out double volume);
                 double.TryParse(LimitRate, out double limitPrice);
                 double.TryParse(LiveBid, out double bidPrice);
                 double.TryParse(LiveAsk, out double askPrice);
 
-                double currentPrice = actionType == "BUY" ? askPrice : bidPrice;
+                double currentPrice = actionType == TradeConstants.ActionBuy ? askPrice : bidPrice;
 
                 var payload = BuildTradePayload(actionType, volume, currentPrice, limitPrice);
-
                 if (payload == null)
                 {
-                    TradeResultMessage = "Failed to build order payload (Invalid Expiry Date).";
+                    TradeResultMessage = "Failed to build order payload (invalid expiry date).";
                     return;
                 }
 
-                bool isModify = actionType == "MODIFY";
-                var result = await _tradeService.PlaceOrModifyOrderAsync(payload, isModify);
+                bool isModify = actionType == TradeConstants.ActionModify;
+                var (success, error, _) = await _tradeService.PlaceOrModifyOrderAsync(payload, isModify);
 
-                // 6. Result Handle
-                if (result.Success)
+                if (success)
                 {
                     _isLastTradeSuccessful = true;
-
-                    if (actionType == "CLOSE")
-                        TradeResultMessage = $"Position Closed successfully!\nSymbol: {SelectedSymbol}\nPrice: {currentPrice}";
-                    else
-                    {
-                        string displayAction = actionType == "BUY" ? "BUY" : "Sell";
-                        TradeResultMessage = $"{displayAction} Order placed successfully!\nSymbol: {SelectedSymbol}\nPrice: {currentPrice}";
-                    }
+                    TradeResultMessage = actionType == TradeConstants.ActionClose
+                        ? $"Position closed successfully!\nSymbol: {SelectedSymbol}\nPrice: {currentPrice}"
+                        : $"{baseAction} order placed successfully!\nSymbol: {SelectedSymbol}\nPrice: {currentPrice}";
                 }
                 else
                 {
-                    _isLastTradeSuccessful = false;
-
-                    TradeResultMessage = $"Operation Failed!\nReason: {result.ErrorMessage}";
+                    TradeResultMessage = $"Operation failed!\nReason: {error}";
                 }
             }
             catch (Exception ex)
             {
-                TradeResultMessage = $"System Error: {ex.Message}";
+                TradeResultMessage = $"System error: {ex.Message}";
             }
         }
 
         private bool CanClosePosition()
         {
-            if (positionGridRow == null)
-                return false;
-
-            if (!double.TryParse(Quantity, out double qty))
-                return false;
-
-            if (qty != positionGridRow.Volume) 
-            {
-                return false; 
-            }
-
-            return true; 
+            if (positionGridRow == null) return false;
+            if (!double.TryParse(Quantity, out double qty)) return false;
+            return qty == positionGridRow.Volume;
         }
 
         private object BuildTradePayload(string actionType, double volume, double currentPrice, double limitPrice)
         {
             string baseAction = (actionType == TradeConstants.ActionBuy ||
-                               (actionType == TradeConstants.ActionModify && OriginalOrderType != null))
-                               ? "Buy" : "Sell";
+                                (actionType == TradeConstants.ActionModify && OriginalOrderType != null))
+                                ? "Buy" : "Sell";
 
             string apiOrderType = baseAction;
             if (CurrentOrderTypeEnum == EnumTradeOrderType.Limit) apiOrderType += "Limit";
@@ -171,17 +186,17 @@ namespace ClientDesktop.ViewModel
                 return new
                 {
                     username = _sessionService.UserId,
-                    symbolId = symbolId,
+                    symbolId,
                     OrderFulfillment = "PENDING",
                     comment = "",
                     positionId = positionGridRow.Id,
                     deviceDetail = new { clientIP = CommonHelper.GetLocalIPAddress(), device = "", reason = "Client" },
-                    marketInfo = new { symbolExpiry = symbolExpiry },
+                    marketInfo = new { symbolExpiry },
                     placeInstruction = new
                     {
                         orderType = apiOrderType,
                         side = reversedSide,
-                        limitMarketOrder = new { price = currentPrice, volume = volume, currentPrice = currentPrice }
+                        limitMarketOrder = new { price = currentPrice, volume, currentPrice }
                     }
                 };
             }
@@ -192,32 +207,20 @@ namespace ClientDesktop.ViewModel
                 if (CurrentOrderTypeEnum == EnumTradeOrderType.Limit) apiOrderType += "Limit";
                 else if (CurrentOrderTypeEnum == EnumTradeOrderType.StopLimit) apiOrderType += "Stop";
                 else apiOrderType = CurrentOrderTypeEnum.ToString();
-                return  new
+
+                return new
                 {
                     orderId = positionGridRow.Id,
                     username = _sessionService.UserId,
-                    symbolId = symbolId,
+                    symbolId,
                     placeInstruction = new
                     {
                         orderType = apiOrderType,
                         side = positionGridRow.Side.ToUpper() == "SELL" ? "BID" : "ASK",
-                        limitMarketOrder = new
-                        {
-                            price = limitPrice,
-                            volume = volume,
-                            currentPrice = currentPrice
-                        }
+                        limitMarketOrder = new { price = limitPrice, volume, currentPrice }
                     },
-                    marketInfo = new
-                    {
-                        symbolExpiry = symbolExpiry
-                    },
-                    deviceDetail = new
-                    {
-                        clientIP = CommonHelper.GetLocalIPAddress(),
-                        device = "",
-                        reason = "Client"
-                    },
+                    marketInfo = new { symbolExpiry },
+                    deviceDetail = new { clientIP = CommonHelper.GetLocalIPAddress(), device = "", reason = "Client" },
                     OrderFulfillment = "PENDING",
                     comment = ""
                 };
@@ -226,20 +229,20 @@ namespace ClientDesktop.ViewModel
             return new
             {
                 username = _sessionService.UserId,
-                symbolId = symbolId,
+                symbolId,
                 OrderFulfillment = "PENDING",
                 comment = "",
                 deviceDetail = new { clientIP = CommonHelper.GetLocalIPAddress(), device = "", reason = "Client" },
-                marketInfo = new { symbolExpiry = symbolExpiry },
+                marketInfo = new { symbolExpiry },
                 placeInstruction = new
                 {
                     orderType = apiOrderType,
-                    side = side,
+                    side,
                     limitMarketOrder = new
                     {
                         price = CurrentOrderTypeEnum == EnumTradeOrderType.Market ? 0 : limitPrice,
-                        volume = volume,
-                        currentPrice = currentPrice
+                        volume,
+                        currentPrice
                     }
                 }
             };
@@ -255,12 +258,9 @@ namespace ClientDesktop.ViewModel
 
             if (SelectedExpiry == TradeConstants.ExpirySpecificDate)
             {
-                if (SelectedExpiryDate.HasValue)
-                {
-                    return SelectedExpiryDate.Value.ToString("yyyy-MM-ddTHH:mm:ss");
-                }
-
-                return "INVALID";
+                return SelectedExpiryDate.HasValue
+                    ? SelectedExpiryDate.Value.ToString("yyyy-MM-ddTHH:mm:ss")
+                    : "INVALID";
             }
 
             return null;
@@ -271,15 +271,15 @@ namespace ClientDesktop.ViewModel
             if (_isLastTradeSuccessful)
             {
                 CloseAction?.Invoke();
+                // Window is closed — no further property changes needed
             }
             else
             {
-                IsProcessingOrDone = false;
+                IsProcessingOrDone = false; // ← only reset form when trade failed
                 _isLastTradeSuccessful = false;
             }
-
-            IsProcessingOrDone = false;
         }
+
         #endregion
     }
 }

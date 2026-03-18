@@ -68,14 +68,14 @@ namespace ClientDesktop.Main
             services.AddSingleton<HistoryService>();
             services.AddSingleton<BanScriptService>();
             services.AddSingleton<LedgerService>();
-            services.AddSingleton<TradeService>();
             services.AddSingleton<SymbolSpecificationService>();
             services.AddSingleton<SymbolService>();
             services.AddSingleton<InvoiceService>();
 
-            // Api Service
+            // Api Service, Tradeservice , Socketservice
             services.AddSingleton<IApiService, ApiService>();
             services.AddSingleton<ISocketService, SocketService>();
+            services.AddSingleton<ITradeService, TradeService>();
 
             // SignalR Service
             services.AddSingleton<LiveTickService>();
