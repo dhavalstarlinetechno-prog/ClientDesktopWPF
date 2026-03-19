@@ -123,10 +123,10 @@ namespace ClientDesktop.ViewModel
             if (client == null) return;
 
             UserName = client.ClientName;
-            Balance = client.UplineAmount.ToString("F2");
-            Credit = client.CreditAmount.ToString("F2");
-            OccupiedMargin = client.OccupiedMarginAmount.ToString("F2");
-            FreeMargin = client.FreeMarginAmount.ToString("F2");
+            Balance = FormatAmount(client.UplineAmount);
+            Credit = FormatAmount(client.CreditAmount);
+            OccupiedMargin = FormatAmount(client.OccupiedMarginAmount);
+            FreeMargin = FormatAmount(client.FreeMarginAmount);
         }
 
         private void SetOrderType(EnumTradeOrderType newType)

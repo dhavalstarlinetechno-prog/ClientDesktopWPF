@@ -145,7 +145,7 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
 
-                <DataGridTextColumn Header="Time" Binding="{Binding Time, StringFormat='{}{0:yyyy.MM.dd HH:mm}'}" ElementStyle="{StaticResource RightAlignCell}" Width="1.5*" SortMemberPath="Time" CanUserSort="True"/>
+                <DataGridTextColumn Header="Time" Binding="{Binding Time, StringFormat='{}{0:dd/MM/yy HH:mm}'}" ElementStyle="{StaticResource RightAlignCell}" Width="1.5*" SortMemberPath="Time" CanUserSort="True"/>
 
                 <DataGridTemplateColumn Header="Type" Width="0.8*" SortMemberPath="Side" CanUserSort="False">
                     <DataGridTemplateColumn.CellTemplate>
@@ -167,7 +167,7 @@
                 </DataGridTemplateColumn>
 
                 <DataGridTextColumn Header="Order Type" Binding="{Binding OrderType}" ElementStyle="{StaticResource RightAlignCell}" Width="1*" SortMemberPath="OrderType" CanUserSort="False"/>
-                <DataGridTextColumn Header="Volume" Binding="{Binding Volume}" ElementStyle="{StaticResource RightAlignCell}" Width="0.8*" SortMemberPath="Volume" CanUserSort="False"/>
+                <DataGridTextColumn Header="Volume" Binding="{Binding Volume , StringFormat=F2}" ElementStyle="{StaticResource RightAlignCell}" Width="0.8*" SortMemberPath="Volume" CanUserSort="False"/>
                 <DataGridTextColumn Header="Avg Price" Binding="{Binding AveragePriceDisplay}" ElementStyle="{StaticResource RightAlignCell}" Width="1*" SortMemberPath="AveragePrice"/>
                 <DataGridTextColumn Header="Price" Binding="{Binding CurrentPriceDisplay}" Width="1*" CanUserSort="False">
                     <DataGridTextColumn.ElementStyle>
@@ -185,21 +185,31 @@
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
-                <DataGridTextColumn Header="Floating P/L" Binding="{Binding Pnl, StringFormat=F2}" Width="1.2*" SortMemberPath="Pnl" CanUserSort="True">
-                    <DataGridTextColumn.ElementStyle>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="Foreground" Value="{Binding PnlColor, FallbackValue=Black}"/>
-                            <Setter Property="TextAlignment" Value="Right"/>
-                            <Setter Property="VerticalAlignment" Value="Center"/>
-                            <Setter Property="Margin" Value="0,0,5,0"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected}" Value="True">
-                                    <Setter Property="Foreground" Value="White"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </DataGridTextColumn.ElementStyle>
-                </DataGridTextColumn>
+                <DataGridTemplateColumn Header="Floating P/L" Width="1.2*" SortMemberPath="Pnl" CanUserSort="True">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding PnlDisplay}"
+                       VerticalAlignment="Center"
+                       Margin="5,0,5,0">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="TextAlignment" Value="Right"/>
+                                        <Setter Property="Foreground" Value="{Binding PnlColor, FallbackValue=Black}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsOrder}" Value="True">
+                                                <Setter Property="TextAlignment" Value="Left"/>
+                                                <Setter Property="Foreground" Value="Black"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected}" Value="True">
+                                                <Setter Property="Foreground" Value="White"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
     </Grid>

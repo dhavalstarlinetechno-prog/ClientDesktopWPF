@@ -11,6 +11,7 @@ using System.Collections;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
+using System.Security.Cryptography;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
@@ -166,7 +167,6 @@ namespace ClientDesktop.ViewModel
                 if (string.Equals(pos.Side, "Bid", StringComparison.OrdinalIgnoreCase)) displaySide = "Sell";
                 else if (string.Equals(pos.Side, "Ask", StringComparison.OrdinalIgnoreCase)) displaySide = "Buy";
 
-                var date = pos.LastInAt.HasValue ? CommonHelper.ConvertUtcToIst(pos.LastInAt.Value).ToString("dd/MM/yy HH:mm:ss", CultureInfo.InvariantCulture) : string.Empty;
 
                 list.Add(new PositionGridRow
                 {
@@ -174,7 +174,7 @@ namespace ClientDesktop.ViewModel
                     SymbolId = pos.SymbolId,
                     SymbolDigit = pos.SymbolDigit,
                     SymbolName = pos.SymbolName,
-                    Time = date,
+                    Time = pos.LastInAt.HasValue? CommonHelper.ConvertUtcToIst(pos.LastInAt.Value): null,
                     Side = displaySide,
                     OrderType = "Market",
                     Volume = pos.TotalVolume,
@@ -220,7 +220,7 @@ namespace ClientDesktop.ViewModel
                     SymbolId = ord.SymbolId,
                     SymbolDigit = ord.SymbolDigit,
                     SymbolName = ord.SymbolName,
-                    Time = CommonHelper.ConvertUtcToIst(ord.UpdatedAt).ToString("dd/MM/yy HH:mm:ss", CultureInfo.InvariantCulture),
+                    Time = CommonHelper.ConvertUtcToIst(ord.UpdatedAt),
                     Side = displaySide,
                     OrderType = ord.OrderType,
                     Volume = ord.Volume,
@@ -229,6 +229,7 @@ namespace ClientDesktop.ViewModel
                     CurrentPrice = ord.CurrentPrice,
                     CurrentPriceDisplay = ord.CurrentPrice.ToString($"F{ord.SymbolDigit}"),
                     Pnl = null,
+                    SymbolExpiry = ord.SymbolExpiry.HasValue ? CommonHelper.ConvertUtcToIst(ord.SymbolExpiry.Value) : null,
                     Type = RowType.Order
                 });
             }
@@ -302,7 +303,7 @@ namespace ClientDesktop.ViewModel
                             SymbolId = updatedPosition.SymbolId,
                             SymbolDigit = updatedPosition.SymbolDigit,
                             SymbolName = updatedPosition.SymbolName,
-                            Time = updatedPosition.CreatedAt?.ToString("dd/MM/yyyy HH:mm") ?? updatedPosition.LastInAt?.ToString("dd/MM/yyyy HH:mm"),
+                            Time = updatedPosition.CreatedAt.HasValue? CommonHelper.ConvertUtcToIst(updatedPosition.CreatedAt.Value) : updatedPosition.LastInAt.HasValue ? CommonHelper.ConvertUtcToIst(updatedPosition.LastInAt.Value) : null,
                             Side = displaySide,
                             OrderType = "Market",
                             Volume = updatedPosition.TotalVolume,
@@ -349,13 +350,14 @@ namespace ClientDesktop.ViewModel
                         var row = GridRows.FirstOrDefault(r => r.Type == RowType.Order && r.Id == updatedOrder.OrderId);
                         if (row != null)
                         {
-                            row.Time = updatedOrder.UpdatedAt.ToString("dd/MM/yyyy HH:mm");
+                            row.Time = updatedOrder.UpdatedAt;
                             row.OrderType = updatedOrder.OrderType;
                             row.Volume = updatedOrder.Volume;
                             row.AveragePrice = updatedOrder.Price;
                             row.AveragePriceDisplay = updatedOrder.Price.ToString($"F{updatedOrder.SymbolDigit}");
                             row.CurrentPrice = updatedOrder.CurrentPrice;
                             row.CurrentPriceDisplay = updatedOrder.CurrentPrice.ToString($"F{updatedOrder.SymbolDigit}");
+                            row.SymbolExpiry = CommonHelper.ConvertUtcToIst(updatedOrder.SymbolExpiry.Value);
                         }
                     }
                     else
@@ -371,7 +373,7 @@ namespace ClientDesktop.ViewModel
                             SymbolId = updatedOrder.SymbolId,
                             SymbolDigit = updatedOrder.SymbolDigit,
                             SymbolName = updatedOrder.SymbolName,
-                            Time = DateTime.Now.ToString("dd/MM/yyyy HH:mm"),
+                            Time = DateTime.Now,
                             Side = displaySide,
                             OrderType = updatedOrder.OrderType,
                             Volume = updatedOrder.Volume,
@@ -380,6 +382,7 @@ namespace ClientDesktop.ViewModel
                             CurrentPrice = updatedOrder.CurrentPrice,
                             CurrentPriceDisplay = updatedOrder.CurrentPrice.ToString($"F{updatedOrder.SymbolDigit}"),
                             Pnl = null,
+                            SymbolExpiry = CommonHelper.ConvertUtcToIst(updatedOrder.SymbolExpiry.Value),  // ← ADD
                             Type = RowType.Order
                         };
                         GridRows.Add(newRow);
@@ -706,7 +709,7 @@ namespace ClientDesktop.ViewModel
                         result = string.Compare(row1.SymbolName, row2.SymbolName, StringComparison.OrdinalIgnoreCase);
                         break;
                     case "Time":
-                        result = string.Compare(row1.Time, row2.Time);
+                        result = Nullable.Compare(row1.Time, row2.Time);
                         break;
                     case "Side":
                         result = string.Compare(row1.Side, row2.Side, StringComparison.OrdinalIgnoreCase);

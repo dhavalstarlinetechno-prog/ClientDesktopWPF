@@ -71,7 +71,7 @@ namespace ClientDesktop.View.Converters
 
                 if (lowerSide.Contains("buy"))
                 {
-                    return new SolidColorBrush(Color.FromRgb(0, 153, 0));
+                    return new SolidColorBrush(Color.FromRgb(0, 119, 254));
                 }
 
                 if (lowerSide.Contains("sell"))

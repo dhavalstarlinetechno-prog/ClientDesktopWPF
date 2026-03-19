@@ -405,16 +405,58 @@ namespace ClientDesktop.Services
 
             var order = new OrderModel
             {
-                OrderId = orderId,
+                OrderId = play["orderId"]?.ToString(),
+                Device = play["device"]?.ToString(),
+
+                SymbolId = play["symbolId"] != null ? (int)play["symbolId"] : 0,
                 SymbolName = play["symbolName"]?.ToString(),
-                Volume = play["volume"] != null ? (double)play["volume"] : 0,
-                Price = play["price"] != null ? (double)play["price"] : 0,
-                CurrentPrice = play["currentPrice"] != null ? (double)play["currentPrice"] : 0,
-                OrderType = play["orderType"]?.ToString(),
-                OrderFulfillment = status,
-                Comment = play["comment"]?.ToString(),
-                Side = play["side"]?.ToString(),
+                SecurityId = play["securityId"] != null ? (int)play["securityId"] : 0,
                 SymbolDigit = play["symbolDigit"] != null ? (int)play["symbolDigit"] : 0,
+
+                Side = play["side"]?.ToString(),
+
+                SymbolExpiry = play["symbolExpiry"]?.Type == JTokenType.Null ? null : (DateTime?)play["symbolExpiry"],
+                SymbolExpiryClose = play["symbolExpiryClose"]?.Type == JTokenType.Null ? null : (DateTime?)play["symbolExpiryClose"],
+
+                SymbolContractSize = play["symbolContractSize"] != null ? (double)play["symbolContractSize"] : 0,
+
+                CurrentPrice = play["currentPrice"] != null ? (double)play["currentPrice"] : 0,
+                Reason = play["reason"]?.ToString(),
+                ClientIp = play["clientIp"]?.ToString(),
+
+                Margin = play["margin"] != null ? (decimal)play["margin"] : 0,
+                Price = play["price"] != null ? (double)play["price"] : 0,
+                Volume = play["volume"] != null ? (double)play["volume"] : 0,
+
+                ParentSharing = play["parentSharing"] != null
+        ? play["parentSharing"].ToObject<List<OrderParentSharing>>()
+        : new List<OrderParentSharing>(),
+
+                // 🔥 IMPORTANT (UTC → IST)
+                CreatedAt = play["createdAt"] != null
+        ? CommonHelper.ConvertUtcToIst((DateTime)play["createdAt"])
+        : DateTime.MinValue,
+
+                UpdatedAt = play["updatedAt"] != null
+        ? CommonHelper.ConvertUtcToIst((DateTime)play["updatedAt"])
+        : DateTime.MinValue,
+
+                MasterSymbolName = play["masterSymbolName"]?.ToString(),
+                OrderType = play["orderType"]?.ToString(),
+                MarginType = play["marginType"]?.ToString(),
+                OrderFulfillment = play["orderFulfillment"]?.ToString(),
+                Comment = play["comment"]?.ToString(),
+
+                SecurityName = play["securityName"]?.ToString(),
+                SymbolDetail = play["symbolDetail"]?.ToString(),
+
+                SpreadType = play["spreadType"]?.ToString(),
+                SpreadValue = play["spreadValue"] != null ? (double)play["spreadValue"] : 0,
+                SpreadBalance = play["spreadBalance"] != null ? (double)play["spreadBalance"] : 0,
+
+                OperatorId = play["operatorId"]?.ToString(),
+                UserName = play["username"]?.ToString(), // ⚠️ JSON is "username"
+                UserId = play["userId"]?.ToString()
             };
 
             if (status == "CANCELLED" || volume <= 0)

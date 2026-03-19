@@ -218,6 +218,17 @@ namespace ClientDesktop.ViewModel
 
         #region Account Info
 
+        private static readonly System.Globalization.NumberFormatInfo _amountFormat
+    = new System.Globalization.NumberFormatInfo
+    {
+        NumberGroupSeparator = " ",
+        NumberDecimalSeparator = ".",
+        NumberDecimalDigits = 2
+    };
+
+        private static string FormatAmount(double value)
+            => value.ToString("N2", _amountFormat);
+
         private string _userName;
         public string UserName
         {
@@ -332,7 +343,8 @@ namespace ClientDesktop.ViewModel
         public bool IsLimitActive => CurrentOrderTypeEnum == EnumTradeOrderType.Limit;
         public bool IsMarketActive => CurrentOrderTypeEnum == EnumTradeOrderType.Market;
         public bool IsStopLimitActive => CurrentOrderTypeEnum == EnumTradeOrderType.StopLimit;
-        public bool IsExpiryVisible => CurrentOrderTypeEnum != EnumTradeOrderType.Market;
+        public bool IsExpiryVisible => CurrentOrderTypeEnum != EnumTradeOrderType.Market && _currentSelectedSymbol != null && string.Equals(_currentSelectedSymbol.SecurityGTC, "GoodTillCancelled", StringComparison.OrdinalIgnoreCase);
+
         public bool IsSpecificDateVisible => SelectedExpiry == "Specific Date";
 
         public string SellButtonText

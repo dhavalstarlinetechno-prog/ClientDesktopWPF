@@ -144,8 +144,8 @@ namespace ClientDesktop.ViewModel
                 {
                     _isLastTradeSuccessful = true;
                     TradeResultMessage = actionType == TradeConstants.ActionClose
-                        ? $"Position closed successfully!\nSymbol: {SelectedSymbol}\nPrice: {currentPrice}"
-                        : $"{baseAction} order placed successfully!\nSymbol: {SelectedSymbol}\nPrice: {currentPrice}";
+                        ? $"Position closed successfully!\nSymbol: {SelectedSymbol}\nPrice: {LimitRate}"
+                        : $"{baseAction} order placed successfully!\nSymbol: {SelectedSymbol}\nPrice: {LimitRate}";
                 }
                 else
                 {
