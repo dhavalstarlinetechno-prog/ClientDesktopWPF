@@ -23,21 +23,46 @@ namespace ClientDesktop.Infrastructure.Helpers
     /// </summary>
     public class PDFBuilder
     {
-       
+
         private readonly List<PdfComponent> _components = new();
-      
+
         private static readonly HashSet<string> _skipColumns = new(StringComparer.OrdinalIgnoreCase)
         {
             "RowType", "IsHeader", "IsTotal", "Side", "SecurityName"
         };
-        
+
         public Color HeaderBgColor { get; set; } = new DeviceRgb(41, 128, 185);
         public Color HeaderForeColor { get; set; } = ColorConstants.WHITE;
         public Color AltRowColor { get; set; } = new DeviceRgb(245, 248, 252);
         public Color SecurityHeaderBg { get; set; } = new DeviceRgb(239, 236, 200); // #EFECC8
         public Color TotalRowBg { get; set; } = new DeviceRgb(240, 240, 240);
         public Color GrandTotalRowBg { get; set; } = new DeviceRgb(220, 220, 220);
-        
+
+        /// <summary>Font size for normal data rows. Default: 9f (same as before).</summary>
+        public float CellFontSize { get; set; } = 9f;
+
+        /// <summary>Font size for header row. Default: 10f (same as before).</summary>
+        public float HeaderFontSize { get; set; } = 10f;
+
+        /// <summary>Padding for header cells. Default: 6f (same as before).</summary>
+        public float HeaderPadding { get; set; } = 6f;
+
+        /// <summary>Padding for data cells. Default: 5f (same as before).</summary>
+        public float CellPadding { get; set; } = 5f;
+
+        /// <summary>
+        /// Show vertical (left/right) grid lines on all cells including headers.
+        /// Default: false — existing callers see zero change.
+        /// </summary>
+        public bool ShowVerticalBorders { get; set; } = false;
+
+        /// <summary>
+        /// Optional per-column relative widths. Key = column name, Value = relative factor.
+        /// Columns not listed get weight 1f. Default: empty = all columns equal (same as before).
+        /// Example: new() { ["Sr"] = 0.4f, ["Time"] = 1.6f }
+        /// </summary>
+        public Dictionary<string, float> ColumnWidths { get; set; } = new();
+
         public event Action<string>? OnPdfSaved;
         public event Action<string>? OnError;
 
@@ -121,7 +146,7 @@ namespace ClientDesktop.Infrastructure.Helpers
         {
             _components.Clear();
             return this;
-        }     
+        }
 
         /// <summary>
         /// Opens WPF SaveFileDialog and writes PDF to disk.
@@ -268,7 +293,7 @@ namespace ClientDesktop.Infrastructure.Helpers
                 .SetMarginTop(20));
         }
 
-        
+
         private Table BuildPdfTable(
             DataTable dt,
             bool autoFormat,
@@ -284,8 +309,12 @@ namespace ClientDesktop.Infrastructure.Helpers
 
             int colCount = displayColumns.Count;
 
-            var table = new Table(UnitValue.CreatePercentArray(
-                            Enumerable.Repeat(1f, colCount).ToArray()))
+            // Use ColumnWidths override if provided, else 1f each (default — same behavior as before)
+            float[] widthArray = displayColumns
+                .Select(c => ColumnWidths.TryGetValue(c.ColumnName, out float w) ? w : 1f)
+                .ToArray();
+
+            var table = new Table(UnitValue.CreatePercentArray(widthArray))
                         .UseAllAvailableWidth()
                         .SetMarginBottom(10);
 
@@ -301,12 +330,15 @@ namespace ClientDesktop.Infrastructure.Helpers
                     new Cell()
                         .Add(new Paragraph(col.ColumnName)
                             .SetFont(headerFont)
-                            .SetFontSize(10))
+                            .SetFontSize(HeaderFontSize))
                         .SetBackgroundColor(HeaderBgColor)
                         .SetFontColor(HeaderForeColor)
-                        .SetPadding(6)
+                        .SetPadding(HeaderPadding)
                         .SetTextAlignment(align)
-                        .SetBorder(Border.NO_BORDER));
+                        .SetBorder(Border.NO_BORDER)
+                        .SetBorderBottom(ShowVerticalBorders ? new SolidBorder(ColorConstants.BLACK, 0.5f) : Border.NO_BORDER)
+                        .SetBorderRight(ShowVerticalBorders ? new SolidBorder(ColorConstants.BLACK, 0.5f) : Border.NO_BORDER)
+                        .SetBorderLeft(ShowVerticalBorders ? new SolidBorder(ColorConstants.BLACK, 0.5f) : Border.NO_BORDER));
             }
 
             // ── Data rows with RowType-based styling ────────────────────────
@@ -319,7 +351,7 @@ namespace ClientDesktop.Infrastructure.Helpers
                 string rowType = hasRowType ? row["RowType"]?.ToString() ?? "" : "";
                 Color rowBg;
                 bool isBold = false;
-                float fontSize = 9f;
+                float fontSize = CellFontSize;   // property — default 9f (same as before)
 
                 switch (rowType)
                 {
@@ -337,7 +369,7 @@ namespace ClientDesktop.Infrastructure.Helpers
                     case "GrandTotal":
                         rowBg = GrandTotalRowBg;
                         isBold = true;
-                        fontSize = 10f;
+                        fontSize = CellFontSize + 1f;
                         break;
 
                     case "SubTotal":
@@ -364,11 +396,12 @@ namespace ClientDesktop.Infrastructure.Helpers
                                 .SetFont(rowFont)
                                 .SetFontSize(fontSize))
                             .SetBackgroundColor(rowBg)
-                            .SetPadding(5)
+                            .SetPadding(CellPadding)
                             .SetTextAlignment(align)
                             .SetBorder(Border.NO_BORDER)
-                            .SetBorderBottom(new SolidBorder(
-                                new DeviceRgb(220, 220, 220), 0.5f)));
+                            .SetBorderBottom(new SolidBorder(ColorConstants.BLACK, 0.5f))
+                            .SetBorderRight(ShowVerticalBorders ? new SolidBorder(ColorConstants.BLACK, 0.5f) : Border.NO_BORDER)
+                            .SetBorderLeft(ShowVerticalBorders ? new SolidBorder(ColorConstants.BLACK, 0.5f) : Border.NO_BORDER));
                 }
             }
 
@@ -427,7 +460,7 @@ namespace ClientDesktop.Infrastructure.Helpers
 
             doc.Add(table);
         }
-       
+
         private static TextAlignment ResolveAlignment(
             DataColumn col,
             Dictionary<string, TextAlignment>? overrides,

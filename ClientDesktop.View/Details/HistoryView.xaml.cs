@@ -391,7 +391,7 @@ namespace ClientDesktop.View.Details
                     filterPositionList = filterPositionList.Where(x => x.SymbolName == selectedPosSymbol);
 
                 var finalData = filterPositionList.OrderBy(s => s.UpdatedAt).ToList();
-                
+
                 if (finalData.Any())
                 {
                     double totalProfit = finalData.Sum(x => x.Pnl);
@@ -467,6 +467,8 @@ namespace ClientDesktop.View.Details
             if (footer != null) result.Add(footer);
 
             GridDealsOrders.ItemsSource = result;
+
+            e.Column.SortDirection = newDir;
         }
 
         private void GridPosition_Sorting(object sender, DataGridSortingEventArgs e)
@@ -505,6 +507,8 @@ namespace ClientDesktop.View.Details
             if (footer != null) result.Add(footer);
 
             GridPosition.ItemsSource = result;
+
+            e.Column.SortDirection = newDir;
         }
 
         // ─────────────────────────────────────────────────────────────────────

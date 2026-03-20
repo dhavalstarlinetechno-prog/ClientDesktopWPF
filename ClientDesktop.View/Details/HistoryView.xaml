@@ -160,6 +160,7 @@
                     so the footer cell can show the total value bold/right-aligned
                     just like normal cells.
             ═══════════════════════════════════════════════════════════════ -->
+            
             <DataGrid x:Name="GridDealsOrders" Visibility="Visible"
                       Style="{StaticResource CustomDataGrid}"
                       AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
@@ -176,7 +177,7 @@
                 <DataGrid.RowStyle>
                     <Style TargetType="DataGridRow">
                         <Setter Property="Background" Value="White"/>
-                        <Setter Property="Foreground" Value="Black"/>
+                        <Setter Property="Foreground" Value="Black"/> 
                         <Setter Property="FontWeight" Value="Normal"/>
 
                         <Setter Property="Template">
@@ -240,7 +241,7 @@
                 </DataGrid.RowStyle>
 
                 <DataGrid.Resources>
-                    <Style TargetType="DataGridColumnHeader">
+                    <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource CustomColumnHeader}">
                         <Setter Property="Background" Value="#F4F4F4"/>
                         <Setter Property="Foreground" Value="#333333"/>
                         <Setter Property="Padding" Value="8,0"/>
@@ -585,7 +586,7 @@
                       Sorting="GridPosition_Sorting">
 
                 <DataGrid.Resources>
-                    <Style TargetType="DataGridColumnHeader">
+                    <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource CustomColumnHeader}">
                         <Setter Property="Background" Value="#F4F4F4"/>
                         <Setter Property="Foreground" Value="#333333"/>
                         <Setter Property="Padding" Value="8,0"/>

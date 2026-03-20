@@ -7,11 +7,9 @@ using ClientDesktop.Infrastructure.Services;
 using ClientDesktop.Models;
 using ClosedXML.Excel;
 using CommunityToolkit.Mvvm.Messaging;
-using iTextSharp.text;
-using iTextSharp.text.pdf;
-using iTextSharp.text.pdf.draw;
 using Microsoft.Win32;
 using System.Collections.ObjectModel;
+using System.Data;
 using System.Windows;
 
 namespace ClientDesktop.ViewModel
@@ -29,6 +27,7 @@ namespace ClientDesktop.ViewModel
 
         private readonly SessionService _sessionService;
         private readonly HistoryService _historyService;
+        private readonly PDFBuilder _pdfBuilder = new PDFBuilder();
         public double ClientCrdeit { get; set; }
         public double ClientBalance { get; set; }
         public Action OnHistoryDataLoaded { get; set; }
@@ -112,10 +111,10 @@ namespace ClientDesktop.ViewModel
 
         public List<HistoryModel> GetHistoryData() => _historyService.GetStoredHistory();
 
-        
+
         public List<PositionHistoryModel> GetPositionHistoryData() => _historyService.GetStoredPositionHistory();
 
-        #region Export Data to excel and PDF
+        #region Export Data to excel 
         public void ExportToExcel(List<HistoryModel> data, HistoryType gridType)
         {
             try
@@ -342,6 +341,15 @@ namespace ClientDesktop.ViewModel
             }
         }
 
+
+        #endregion Export Data to excel and PDF
+
+        #region Export Data to PDF
+
+        // Strips trailing zeros: 0.863660000 → 0.86366
+        private static string FormatPrice(decimal value)
+            => value.ToString("0.##########");
+
         public void ExportToPdf(List<HistoryModel> data, HistoryType gridType)
         {
             try
@@ -352,244 +360,104 @@ namespace ClientDesktop.ViewModel
                     return;
                 }
 
-                var exportData = data.Where(x => x.RefId != "FOOTER").ToList();
+                // ── Footer values ─────────────────────────────────────────────
                 var footerRow = data.FirstOrDefault(x => x.RefId == "FOOTER");
+                decimal totalProfit = footerRow?.Pnl ?? 0;
+                decimal totalComm = footerRow?.UplineCommission ?? 0;
+                decimal credit = 0, balance = 0;
 
-                SaveFileDialog saveDialog = new SaveFileDialog
+                if (footerRow?.Comment != null && footerRow.Comment.Contains("Credit:"))
                 {
-                    Filter = "PDF Files|*.pdf",
-                    Title = "Export to PDF",
-                    FileName = $"{gridType}_History_{DateTime.Now:yyyyMMdd_HHmmss}.pdf"
-                };
-
-                if (saveDialog.ShowDialog() != true)
-                    return;
-
-                // ✅ Landscape for better table view
-                Document document = new Document(PageSize.A4.Rotate(), 30, 30, 40, 40);
-                PdfWriter writer = PdfWriter.GetInstance(document, new FileStream(saveDialog.FileName, FileMode.Create));
-                document.Open();
-
-                // ============ HEADER ============
-                // Company/App Name
-                Font companyFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 16, new BaseColor(0, 51, 102)); // Dark Blue
-                //Paragraph company = new Paragraph("TRADING PLATFORM", companyFont)
-                //{
-                //    Alignment = Element.ALIGN_CENTER,
-                //    SpacingAfter = 5
-                //};
-                //document.Add(company);
-
-                // Report Title
-                Font titleFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 14, BaseColor.BLACK);
-                Paragraph title = new Paragraph($"{gridType} History Report", titleFont)
-                {
-                    Alignment = Element.ALIGN_CENTER,
-                    SpacingAfter = 3
-                };
-                document.Add(title);
-
-                // Date Range / Generated Date
-                Font dateFont = FontFactory.GetFont(FontFactory.HELVETICA, 9, BaseColor.DARK_GRAY);
-                Paragraph dateInfo = new Paragraph($"Generated on: {DateTime.Now:dd MMM yyyy HH:mm:ss}", dateFont)
-                {
-                    Alignment = Element.ALIGN_CENTER,
-                    SpacingAfter = 20
-                };
-                document.Add(dateInfo);
-
-                // Separator Line
-                LineSeparator line = new LineSeparator(1f, 100f, BaseColor.LIGHT_GRAY, Element.ALIGN_CENTER, -2);
-                document.Add(new Chunk(line));
-                document.Add(new Paragraph(" ") { SpacingAfter = 10 });
-
-                // ============ DATA TABLE ============
-                PdfPTable table = new PdfPTable(12)
-                {
-                    WidthPercentage = 100,
-                    SpacingBefore = 5,
-                    SpacingAfter = 15
-                };
-
-                // Column widths (adjust based on content)
-                float[] columnWidths = { 4f, 12f, 10f, 10f, 10f, 9f, 7f, 7f, 7f, 8f, 7f, 8f };
-                table.SetWidths(columnWidths);
-
-                // ✅ Table Header Row
-                string[] headers = { "Sr.", "Time", "Deal ID", "Position ID", "Symbol", "Execution", "Type", "Entry", "Volume", "Price", "Comm.", "Profit" };
-                Font headerFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 8, BaseColor.WHITE);
-                BaseColor headerBg = new BaseColor(41, 128, 185); // Blue background
-
-                foreach (string header in headers)
-                {
-                    PdfPCell cell = new PdfPCell(new Phrase(header, headerFont))
-                    {
-                        BackgroundColor = headerBg,
-                        HorizontalAlignment = Element.ALIGN_CENTER,
-                        VerticalAlignment = Element.ALIGN_MIDDLE,
-                        Padding = 6,
-                        BorderWidth = 0.5f,
-                        BorderColor = BaseColor.WHITE
-                    };
-                    table.AddCell(cell);
+                    var parts = footerRow.Comment.Split(new[] { "Credit:", "Balance:" }, StringSplitOptions.None);
+                    if (parts.Length >= 2) decimal.TryParse(parts[1].Trim().Split(' ')[0].Replace(",", ""), out credit);
+                    if (parts.Length >= 3) decimal.TryParse(parts[2].Replace("INR", "").Trim().Replace(",", ""), out balance);
                 }
 
-                // ✅ Data Rows
-                Font dataFont = FontFactory.GetFont(FontFactory.HELVETICA, 7, BaseColor.BLACK);
-                Font dataBoldFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 7, BaseColor.BLACK);
-                BaseColor evenRowColor = new BaseColor(245, 245, 245); // Light gray
-                BaseColor oddRowColor = BaseColor.WHITE;
+                // ── DataTable ─────────────────────────────────────────────────
+                var dt = new DataTable();
+                dt.Columns.Add("RowType", typeof(string));   // hidden by PDFBuilder._skipColumns
+                dt.Columns.Add("Sr", typeof(string));
+                dt.Columns.Add("Time", typeof(string));
+                dt.Columns.Add("Deal Id", typeof(string));
+                dt.Columns.Add("Position Id", typeof(string));
+                dt.Columns.Add("Symbol", typeof(string));
+                dt.Columns.Add("Execution", typeof(string));
+                dt.Columns.Add("Type", typeof(string));
+                dt.Columns.Add("Entry", typeof(string));
+                dt.Columns.Add("Volume", typeof(string));
+                dt.Columns.Add("Price", typeof(string));
+                dt.Columns.Add("Comm.", typeof(string));
+                dt.Columns.Add("Profit", typeof(string));
+                dt.Columns.Add("Comment", typeof(string));
 
-                int srNo = 1;
-                foreach (var item in exportData)
+                int sr = 1;
+                foreach (var item in data.Where(x => x.RefId != "FOOTER"))
                 {
-                    BaseColor rowBg = (srNo % 2 == 0) ? evenRowColor : oddRowColor;
-
-                    // Sr.
-                    table.AddCell(CreateStyledCell(srNo.ToString(), dataFont, Element.ALIGN_CENTER, rowBg));
-
-                    // Time
-                    table.AddCell(CreateStyledCell(item.CreatedOn.ToString("dd/MM/yyyy HH:mm:ss"), dataFont, Element.ALIGN_LEFT, rowBg));
-
-                    // Deal ID
-                    table.AddCell(CreateStyledCell(item.RefId, dataFont, Element.ALIGN_LEFT, rowBg));
-
-                    // Position ID
-                    table.AddCell(CreateStyledCell(item.PositionId ?? "--", dataFont, Element.ALIGN_LEFT, rowBg));
-
-                    // Symbol
-                    table.AddCell(CreateStyledCell(item.SymbolName, dataBoldFont, Element.ALIGN_LEFT, rowBg));
-
-                    // Execution
-                    table.AddCell(CreateStyledCell(item.OrderType, dataFont, Element.ALIGN_CENTER, rowBg));
-
-                    // Type (Buy/Sell with color)
-                    BaseColor sideColor = item.Side.ToUpper() == "BUY" ? new BaseColor(34, 139, 34) : new BaseColor(220, 20, 60);
-                    Font sideFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 7, sideColor);
-                    table.AddCell(CreateStyledCell(item.Side, sideFont, Element.ALIGN_CENTER, rowBg));
-
-                    // Entry
-                    table.AddCell(CreateStyledCell(item.DealType, dataFont, Element.ALIGN_CENTER, rowBg));
-
-                    // Volume
-                    table.AddCell(CreateStyledCell(item.Volume.ToString("N2"), dataFont, Element.ALIGN_RIGHT, rowBg));
-
-                    // Price
-                    table.AddCell(CreateStyledCell(item.Price.ToString("N2"), dataFont, Element.ALIGN_RIGHT, rowBg));
-
-                    // Commission
-                    table.AddCell(CreateStyledCell(item.UplineCommission.ToString("N2"), dataFont, Element.ALIGN_RIGHT, rowBg));
-
-                    // Profit (with color)
-                    BaseColor profitColor = item.Pnl >= 0 ? new BaseColor(34, 139, 34) : new BaseColor(220, 20, 60);
-                    Font profitFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 7, profitColor);
-                    table.AddCell(CreateStyledCell(item.Pnl.ToString("N2"), profitFont, Element.ALIGN_RIGHT, rowBg));
-
-                    srNo++;
+                    var ist = CommonHelper.ConvertUtcToIst(item.CreatedOn);
+                    dt.Rows.Add(
+                        "",
+                        sr++.ToString(),
+                        ist.ToString("dd/MM/yy HH:mm"),
+                        item.RefId ?? "",
+                        item.PositionId ?? "--",
+                        item.SymbolName ?? "",
+                        item.OrderType ?? "",
+                        item.Side ?? "",
+                        item.DealType ?? "",
+                        item.Volume.ToString(),
+                        FormatPrice(item.Price),
+                        item.UplineCommission.ToString("N2"),
+                        item.Pnl.ToString("N2"),
+                        item.Comment ?? ""
+                    );
                 }
 
-                document.Add(table);
+                // ── Footer row inside table (GrandTotal = bold + grey) ────────
+                dt.Rows.Add(
+                    "GrandTotal",
+                    "Profit:", totalProfit.ToString("N2"),
+                    "Credit:", credit.ToString("N2"),
+                    "Balance:", balance.ToString("N3") + " INR",
+                    "", "", "",
+                    totalComm.ToString("N2"),
+                    totalProfit.ToString("N2"),
+                    ""
+                );
 
-                // ============ SUMMARY SECTION ============
-                if (footerRow != null)
+                // ── PDFBuilder uses iText7 TextAlignment directly ─────────────
+                var alignments = new Dictionary<string, iText.Layout.Properties.TextAlignment>
                 {
-                    decimal totalProfit = footerRow.Pnl;
-                    decimal totalComm = footerRow.UplineCommission;
-
-                    decimal credit = 0;
-                    decimal balance = 0;
-
-                    if (footerRow.Comment != null && footerRow.Comment.Contains("Credit:"))
-                    {
-                        var parts = footerRow.Comment.Split(new[] { "Credit:", "Balance:" }, StringSplitOptions.None);
-                        if (parts.Length >= 2)
-                            decimal.TryParse(parts[1].Trim().Split(' ')[0].Replace(",", ""), out credit);
-                        if (parts.Length >= 3)
-                            decimal.TryParse(parts[2].Replace("INR", "").Trim().Replace(",", ""), out balance);
-                    }
-
-                    // Summary Table
-                    PdfPTable summaryTable = new PdfPTable(4)
-                    {
-                        WidthPercentage = 60,
-                        HorizontalAlignment = Element.ALIGN_RIGHT,
-                        SpacingBefore = 10
-                    };
-
-                    float[] summaryWidths = { 1f, 1f, 1f, 1f };
-                    summaryTable.SetWidths(summaryWidths);
-
-                    Font summaryLabelFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 9, BaseColor.BLACK);
-                    Font summaryValueFont = FontFactory.GetFont(FontFactory.HELVETICA, 9, BaseColor.BLACK);
-
-                    // Total Commission
-                    summaryTable.AddCell(CreateSummaryCell("Total Commission:", summaryLabelFont, Element.ALIGN_RIGHT));
-                    summaryTable.AddCell(CreateSummaryCell(totalComm.ToString("N2"), summaryValueFont, Element.ALIGN_RIGHT));
-
-                    // Total Profit
-                    BaseColor totalProfitColor = totalProfit >= 0 ? new BaseColor(34, 139, 34) : new BaseColor(220, 20, 60);
-                    Font totalProfitFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 9, totalProfitColor);
-                    summaryTable.AddCell(CreateSummaryCell("Total Profit:", summaryLabelFont, Element.ALIGN_RIGHT));
-                    summaryTable.AddCell(CreateSummaryCell(totalProfit.ToString("N2"), totalProfitFont, Element.ALIGN_RIGHT));
-
-                    // Credit
-                    summaryTable.AddCell(CreateSummaryCell("Credit:", summaryLabelFont, Element.ALIGN_RIGHT));
-                    summaryTable.AddCell(CreateSummaryCell(credit.ToString("N2"), summaryValueFont, Element.ALIGN_RIGHT));
-
-                    // Balance
-                    summaryTable.AddCell(CreateSummaryCell("Balance:", summaryLabelFont, Element.ALIGN_RIGHT));
-                    summaryTable.AddCell(CreateSummaryCell(balance.ToString("N3") + " INR", summaryValueFont, Element.ALIGN_RIGHT));
-
-                    document.Add(summaryTable);
-                }
-
-                // ============ FOOTER ============
-                document.Add(new Paragraph(" ") { SpacingBefore = 20 });
-                LineSeparator footerLine = new LineSeparator(0.5f, 100f, BaseColor.LIGHT_GRAY, Element.ALIGN_CENTER, -2);
-                document.Add(new Chunk(footerLine));
-
-                Font footerFont = FontFactory.GetFont(FontFactory.HELVETICA, 7, BaseColor.GRAY);
-                Paragraph footer = new Paragraph($"Report generated | Page 1 of 1 | {DateTime.Now:dd MMM yyyy HH:mm:ss}", footerFont)
-                {
-                    Alignment = Element.ALIGN_CENTER,
-                    SpacingBefore = 5
+                    { "Volume", iText.Layout.Properties.TextAlignment.RIGHT },
+                    { "Comm.",  iText.Layout.Properties.TextAlignment.RIGHT },
+                    { "Profit", iText.Layout.Properties.TextAlignment.RIGHT }
                 };
-                document.Add(footer);
 
-                document.Close();
+                _pdfBuilder
+                    .Clear()
+                    .AddSubTitle("History", fontSize: 16, centerAlign: false)
+                    .AddSpacing(6)
+                    .AddGrid(dt, null, null, alignments)
+                    ;
 
-                MessageBox.Show("PDF exported successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                // Compact settings for wide 13-column table
+                _pdfBuilder.CellFontSize = 7.5f;
+                _pdfBuilder.HeaderFontSize = 8f;
+                _pdfBuilder.HeaderPadding = 4f;
+                _pdfBuilder.CellPadding = 3f;
+                _pdfBuilder.ShowVerticalBorders = true;
+                _pdfBuilder.ColumnWidths = new Dictionary<string, float>
+                {
+                    { "Sr",   0.4f },   // narrow
+                    { "Time", 1.6f }    // wider for date+time
+                };
+
+                _pdfBuilder.BuildPDF($"{gridType}_History", landscape: true, autoFormat: true);
             }
             catch (Exception ex)
             {
+                FileLogger.ApplicationLog(nameof(ExportToPdf), ex);
                 MessageBox.Show($"PDF export error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-        }
-
-        private PdfPCell CreateStyledCell(string text, Font font, int alignment, BaseColor bgColor)
-        {
-            PdfPCell cell = new PdfPCell(new Phrase(text, font))
-            {
-                HorizontalAlignment = alignment,
-                VerticalAlignment = Element.ALIGN_MIDDLE,
-                Padding = 4,
-                BackgroundColor = bgColor,
-                BorderWidth = 0.3f,
-                BorderColor = new BaseColor(200, 200, 200)
-            };
-            return cell;
-        }
-
-        private PdfPCell CreateSummaryCell(string text, Font font, int alignment)
-        {
-            PdfPCell cell = new PdfPCell(new Phrase(text, font))
-            {
-                HorizontalAlignment = alignment,
-                VerticalAlignment = Element.ALIGN_MIDDLE,
-                Padding = 5,
-                Border = Rectangle.NO_BORDER
-            };
-            return cell;
         }
 
         public void ExportPositionToPdf(List<PositionHistoryModel> data)
@@ -602,188 +470,102 @@ namespace ClientDesktop.ViewModel
                     return;
                 }
 
-                var exportData = data.Where(x => x.RefId != "FOOTER").ToList();
+                // ── Footer values ─────────────────────────────────────────────
                 var footerRow = data.FirstOrDefault(x => x.RefId == "FOOTER");
+                decimal totalProfit = (decimal)(footerRow?.Pnl ?? 0);
+                decimal credit = 0, balance = 0;
 
-                SaveFileDialog saveDialog = new SaveFileDialog
+                if (footerRow?.Comment != null && footerRow.Comment.Contains("Credit:"))
                 {
-                    Filter = "PDF Files|*.pdf",
-                    Title = "Export to PDF",
-                    FileName = $"Position_History_{DateTime.Now:yyyyMMdd_HHmmss}.pdf"
-                };
-
-                if (saveDialog.ShowDialog() != true)
-                    return;
-
-                Document document = new Document(PageSize.A4.Rotate(), 30, 30, 40, 40);
-                PdfWriter writer = PdfWriter.GetInstance(document, new FileStream(saveDialog.FileName, FileMode.Create));
-                document.Open();
-
-                // Header
-                Font companyFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 16, new BaseColor(0, 51, 102));
-                Paragraph company = new Paragraph("TRADING PLATFORM", companyFont)
-                {
-                    Alignment = Element.ALIGN_CENTER,
-                    SpacingAfter = 5
-                };
-                document.Add(company);
-
-                Font titleFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 14, BaseColor.BLACK);
-                Paragraph title = new Paragraph("Position History Report", titleFont)
-                {
-                    Alignment = Element.ALIGN_CENTER,
-                    SpacingAfter = 3
-                };
-                document.Add(title);
-
-                Font dateFont = FontFactory.GetFont(FontFactory.HELVETICA, 9, BaseColor.DARK_GRAY);
-                Paragraph dateInfo = new Paragraph($"Generated on: {DateTime.Now:dd MMM yyyy HH:mm:ss}", dateFont)
-                {
-                    Alignment = Element.ALIGN_CENTER,
-                    SpacingAfter = 20
-                };
-                document.Add(dateInfo);
-
-                LineSeparator line = new LineSeparator(1f, 100f, BaseColor.LIGHT_GRAY, Element.ALIGN_CENTER, -2);
-                document.Add(new Chunk(line));
-                document.Add(new Paragraph(" ") { SpacingAfter = 10 });
-
-                // Table
-                PdfPTable table = new PdfPTable(10)
-                {
-                    WidthPercentage = 100,
-                    SpacingBefore = 5,
-                    SpacingAfter = 15
-                };
-
-                float[] columnWidths = { 4f, 12f, 12f, 10f, 8f, 8f, 12f, 8f, 8f, 9f };
-                table.SetWidths(columnWidths);
-
-                // Headers
-                string[] headers = { "Sr.", "Time", "Last Out Time", "Position ID", "Type", "Volume", "Symbol", "Price", "Comm.", "Profit" };
-                Font headerFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 8, BaseColor.WHITE);
-                BaseColor headerBg = new BaseColor(41, 128, 185);
-
-                foreach (string header in headers)
-                {
-                    PdfPCell cell = new PdfPCell(new Phrase(header, headerFont))
-                    {
-                        BackgroundColor = headerBg,
-                        HorizontalAlignment = Element.ALIGN_CENTER,
-                        VerticalAlignment = Element.ALIGN_MIDDLE,
-                        Padding = 6,
-                        BorderWidth = 0.5f,
-                        BorderColor = BaseColor.WHITE
-                    };
-                    table.AddCell(cell);
+                    var parts = footerRow.Comment.Split(new[] { "Credit:", "Balance:" }, StringSplitOptions.None);
+                    if (parts.Length >= 2) decimal.TryParse(parts[1].Trim().Split(' ')[0].Replace(",", ""), out credit);
+                    if (parts.Length >= 3) decimal.TryParse(parts[2].Replace("INR", "").Trim().Replace(",", ""), out balance);
                 }
 
-                // Data
-                Font dataFont = FontFactory.GetFont(FontFactory.HELVETICA, 7, BaseColor.BLACK);
-                Font dataBoldFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 7, BaseColor.BLACK);
-                BaseColor evenRowColor = new BaseColor(245, 245, 245);
-                BaseColor oddRowColor = BaseColor.WHITE;
+                // ── DataTable ─────────────────────────────────────────────────
+                var dt = new DataTable();
+                dt.Columns.Add("RowType", typeof(string));
+                dt.Columns.Add("Sr", typeof(string));
+                dt.Columns.Add("Time", typeof(string));
+                dt.Columns.Add("Last Out Time", typeof(string));
+                dt.Columns.Add("Position Id", typeof(string));
+                dt.Columns.Add("Type", typeof(string));
+                dt.Columns.Add("Volume", typeof(string));
+                dt.Columns.Add("Symbol", typeof(string));
+                dt.Columns.Add("Price", typeof(string));
+                dt.Columns.Add("Comm.", typeof(string));
+                dt.Columns.Add("Profit", typeof(string));
+                dt.Columns.Add("Comment", typeof(string));
 
-                int srNo = 1;
-                foreach (var item in exportData)
+                int sr = 1;
+                foreach (var item in data.Where(x => x.RefId != "FOOTER"))
                 {
-                    BaseColor rowBg = (srNo % 2 == 0) ? evenRowColor : oddRowColor;
-
-                    table.AddCell(CreateStyledCell(srNo.ToString(), dataFont, Element.ALIGN_CENTER, rowBg));
-                    table.AddCell(CreateStyledCell(item.UpdatedAt.ToString("dd/MM/yyyy HH:mm:ss"), dataFont, Element.ALIGN_LEFT, rowBg));
-                    table.AddCell(CreateStyledCell(item.LastOutAt?.ToString("dd/MM/yyyy HH:mm:ss") ?? "--", dataFont, Element.ALIGN_LEFT, rowBg));
-                    table.AddCell(CreateStyledCell(item.RefId, dataFont, Element.ALIGN_LEFT, rowBg));
-
-                    BaseColor sideColor = item.Side.ToUpper() == "BUY" ? new BaseColor(34, 139, 34) : new BaseColor(220, 20, 60);
-                    Font sideFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 7, sideColor);
-                    table.AddCell(CreateStyledCell(item.Side, sideFont, Element.ALIGN_CENTER, rowBg));
-
-                    table.AddCell(CreateStyledCell(item.TotalVolume.ToString("N2"), dataFont, Element.ALIGN_RIGHT, rowBg));
-                    table.AddCell(CreateStyledCell(item.SymbolName, dataBoldFont, Element.ALIGN_LEFT, rowBg));
-                    table.AddCell(CreateStyledCell(item.AveragePrice.ToString("N2"), dataFont, Element.ALIGN_RIGHT, rowBg));
-                    table.AddCell(CreateStyledCell(item.CurrentPrice.ToString("N2"), dataFont, Element.ALIGN_RIGHT, rowBg));
-
-                    BaseColor profitColor = item.Pnl >= 0 ? new BaseColor(34, 139, 34) : new BaseColor(220, 20, 60);
-                    Font profitFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 7, profitColor);
-                    table.AddCell(CreateStyledCell(item.Pnl.ToString("N2"), profitFont, Element.ALIGN_RIGHT, rowBg));
-
-                    srNo++;
+                    string displayTime = CommonHelper.ConvertUtcToIst(item.UpdatedAt).ToString("dd/MM/yy HH:mm");
+                    string lastOutTime = item.LastOutAt.HasValue
+                                        ? CommonHelper.ConvertUtcToIst(item.LastOutAt.Value).ToString("dd/MM/yy HH:mm")
+                                        : "--";
+                    dt.Rows.Add(
+                        "",
+                        sr++.ToString(),
+                        displayTime,
+                        lastOutTime,
+                        item.RefId ?? "",
+                        item.Side ?? "",
+                        item.VolumeDisplay.ToString(),
+                        item.SymbolName ?? "",
+                        FormatPrice((decimal)item.AveragePrice),
+                        "",
+                        item.Pnl.ToString("N2"),
+                        item.Comment ?? ""
+                    );
                 }
 
-                document.Add(table);
+                // ── Footer row inside table ───────────────────────────────────
+                dt.Rows.Add(
+                    "GrandTotal",
+                    "Profit:", totalProfit.ToString("N2"),
+                    "Credit:", credit.ToString("N2"),
+                    "Balance:", balance.ToString("N3") + " INR",
+                    "", "", "",
+                    totalProfit.ToString("N2"),
+                    ""
+                );
 
-                // Summary
-                if (footerRow != null)
+                var alignments = new Dictionary<string, iText.Layout.Properties.TextAlignment>
                 {
-                    decimal totalProfit = (decimal)footerRow.Pnl;
-                    decimal totalFee = (decimal)footerRow.Pnl; 
-
-                    decimal credit = 0;
-                    decimal balance = 0;
-
-                    if (footerRow.Comment != null && footerRow.Comment.Contains("Credit:"))
-                    {
-                        var parts = footerRow.Comment.Split(new[] { "Credit:", "Balance:" }, StringSplitOptions.None);
-                        if (parts.Length >= 2)
-                            decimal.TryParse(parts[1].Trim().Split(' ')[0].Replace(",", ""), out credit);
-                        if (parts.Length >= 3)
-                            decimal.TryParse(parts[2].Replace("INR", "").Trim().Replace(",", ""), out balance);
-                    }
-
-                    PdfPTable summaryTable = new PdfPTable(4)
-                    {
-                        WidthPercentage = 60,
-                        HorizontalAlignment = Element.ALIGN_RIGHT,
-                        SpacingBefore = 10
-                    };
-
-                    float[] summaryWidths = { 1f, 1f, 1f, 1f };
-                    summaryTable.SetWidths(summaryWidths);
-
-                    Font summaryLabelFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 9, BaseColor.BLACK);
-                    Font summaryValueFont = FontFactory.GetFont(FontFactory.HELVETICA, 9, BaseColor.BLACK);
-
-                    summaryTable.AddCell(CreateSummaryCell("Total Fee:", summaryLabelFont, Element.ALIGN_RIGHT));
-                    summaryTable.AddCell(CreateSummaryCell(totalFee.ToString("N2"), summaryValueFont, Element.ALIGN_RIGHT));
-
-                    BaseColor totalProfitColor = totalProfit >= 0 ? new BaseColor(34, 139, 34) : new BaseColor(220, 20, 60);
-                    Font totalProfitFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 9, totalProfitColor);
-                    summaryTable.AddCell(CreateSummaryCell("Total Profit:", summaryLabelFont, Element.ALIGN_RIGHT));
-                    summaryTable.AddCell(CreateSummaryCell(totalProfit.ToString("N2"), totalProfitFont, Element.ALIGN_RIGHT));
-
-                    summaryTable.AddCell(CreateSummaryCell("Credit:", summaryLabelFont, Element.ALIGN_RIGHT));
-                    summaryTable.AddCell(CreateSummaryCell(credit.ToString("N2"), summaryValueFont, Element.ALIGN_RIGHT));
-
-                    summaryTable.AddCell(CreateSummaryCell("Balance:", summaryLabelFont, Element.ALIGN_RIGHT));
-                    summaryTable.AddCell(CreateSummaryCell(balance.ToString("N3") + " INR", summaryValueFont, Element.ALIGN_RIGHT));
-
-                    document.Add(summaryTable);
-                }
-
-                // Footer
-                document.Add(new Paragraph(" ") { SpacingBefore = 20 });
-                LineSeparator footerLine = new LineSeparator(0.5f, 100f, BaseColor.LIGHT_GRAY, Element.ALIGN_CENTER, -2);
-                document.Add(new Chunk(footerLine));
-
-                Font footerFont = FontFactory.GetFont(FontFactory.HELVETICA, 7, BaseColor.GRAY);
-                Paragraph footer = new Paragraph($"Report generated| Page 1 of 1 | {DateTime.Now:dd MMM yyyy HH:mm:ss}", footerFont)
-                {
-                    Alignment = Element.ALIGN_CENTER,
-                    SpacingBefore = 5
+                    { "Profit", iText.Layout.Properties.TextAlignment.RIGHT }
                 };
-                document.Add(footer);
 
-                document.Close();
+                _pdfBuilder
+                    .Clear()
+                    .AddSubTitle("Position", fontSize: 16, centerAlign: false)
+                    .AddSpacing(6)
+                    .AddGrid(dt, null, null, alignments)
+                    ;
 
-                MessageBox.Show("PDF exported successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                // Compact settings for wide 11-column table
+                _pdfBuilder.CellFontSize = 7.5f;
+                _pdfBuilder.HeaderFontSize = 8f;
+                _pdfBuilder.HeaderPadding = 4f;
+                _pdfBuilder.CellPadding = 3f;
+                _pdfBuilder.ShowVerticalBorders = true;
+                _pdfBuilder.ColumnWidths = new Dictionary<string, float>
+                {
+                    { "Sr",            0.4f },
+                    { "Time",          1.6f },
+                    { "Last Out Time", 1.6f }
+                };
+
+                _pdfBuilder.BuildPDF("Position_History", landscape: true, autoFormat: true);
             }
             catch (Exception ex)
             {
+                FileLogger.ApplicationLog(nameof(ExportPositionToPdf), ex);
                 MessageBox.Show($"PDF export error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        #endregion Export Data to excel and PDF
+        #endregion Export Data to PDF
 
     }
 }

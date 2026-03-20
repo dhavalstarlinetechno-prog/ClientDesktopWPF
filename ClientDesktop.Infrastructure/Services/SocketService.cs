@@ -455,7 +455,7 @@ namespace ClientDesktop.Services
                 SpreadBalance = play["spreadBalance"] != null ? (double)play["spreadBalance"] : 0,
 
                 OperatorId = play["operatorId"]?.ToString(),
-                UserName = play["username"]?.ToString(), // ⚠️ JSON is "username"
+                UserName = play["username"]?.ToString(), 
                 UserId = play["userId"]?.ToString()
             };
 
