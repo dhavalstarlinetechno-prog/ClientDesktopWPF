@@ -77,24 +77,61 @@
                        SelectionUnit="FullRow"
                        CanUserAddRows="False"
                        CanUserDeleteRows="False"                      
-                       VerticalScrollBarVisibility="Auto"
-                       IsHitTestVisible="False">
+                       VerticalScrollBarVisibility="Auto">
 
                     <DataGrid.Columns>
                         <DataGridTextColumn
                             Header="Symbol" FontFamily="Microsoft Sans Serif"
                             Binding="{Binding Symbol}"
-                            Width="*"/>
+                            Width="*">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                    <!--<Setter Property="VerticalAlignment" Value="Center"/>-->
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
                     </DataGrid.Columns>
 
-                    <!--<DataGrid.ColumnHeaderStyle>
+                    <!--<DataGrid.RowStyle>
+                        <Style TargetType="DataGridRow">
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="BorderBrush" Value="Transparent"/>
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.RowStyle>-->
+
+                    <!-- ✅ FIX: Cell selection color hatane ke liye -->
+                    <DataGrid.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="BorderThickness" Value="0"/>
+                            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="BorderBrush" Value="Transparent"/>
+                                    <Setter Property="Foreground" Value="Black"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.CellStyle>
+
+                    <DataGrid.ColumnHeaderStyle>
                         <Style TargetType="DataGridColumnHeader">
                             <Setter Property="Background" Value="CornflowerBlue"/>
                             <Setter Property="Foreground" Value="White"/>
                             <Setter Property="FontWeight" Value="Regular"/>
                             <Setter Property="FontSize" Value="13"/>
+                            <Setter Property="VerticalAlignment" Value="Center"/>
                         </Style>
-                    </DataGrid.ColumnHeaderStyle>-->
+                    </DataGrid.ColumnHeaderStyle>
                 </DataGrid>
 
                 <!-- No Data -->
