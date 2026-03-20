@@ -74,14 +74,20 @@ namespace ClientDesktop.Main
 
             // Api Service, Tradeservice , Socketservice
             services.AddSingleton<IApiService, ApiService>();
-            services.AddSingleton<ISocketService, SocketService>();
-            services.AddSingleton<ITradeService, TradeService>();
 
-            // SignalR Service
-            services.AddSingleton<LiveTickService>();
+            // PDF Service
+            services.AddTransient<IPdfService, PdfService>();
 
             // Dialog Service (Interface mapping)
             services.AddSingleton<IDialogService, DialogService>();
+
+            // Socket Service
+            services.AddSingleton<ISocketService, SocketService>();
+            services.AddSingleton<ITradeService, TradeService>();
+
+            
+            // SignalR Service
+            services.AddSingleton<LiveTickService>();
 
             // ViewModels
             services.AddSingleton<MainWindowViewModel>();

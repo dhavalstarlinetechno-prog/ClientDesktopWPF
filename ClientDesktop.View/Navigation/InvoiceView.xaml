@@ -145,6 +145,23 @@
 
                         <Button x:Name="Btngetdata" Content="Go" Grid.Row="0" Grid.Column="2" Width="82" Height="30" Margin="10,0,0,0" Click="Btngetdata_Click" Style="{StaticResource FixedBlueButtonStyle}"/>
 
+                        <Button Grid.Row="0" Grid.RowSpan="2" Grid.Column="4" ToolTip="Export to PDF" Width="40" Height="40" 
+                                Background="Transparent" BorderThickness="0" 
+                                Cursor="Hand" 
+                                Click="PdfExport_Click"
+                                VerticalAlignment="Bottom" Margin="0,0,10,5">
+                            <Viewbox Width="30" Height="30">
+                                <Grid>
+                                    <Path Fill="#B30B00" Data="M4,4 H20 A2,2 0 0 1 22,6 V26 A2,2 0 0 1 20,28 H4 A2,2 0 0 1 2,26 V6 A2,2 0 0 1 4,4 Z" />
+                                    <Path Fill="#7A0800" Opacity="0.4" Data="M22,15 V26 A2,2 0 0 1 20,28 H12 L22,15 Z" />
+                                    <Path Stroke="White" StrokeThickness="1" Opacity="0.3" Data="M6,10 H16 M6,14 H18 M6,18 H18 M6,22 H12" />
+                                    <Border Background="#E52521" CornerRadius="2" Margin="8,10,0,4" VerticalAlignment="Bottom" HorizontalAlignment="Right" Padding="2,0">
+                                        <TextBlock Text="PDF" Foreground="White" FontSize="7" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Center" FontFamily="Segoe UI" />
+                                    </Border>
+                                </Grid>
+                            </Viewbox>
+                        </Button>
+
                         <Label x:Name="Lblfrom" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="5" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" FontSize="14" Content="" Margin="0,5,0,5"/>
                         <Label x:Name="Lblfromdate" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="5" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" FontSize="14" Content="" Visibility="Collapsed" Margin="0,5,0,5"/>
                     </Grid>

@@ -261,5 +261,15 @@ namespace ClientDesktop.View.Navigation
         }
 
         #endregion Events
+
+        private void ExcelExport_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void PdfExport_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }
