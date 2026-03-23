@@ -78,6 +78,9 @@ namespace ClientDesktop.Main
             // PDF Service
             services.AddTransient<IPdfService, PdfService>();
 
+            // Excel Service — Transient: same reason as PDF
+            services.AddTransient<IExcelService, ExcelService>();
+
             // Dialog Service (Interface mapping)
             services.AddSingleton<IDialogService, DialogService>();
 

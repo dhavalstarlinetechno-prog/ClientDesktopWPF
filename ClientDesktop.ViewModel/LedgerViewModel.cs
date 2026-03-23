@@ -19,7 +19,8 @@ namespace ClientDesktop.ViewModel
 
         private readonly SessionService _sessionService;
         private readonly LedgerService _ledgerService;
-        private readonly IPdfService _pdfService;        // ← NEW: injected
+        private readonly IPdfService _pdfService;
+        private readonly IExcelService _excelService;
 
         private LedgerUserDetail _ledgerUser;
         private bool _isBusy;
@@ -34,11 +35,13 @@ namespace ClientDesktop.ViewModel
         public LedgerViewModel(
             SessionService sessionService,
             LedgerService ledgerService,
-            IPdfService pdfService)           // ← NEW parameter
+            IPdfService pdfService,
+            IExcelService excelService)           
         {
             _sessionService = sessionService;
             _ledgerService = ledgerService;
             _pdfService = pdfService;
+            _excelService = excelService;
 
             GridRows = new ObservableCollection<LedgerRowModel>();
         }
@@ -170,8 +173,7 @@ namespace ClientDesktop.ViewModel
 
         #endregion
 
-        #region PDF Export  ← MAIN NEW SECTION
-       
+        #region PDF Export  ← MAIN NEW SECTION       
         public void ExportToPdf(DateTime fromDate, DateTime toDate)
         {          
             if (GridRows == null || GridRows.Count == 0)
@@ -237,6 +239,89 @@ namespace ClientDesktop.ViewModel
                     {
                         srVal = "Closing Balance";
                         dateVal = string.Empty;
+                    }
+                }
+
+                dt.Rows.Add(srVal, dateVal, row.Type, row.Amount, row.Remarks);
+            }
+
+            return dt;
+        }
+
+        #endregion
+
+        #region Excel Export  ← NEW
+     
+        public void ExportToExcel(DateTime fromDate, DateTime toDate)
+        {
+            if (GridRows == null || GridRows.Count == 0)
+            {
+                MessageBox.Show("No data available to export.",
+                    "Excel Export", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            try
+            {
+                // Same DataTable as PDF — no duplication
+                DataTable dt = BuildExportDataTable();
+
+                // Title — exactly same format as WinForms Picexcel_Click
+                string title =
+                    $"Ledger History Report for User Id:{_sessionService.UserId}(Client)" +
+                    $"  From: {fromDate:dd-MM-yyyy} To: {toDate:dd-MM-yyyy}";
+
+                var columnAlignments = new Dictionary<string, ExcelColumnAlignment>
+                {
+                    ["Amount"] = ExcelColumnAlignment.Right
+                };
+
+                _excelService
+                    .Clear()
+                    .AddSheet(dt, title, sheetName: "Ledger", columnAlignments: columnAlignments)
+                    .SaveExcel("LedgerHistory");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Excel export failed:\n{ex.Message}",
+                    "Excel Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        #endregion
+
+        #region Shared DataTable Builder
+
+        /// <summary>
+        /// Converts GridRows → DataTable.
+        /// Used by BOTH ExportToPdf and ExportToExcel — single source of truth.
+        /// Opening/Closing Amount → Opening/Closing Balance (same as WinForms Picpdf_Click).
+        /// </summary>
+        private DataTable BuildExportDataTable()
+        {
+            var dt = new DataTable("LedgerHistory");
+            dt.Columns.Add("Sr", typeof(string));
+            dt.Columns.Add("Date", typeof(string));
+            dt.Columns.Add("Type", typeof(string));
+            dt.Columns.Add("Amount", typeof(string));
+            dt.Columns.Add("Remarks", typeof(string));
+
+            foreach (var row in GridRows)
+            {
+                string srVal = row.Sr;
+                string dateVal = row.Date;
+
+                if (row.IsSummaryRow)
+                {
+                    if (dateVal.Contains("Opening Amount"))
+                    {
+                        dateVal = "Opening Balance";
+                        srVal = string.Empty;
+                    }
+                    else if (dateVal.Contains("Closing Amount"))
+                    {
+                        dateVal = "Closing Balance";
+                        srVal = string.Empty;
                     }
                 }
 

@@ -165,7 +165,7 @@ namespace ClientDesktop.View.Navigation
             DgvLedgerRecord.Columns.Add(new DataGridTextColumn
             {
                 Header = "Type",
-                Width = 232,
+                Width = 215,
                 Binding = new Binding("Type")
             });
 
@@ -225,12 +225,13 @@ namespace ClientDesktop.View.Navigation
         #endregion
 
         #region Export — Excel
-
-        private void ExcelExport_Click(object sender, RoutedEventArgs e)
+        private void ExcelExportBtn_Click(object sender, RoutedEventArgs e)
         {
-            // Excel export can follow the same pattern — add ExportToExcel() to ViewModel later.
+            _viewModel.ExportToExcel(_currentFromDate, _currentToDate);
+            FileLogger.Log("Export", "Excel Generate Successfully.");
         }
 
         #endregion
+
     }
 }
