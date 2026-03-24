@@ -42,7 +42,16 @@ namespace ClientDesktop.View.Navigation
                 DgvLedgerRecord.ItemsSource = _viewModel.GridRows;
 
                 this.DataContext = _viewModel;
-            }            
+            }
+            if (MainWindowViewModel.isViewLocked == true)
+            {
+                Lbldetails.Text = CommonMessages.InvoiceLedgerWrongPassword;
+                Lbldetails.FontFamily = new System.Windows.Media.FontFamily("Segoe UI");
+                Lbldetails.Foreground = System.Windows.Media.Brushes.Red;
+                Lbldetails.Margin = new System.Windows.Thickness(0, 10, 250, 0);
+                TxtPassword.Visibility = System.Windows.Visibility.Collapsed;
+                Btngo.Visibility = System.Windows.Visibility.Collapsed;
+            }
         }
 
         #endregion

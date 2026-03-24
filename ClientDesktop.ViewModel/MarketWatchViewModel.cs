@@ -906,6 +906,8 @@ namespace ClientDesktop.ViewModel
                         await Task.Delay(100);
                                               
                         UpdateSymbolCount();
+
+                        FileLogger.Log("MarketWatch", "Symbol Show Successfully!!");
                     });
                 }
                 else // Symbol hide 

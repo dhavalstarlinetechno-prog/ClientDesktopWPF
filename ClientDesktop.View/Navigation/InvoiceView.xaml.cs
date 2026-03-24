@@ -65,7 +65,17 @@ namespace ClientDesktop.View.Navigation
                 _sessionService = AppServiceLocator.GetService<SessionService>();
                 _viewModel = AppServiceLocator.GetService<InvoiceViewModel>();
                 this.DataContext = _viewModel;
-            }            
+            }
+
+            if (MainWindowViewModel.isViewLocked == true)
+            {
+                Lbltext.Text = CommonMessages.InvoiceLedgerWrongPassword;
+                Lbltext.FontFamily = new System.Windows.Media.FontFamily("Segoe UI");
+                Lbltext.Foreground = System.Windows.Media.Brushes.Red;
+                Lbltext.Margin = new System.Windows.Thickness(0, 10, 250, 0);
+                TxtPassword.Visibility = System.Windows.Visibility.Collapsed;
+                Btngo.Visibility = System.Windows.Visibility.Collapsed;
+            }
         }
         
         private async void Btngo_Click(object sender, RoutedEventArgs e)

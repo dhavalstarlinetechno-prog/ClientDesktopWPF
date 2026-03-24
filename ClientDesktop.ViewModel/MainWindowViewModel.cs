@@ -28,6 +28,7 @@ namespace ClientDesktop.ViewModel
         private string _userId;
         private bool _isLoggedIn;
         private bool _isPasswordReadOnly;
+        public static bool isViewLocked = false;
 
         #endregion
 
@@ -191,6 +192,7 @@ namespace ClientDesktop.ViewModel
                         var specificData = await _clientService.GetSpecificClientListAsync();
                         var result = await _clientService.GetClientListAsync(specificData.Clients);
                         _sessionService.IsClientDataLoaded = true;
+                        isViewLocked = result.IsViewLocked;
                         _sessionService.SetClientList(result.Clients);
                     }
                     catch (Exception ex)
