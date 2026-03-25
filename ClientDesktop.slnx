@@ -1,6 +1,18 @@
 <Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="ARM64" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="ClientDesktop.AppSetup/ClientDesktop.AppSetup.wixproj" Type="b7dd6f7e-def8-4e67-b5b7-07ef123db6f0" Id="e0efb2a7-4f29-40b8-8a92-59bc9ec9445e">
+    <Platform Solution="*|Any CPU" Project="x86" />
+  </Project>
   <Project Path="ClientDesktop.Core/ClientDesktop.Core.csproj" />
   <Project Path="ClientDesktop.Infrastructure/ClientDesktop.Infrastructure.csproj" />
+  <Project Path="ClientDesktop.Installer/ClientDesktop.Installer.wixproj" Type="b7dd6f7e-def8-4e67-b5b7-07ef123db6f0" Id="26b0da94-fd79-494b-89e9-2ecb32018a5c">
+    <Platform Solution="*|Any CPU" Project="x86" />
+  </Project>
   <Project Path="ClientDesktop.Main/ClientDesktop.Main.csproj" />
   <Project Path="ClientDesktop.UserControl/ClientDesktop.UserControl.csproj" />
   <Project Path="ClientDesktop.View/ClientDesktop.View.csproj" />

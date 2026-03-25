@@ -1,0 +1,13 @@
+﻿<Project Sdk="WixToolset.Sdk/6.0.2">
+	<PropertyGroup>
+		<RuntimeIdentifier>win-x86</RuntimeIdentifier>
+		<Platform>x86</Platform>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="WixToolset.UI.wixext" Version="6.0.2" />
+		<PackageReference Include="WixToolset.Util.wixext" Version="6.0.2" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\ClientDesktop.Main\ClientDesktop.Main.csproj" />
+	</ItemGroup>
+</Project>

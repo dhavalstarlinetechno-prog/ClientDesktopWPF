@@ -1,0 +1,18 @@
+﻿<Project Sdk="WixToolset.Sdk/6.0.2">
+	<PropertyGroup>
+		<OutputType>Bundle</OutputType>
+		<RuntimeIdentifier>win-x86</RuntimeIdentifier>
+		<Platform>x86</Platform>
+	</PropertyGroup>
+	<ItemGroup>
+		<None Include="dotnet8-x86.exe" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="WixToolset.Bal.wixext" Version="6.0.2" />
+		<PackageReference Include="WixToolset.Util.wixext" Version="6.0.2" />
+		<PackageReference Include="WixToolset.Netfx.wixext" Version="6.0.2" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\ClientDesktop.Installer\ClientDesktop.Installer.wixproj" />
+	</ItemGroup>
+</Project>

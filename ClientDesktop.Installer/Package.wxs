@@ -1,0 +1,87 @@
+﻿<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+
+	<Package Name="Client Desktop" Manufacturer="ClientDesktop" Version="1.0.0.0"
+			 UpgradeCode="0488746D-B39A-45EC-B04C-0CE2F2F53383">
+		
+		<WixVariable Id="WixUILicenseRtf" Value="$(var.ClientDesktop.Main.ProjectDir)Assets\License.rtf" />
+		<Icon Id="AppIcon" SourceFile="$(var.ClientDesktop.Main.ProjectDir)Assets\app_icon.ico" />
+		<Property Id="ARPPRODUCTICON" Value="AppIcon" />
+
+		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+		<MediaTemplate EmbedCab="yes" />
+
+		<ui:WixUI Id="WixUI_InstallDir" />
+		<Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+
+		<Property Id="DESKTOP_SHORTCUT" Value="1" />
+		<Property Id="LAUNCH_APP" Value="1" />
+
+		<Property Id="WixShellExecTarget" Value="[#MainAppExe]" />
+		<CustomAction Id="LaunchApplication" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)"
+					  DllEntry="WixShellExec" Impersonate="yes" />
+
+		<UI>
+			<Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="CustomOptionsDlg" Order="10" />
+			<Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="CustomOptionsDlg" Order="10" />
+			<Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchApplication" Condition="LAUNCH_APP = 1 and NOT Installed" />
+
+			<Dialog Id="CustomOptionsDlg" Width="370" Height="270" Title="[ProductName] Setup">
+				<Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="WixUI_Bmp_Banner" />
+				<Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />
+				<Control Id="Title" Type="Text" X="15" Y="6" Width="200" Height="15" Transparent="yes" NoPrefix="yes" Text="{\WixUI_Font_Title}Installation Options" />
+				<Control Id="Description" Type="Text" X="25" Y="23" Width="280" Height="15" Transparent="yes" NoPrefix="yes" Text="Choose additional installation options." />
+
+				<Control Id="DesktopShortcutCheckBox" Type="CheckBox" X="20" Y="90" Width="310" Height="17" Property="DESKTOP_SHORTCUT" CheckBoxValue="1" Text="&amp;Create a desktop shortcut" />
+				<Control Id="LaunchAppCheckBox" Type="CheckBox" X="20" Y="115" Width="310" Height="17" Property="LAUNCH_APP" CheckBoxValue="1" Text="&amp;Launch Client Desktop after installation" />
+
+				<Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
+
+				<Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="!(loc.WixUIBack)">
+					<Publish Event="NewDialog" Value="InstallDirDlg" />
+				</Control>
+				<Control Id="Install" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="Install">
+					<Publish Event="SpawnDialog" Value="OutOfDiskDlg" Order="1" Condition="OutOfDiskSpace = 1" />
+					<Publish Event="EndDialog" Value="Return" Order="2" Condition="OutOfDiskSpace &lt;&gt; 1" />
+				</Control>
+				<Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="!(loc.WixUICancel)">
+					<Publish Event="SpawnDialog" Value="CancelDlg" />
+				</Control>
+			</Dialog>
+		</UI>
+
+		<Feature Id="Main">
+			<ComponentGroupRef Id="AppComponents" />
+		</Feature>
+	</Package>
+	
+	<Fragment>
+		<StandardDirectory Id="ProgramFilesFolder">
+			<Directory Id="INSTALLFOLDER" Name="ClientDesktop" />
+		</StandardDirectory>
+		<StandardDirectory Id="ProgramMenuFolder">
+			<Directory Id="ApplicationProgramsFolder" Name="ClientDesktop" />
+		</StandardDirectory>
+		<StandardDirectory Id="DesktopFolder" />
+	</Fragment>
+
+	<Fragment>
+		<ComponentGroup Id="AppComponents" Directory="INSTALLFOLDER">
+			<Component Id="MainExeComp">
+				<File Id="MainAppExe" Source="$(var.ClientDesktop.Main.TargetDir)ClientDesktop.Main.exe">
+					<Shortcut Name="Client Desktop" Directory="ApplicationProgramsFolder" Advertise="yes" />
+				</File>
+				<RemoveFolder Id="RemoveStartMenu" Directory="ApplicationProgramsFolder" On="uninstall" />
+			</Component>
+
+			<Component Id="DesktopShortcutComp" Directory="DesktopFolder" Condition="DESKTOP_SHORTCUT">
+				<RegistryValue Root="HKCU" Key="Software\ClientDesktop" Name="DesktopShortcut" Type="integer" Value="1" KeyPath="yes" />
+				<Shortcut Id="DesktopShortcutLink" Name="Client Desktop" Target="[INSTALLFOLDER]ClientDesktop.Main.exe" WorkingDirectory="INSTALLFOLDER" Icon="AppIcon" />
+			</Component>
+
+			<Files Include="$(var.ClientDesktop.Main.TargetDir)**\*.dll" />
+			<Files Include="$(var.ClientDesktop.Main.TargetDir)**\*.json" />
+			<Files Include="$(var.ClientDesktop.Main.TargetDir)**\*.config" />
+		</ComponentGroup>
+	</Fragment>
+</Wix>

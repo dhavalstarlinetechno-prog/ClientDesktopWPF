@@ -1,30 +1,43 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <UseWPF>true</UseWPF>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
-  </PropertyGroup>
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net8.0-windows</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<UseWPF>true</UseWPF>
+		<ApplicationManifest>app.manifest</ApplicationManifest>
+		<RuntimeIdentifier>win-x86</RuntimeIdentifier>
+		<PlatformTarget>x86</PlatformTarget>
+		<ApplicationIcon>Assets\app_icon.ico</ApplicationIcon>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <Folder Include="Assests\Images\" />
-    <Folder Include="Assests\Icons\" />
-  </ItemGroup>
+	<ItemGroup>
+	  <Compile Remove="Assets\Icons\**" />
+	  <EmbeddedResource Remove="Assets\Icons\**" />
+	  <None Remove="Assets\Icons\**" />
+	  <Page Remove="Assets\Icons\**" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Dirkster.AvalonDock" Version="4.72.1" />
-    <PackageReference Include="Dirkster.AvalonDock.Themes.VS2013" Version="4.72.1" />
-  </ItemGroup>
+	<ItemGroup>
+	  <None Remove="Assets\app_icon.ico" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\ClientDesktop.Core\ClientDesktop.Core.csproj" />
-    <ProjectReference Include="..\ClientDesktop.Infrastructure\ClientDesktop.Infrastructure.csproj" />
-    <ProjectReference Include="..\ClientDesktop.UserControl\ClientDesktop.UserControl.csproj" />
-    <ProjectReference Include="..\ClientDesktop.ViewModel\ClientDesktop.ViewModel.csproj" />
-    <ProjectReference Include="..\ClientDesktop.View\ClientDesktop.View.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+	  <Resource Include="Assets\app_icon.ico" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Dirkster.AvalonDock" Version="4.72.1" />
+		<PackageReference Include="Dirkster.AvalonDock.Themes.VS2013" Version="4.72.1" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\ClientDesktop.Core\ClientDesktop.Core.csproj" />
+		<ProjectReference Include="..\ClientDesktop.Infrastructure\ClientDesktop.Infrastructure.csproj" />
+		<ProjectReference Include="..\ClientDesktop.UserControl\ClientDesktop.UserControl.csproj" />
+		<ProjectReference Include="..\ClientDesktop.ViewModel\ClientDesktop.ViewModel.csproj" />
+		<ProjectReference Include="..\ClientDesktop.View\ClientDesktop.View.csproj" />
+	</ItemGroup>
 
 </Project>
