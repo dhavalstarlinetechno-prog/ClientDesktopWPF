@@ -128,3 +128,4 @@ obj/
 /ClientDesktop.UserControl/obj/Debug/net8.0-windows/ClientDesktop.UserControl.GlobalUsings.g.cs
 /ClientDesktop.View/obj/Debug/net8.0-windows/ClientDesktop.View.GlobalUsings.g.cs
 /ClientDesktop.UserControl/obj/Debug/net8.0-windows/ClientDesktop.UserControl.GlobalUsings.g.cs
+/ClientDesktop.Main/obj/Debug/net8.0-windows/.NETCoreApp,Version=v8.0.AssemblyAttributes.cs
