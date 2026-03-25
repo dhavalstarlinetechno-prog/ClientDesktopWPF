@@ -326,7 +326,14 @@ namespace ClientDesktop.Infrastructure.Helpers
             foreach (var col in displayColumns)
             {
                 TextAlignment align = ResolveAlignment(col, columnAlignments, autoFormat);
-                table.AddHeaderCell(
+
+                // PREVIOUS CODE:
+                // table.AddHeaderCell( 
+                // EXPLANATION: 'AddHeaderCell' was used here because it marks the cell as a table header in iText7. 
+                // This built-in feature forces the library to automatically repeat this entire row at the top of every new page.
+
+                // NEW CODE:
+                table.AddCell( // Using 'AddCell' treats this as a normal first row, so it only prints once at the very beginning and doesn't repeat on new pages.
                     new Cell()
                         .Add(new Paragraph(col.ColumnName)
                             .SetFont(headerFont)
