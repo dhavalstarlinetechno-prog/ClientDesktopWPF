@@ -25,7 +25,8 @@ namespace ClientDesktop.Core.Interfaces
             DataTable dataTable,
             string? gridTitle = null,
             Dictionary<string, string>? footerData = null,
-            Dictionary<string, PdfColumnAlignment>? columnAlignments = null);
+            Dictionary<string, PdfColumnAlignment>? columnAlignments = null,
+            bool repeatHeader = true);
 
         /// <summary>
         /// Add an info/header section — key-value pairs in a grid layout.

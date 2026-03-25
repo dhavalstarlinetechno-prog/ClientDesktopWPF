@@ -55,7 +55,8 @@ namespace ClientDesktop.Infrastructure.Services
             DataTable dataTable,
             string? gridTitle = null,
             Dictionary<string, string>? footerData = null,
-            Dictionary<string, PdfColumnAlignment>? columnAlignments = null)
+            Dictionary<string, PdfColumnAlignment>? columnAlignments = null,
+            bool repeatHeader = true)
         {
             // PdfService ka kaam: Core enum → iText7 enum conversion yahan hoga
             // ViewModel ko iText7 ka koi pata nahi — woh sirf PdfColumnAlignment.Right likhega

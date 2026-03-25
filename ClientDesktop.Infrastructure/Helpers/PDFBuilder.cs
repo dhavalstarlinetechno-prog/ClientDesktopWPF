@@ -98,7 +98,8 @@ namespace ClientDesktop.Infrastructure.Helpers
             DataTable dataTable,
             string? gridTitle = null,
             Dictionary<string, string>? footerData = null,
-            Dictionary<string, TextAlignment>? columnAlignments = null)   // ← TextAlignment, NOT PdfColumnAlignment
+            Dictionary<string, TextAlignment>? columnAlignments = null,
+            bool repeatHeader = true)   // ← TextAlignment, NOT PdfColumnAlignment
         {
             _components.Add(new PdfComponent
             {
@@ -106,7 +107,8 @@ namespace ClientDesktop.Infrastructure.Helpers
                 Text = gridTitle,
                 DataTable = dataTable,
                 FooterData = footerData,
-                ColumnAlignments = columnAlignments
+                ColumnAlignments = columnAlignments,
+                RepeatHeader = repeatHeader
             });
             return this;
         }
@@ -268,7 +270,7 @@ namespace ClientDesktop.Infrastructure.Helpers
 
             if (comp.DataTable is { Columns.Count: > 0 })
             {
-                Table table = BuildPdfTable(comp.DataTable, autoFormat, comp.ColumnAlignments);
+                Table table = BuildPdfTable(comp.DataTable, autoFormat, comp.ColumnAlignments, comp.RepeatHeader);
                 doc.Add(table);
             }
 
@@ -297,7 +299,8 @@ namespace ClientDesktop.Infrastructure.Helpers
         private Table BuildPdfTable(
             DataTable dt,
             bool autoFormat,
-            Dictionary<string, TextAlignment>? columnAlignments)
+            Dictionary<string, TextAlignment>? columnAlignments,
+            bool repeatHeader)
         {
             // [FIX 3] Filter metadata columns — only display columns go to PDF
             var displayColumns = dt.Columns
@@ -327,25 +330,27 @@ namespace ClientDesktop.Infrastructure.Helpers
             {
                 TextAlignment align = ResolveAlignment(col, columnAlignments, autoFormat);
 
-                // PREVIOUS CODE:
-                // table.AddHeaderCell( 
-                // EXPLANATION: 'AddHeaderCell' was used here because it marks the cell as a table header in iText7. 
-                // This built-in feature forces the library to automatically repeat this entire row at the top of every new page.
+                Cell headerCell = new Cell()
+                    .Add(new Paragraph(col.ColumnName)
+                        .SetFont(headerFont)
+                        .SetFontSize(HeaderFontSize))
+                    .SetBackgroundColor(HeaderBgColor)
+                    .SetFontColor(HeaderForeColor)
+                    .SetPadding(HeaderPadding)
+                    .SetTextAlignment(align)
+                    .SetBorder(Border.NO_BORDER)
+                    .SetBorderBottom(ShowVerticalBorders ? new SolidBorder(ColorConstants.BLACK, 0.5f) : Border.NO_BORDER)
+                    .SetBorderRight(ShowVerticalBorders ? new SolidBorder(ColorConstants.BLACK, 0.5f) : Border.NO_BORDER)
+                    .SetBorderLeft(ShowVerticalBorders ? new SolidBorder(ColorConstants.BLACK, 0.5f) : Border.NO_BORDER);
 
-                // NEW CODE:
-                table.AddCell( // Using 'AddCell' treats this as a normal first row, so it only prints once at the very beginning and doesn't repeat on new pages.
-                    new Cell()
-                        .Add(new Paragraph(col.ColumnName)
-                            .SetFont(headerFont)
-                            .SetFontSize(HeaderFontSize))
-                        .SetBackgroundColor(HeaderBgColor)
-                        .SetFontColor(HeaderForeColor)
-                        .SetPadding(HeaderPadding)
-                        .SetTextAlignment(align)
-                        .SetBorder(Border.NO_BORDER)
-                        .SetBorderBottom(ShowVerticalBorders ? new SolidBorder(ColorConstants.BLACK, 0.5f) : Border.NO_BORDER)
-                        .SetBorderRight(ShowVerticalBorders ? new SolidBorder(ColorConstants.BLACK, 0.5f) : Border.NO_BORDER)
-                        .SetBorderLeft(ShowVerticalBorders ? new SolidBorder(ColorConstants.BLACK, 0.5f) : Border.NO_BORDER));
+                if (repeatHeader)
+                {
+                    table.AddHeaderCell(headerCell);
+                }
+                else
+                {
+                    table.AddCell(headerCell);
+                }
             }
 
             // ── Data rows with RowType-based styling ────────────────────────
@@ -512,5 +517,6 @@ namespace ClientDesktop.Infrastructure.Helpers
         public Dictionary<string, string>? FooterData { get; set; }
         public Dictionary<string, TextAlignment>? ColumnAlignments { get; set; }
         public int Columns { get; set; } = 2;
+        public bool RepeatHeader { get; set; } = false;
     }
 }
