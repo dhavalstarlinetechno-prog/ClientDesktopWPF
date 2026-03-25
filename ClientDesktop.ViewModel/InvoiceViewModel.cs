@@ -163,7 +163,7 @@ namespace ClientDesktop.ViewModel
                         dataTable: table,
                         gridTitle: securityName,
                         footerData: null,
-                        columnAlignments: securityAlignments)
+                        columnAlignments: securityAlignments,false)
                     .AddSpacing();
             }
            
@@ -182,7 +182,7 @@ namespace ClientDesktop.ViewModel
                         dataTable: _summaryPdfTable,
                         gridTitle: null,
                         footerData: null,
-                        columnAlignments: summaryAlignments)
+                        columnAlignments: summaryAlignments,false)
                     .AddSpacing();
             }
            
@@ -201,7 +201,7 @@ namespace ClientDesktop.ViewModel
                         dataTable: _carryPdfTable,
                         gridTitle: null,
                         footerData: null,
-                        columnAlignments: carryAlignments)
+                        columnAlignments: carryAlignments,false)
                     .AddSpacing();
             }
             string baseFileName = _sessionService.UserId + "_Invoice";
