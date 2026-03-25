@@ -16,5 +16,6 @@ namespace ClientDesktop.Services
         event Action<OrderModel, bool, string> OnOrderUpdated;
         event Action<string> OnForceLogout;
         event Action<ClientDetails> OnUpdateUserBalance;
+        event Action<bool> OnViewLockChanged;
     }
 }

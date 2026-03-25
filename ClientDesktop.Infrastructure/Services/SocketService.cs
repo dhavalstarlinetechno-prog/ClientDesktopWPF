@@ -36,6 +36,7 @@ namespace ClientDesktop.Services
         public event Action<string> OnForceLogout;
         public event Action<ClientDetails> OnUpdateUserBalance;
 
+        public event Action<bool> OnViewLockChanged;
         private readonly IApiService _apiService;
         private readonly SessionService _sessionService;
         #endregion
@@ -286,6 +287,8 @@ namespace ClientDesktop.Services
                         _socketData.Balance.uplineAmount = (decimal)(playLoad["uplineAmount"] ?? 0);
                         _socketData.Balance.uplineCommission = (decimal)(playLoad["uplineCommission"] ?? 0);
                         _socketData.Balance.floatingPLAmount = (decimal)(playLoad["floatingPLAmount"] ?? 0);
+                        bool isViewLocked = (bool)(playLoad["isViewLocked"] ?? false);
+                        OnViewLockChanged?.Invoke(isViewLocked);
                         break;
 
                     case "SYMBOL_SPREAD_BALANCE_UPDATE":

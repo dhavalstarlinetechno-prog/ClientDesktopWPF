@@ -65,19 +65,66 @@ namespace ClientDesktop.View.Navigation
                 _sessionService = AppServiceLocator.GetService<SessionService>();
                 _viewModel = AppServiceLocator.GetService<InvoiceViewModel>();
                 this.DataContext = _viewModel;
+                _viewModel.PropertyChanged += ViewModel_PropertyChanged;
             }
 
-            if (MainWindowViewModel.isViewLocked == true)
+            ApplyViewLockUI(_viewModel?.IsViewLocked ?? MainWindowViewModel.isViewLocked);
+
+            this.Unloaded += InvoiceView_Unloaded;
+
+
+            //if (MainWindowViewModel.isViewLocked == true)
+            //{
+            //    Lbltext.Text = CommonMessages.InvoiceLedgerWrongPassword;
+            //    Lbltext.FontFamily = new System.Windows.Media.FontFamily("Segoe UI");
+            //    Lbltext.Foreground = System.Windows.Media.Brushes.Red;
+            //    Lbltext.Margin = new System.Windows.Thickness(0, 10, 250, 0);
+            //    TxtPassword.Visibility = System.Windows.Visibility.Collapsed;
+            //    Btngo.Visibility = System.Windows.Visibility.Collapsed;
+            //}
+        }
+
+        private void ViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(InvoiceViewModel.IsViewLocked))
+            {
+                ApplyViewLockUI(_viewModel.IsViewLocked);
+            }
+        }
+
+        private void ApplyViewLockUI(bool isLocked)
+        {
+            if (isLocked)
             {
                 Lbltext.Text = CommonMessages.InvoiceLedgerWrongPassword;
-                Lbltext.FontFamily = new System.Windows.Media.FontFamily("Segoe UI");
+                Lbltext.FontFamily = new System.Windows.Media.FontFamily("Microsoft Sans Serif");
                 Lbltext.Foreground = System.Windows.Media.Brushes.Red;
                 Lbltext.Margin = new System.Windows.Thickness(0, 10, 250, 0);
                 TxtPassword.Visibility = System.Windows.Visibility.Collapsed;
                 Btngo.Visibility = System.Windows.Visibility.Collapsed;
             }
+            else
+            {
+                // ✅ Restore normal UI when unlocked via socket
+                Lbltext.Text = "This report represents sample invoice format. It contains sample data only for education purpose. Invoice can be displayed in below structure";
+                Lbltext.FontFamily = new System.Windows.Media.FontFamily("Microsoft Sans Serif");
+                Lbltext.Foreground = System.Windows.Media.Brushes.Black;
+                Lbltext.Margin = new System.Windows.Thickness(40,30,60,20);
+                TxtPassword.Visibility = System.Windows.Visibility.Visible;
+                Btngo.Visibility = System.Windows.Visibility.Visible;
+                Btngo.IsEnabled = !string.IsNullOrEmpty(TxtPassword.Password);
+            }
         }
-        
+
+        private void InvoiceView_Unloaded(object sender, RoutedEventArgs e)
+        {
+            if (_viewModel != null)
+            {
+                _viewModel.PropertyChanged -= ViewModel_PropertyChanged;
+                _viewModel.Cleanup();
+            }
+        }
+
         private async void Btngo_Click(object sender, RoutedEventArgs e)
         {
             Btngo.IsEnabled = false;

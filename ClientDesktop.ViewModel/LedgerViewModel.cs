@@ -4,6 +4,7 @@ using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Helpers;
 using ClientDesktop.Infrastructure.Services;
+using ClientDesktop.Services;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
@@ -21,9 +22,11 @@ namespace ClientDesktop.ViewModel
         private readonly LedgerService _ledgerService;
         private readonly IPdfService _pdfService;
         private readonly IExcelService _excelService;
+        private readonly ISocketService _socketService;
 
         private LedgerUserDetail _ledgerUser;
         private bool _isBusy;
+        private bool _isViewLocked;
 
         #endregion
 
@@ -36,14 +39,23 @@ namespace ClientDesktop.ViewModel
             SessionService sessionService,
             LedgerService ledgerService,
             IPdfService pdfService,
-            IExcelService excelService)           
+            IExcelService excelService,
+            ISocketService socketService)           
         {
             _sessionService = sessionService;
             _ledgerService = ledgerService;
             _pdfService = pdfService;
             _excelService = excelService;
+            _socketService = socketService;
 
             GridRows = new ObservableCollection<LedgerRowModel>();
+
+            _isViewLocked = MainWindowViewModel.isViewLocked;
+
+            _socketService.OnViewLockChanged += OnViewLockChangedHandler;
+
+            if (!_socketService.IsConnected)
+                _socketService.Start();
         }
 
         #endregion
@@ -51,6 +63,7 @@ namespace ClientDesktop.ViewModel
         #region Properties
         
         public ObservableCollection<LedgerRowModel> GridRows { get; }
+
 
         public LedgerUserDetail LedgerUser
         {
@@ -63,6 +76,36 @@ namespace ClientDesktop.ViewModel
         {
             get => _isBusy;
             set { _isBusy = value; OnPropertyChanged(); }
+        }
+
+        public bool IsViewLocked
+        {
+            get => _isViewLocked;
+            set
+            {
+                if (_isViewLocked == value) return;
+                _isViewLocked = value;
+                OnPropertyChanged();
+            }
+        }
+
+        #endregion
+
+        #region WebSocket Handler
+
+        // ✅ Called from background socket thread — marshal to UI thread
+        private void OnViewLockChangedHandler(bool isLocked)
+        {
+            Application.Current?.Dispatcher.Invoke(() =>
+            {
+                IsViewLocked = isLocked;
+            });
+        }
+
+        // ✅ Call on View Unloaded — prevents memory leak
+        public void Cleanup()
+        {
+            _socketService.OnViewLockChanged -= OnViewLockChangedHandler;
         }
 
         #endregion

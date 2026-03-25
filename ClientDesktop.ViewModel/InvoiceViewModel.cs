@@ -3,6 +3,7 @@ using ClientDesktop.Core.Enums;
 using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Services;
+using ClientDesktop.Services;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -18,7 +19,8 @@ namespace ClientDesktop.ViewModel
         private readonly SessionService _sessionService;
         private readonly InvoiceService _invoiceService;
         private readonly IPdfService _pdfService;          // ← NEW
-      
+        private readonly ISocketService _socketService;  // ✅ Socket dependency
+        
         private ObservableCollection<Invoicemodel> _invoiceData;
 
         public ObservableCollection<Invoicemodel> InvoiceDetails
@@ -26,7 +28,22 @@ namespace ClientDesktop.ViewModel
             get => _invoiceData;
             set { _invoiceData = value; OnPropertyChanged(); }
         }
-             
+
+        // ✅ NEW: Bindable property — View binds to this instead of static MainWindowViewModel.isViewLocked
+        private bool _isViewLocked;
+        public bool IsViewLocked
+        {
+            get => _isViewLocked;
+            set
+            {
+                if (_isViewLocked == value) return;
+                _isViewLocked = value;
+                OnPropertyChanged();
+            }
+        }
+
+
+
         private List<(string SecurityName, DataTable Table)> _securityPdfTables
             = new List<(string, DataTable)>();
 
@@ -38,13 +55,37 @@ namespace ClientDesktop.ViewModel
         public InvoiceViewModel(
             SessionService sessionService,
             InvoiceService invoiceService,
-            IPdfService pdfService)          
+            IPdfService pdfService,
+            ISocketService socketService)          
         {
             _sessionService = sessionService;
             _invoiceService = invoiceService;
             _pdfService = pdfService;
+            _socketService = socketService;
+
+            _isViewLocked = MainWindowViewModel.isViewLocked;
+
+            _socketService.OnViewLockChanged += OnViewLockChangedHandler;
+
+            if (!_socketService.IsConnected)
+            {
+                _socketService.Start();
+            }
         }
-       
+
+        private void OnViewLockChangedHandler(bool isLocked)
+        {
+            Application.Current?.Dispatcher.Invoke(() =>
+            {
+                IsViewLocked = isLocked;
+            });
+        }
+
+        public void Cleanup()
+        {
+            _socketService.OnViewLockChanged -= OnViewLockChangedHandler;
+        }
+
         public async Task<bool> VerifyPasswordAsync(string password)
         {
             string clientId = _sessionService.UserId;

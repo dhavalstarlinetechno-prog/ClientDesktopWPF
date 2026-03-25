@@ -42,21 +42,86 @@ namespace ClientDesktop.View.Navigation
                 DgvLedgerRecord.ItemsSource = _viewModel.GridRows;
 
                 this.DataContext = _viewModel;
+
+                _viewModel.PropertyChanged += ViewModel_PropertyChanged;
             }
-            if (MainWindowViewModel.isViewLocked == true)
+
+            this.Loaded += Ledger_Loaded;
+
+            this.Unloaded += Ledger_Unloaded;
+
+
+            //if (MainWindowViewModel.isViewLocked == true)
+            //{
+            //    Lbldetails.Text = CommonMessages.InvoiceLedgerWrongPassword;
+            //    Lbldetails.FontFamily = new System.Windows.Media.FontFamily("Segoe UI");
+            //    Lbldetails.Foreground = System.Windows.Media.Brushes.Red;
+            //    Lbldetails.Margin = new System.Windows.Thickness(0, 10, 250, 0);
+            //    TxtPassword.Visibility = System.Windows.Visibility.Collapsed;
+            //    Btngo.Visibility = System.Windows.Visibility.Collapsed;
+            //}
+        }
+
+        #endregion
+
+        #region Loaded / Unloaded
+
+        private void Ledger_Loaded(object sender, RoutedEventArgs e)
+        {
+            // ✅ Apply initial lock state once View is fully rendered
+            ApplyViewLockUI(_viewModel?.IsViewLocked ?? MainWindowViewModel.isViewLocked);
+        }
+
+        private void Ledger_Unloaded(object sender, RoutedEventArgs e)
+        {
+            if (_viewModel != null)
             {
-                Lbldetails.Text = CommonMessages.InvoiceLedgerWrongPassword;
-                Lbldetails.FontFamily = new System.Windows.Media.FontFamily("Segoe UI");
-                Lbldetails.Foreground = System.Windows.Media.Brushes.Red;
-                Lbldetails.Margin = new System.Windows.Thickness(0, 10, 250, 0);
-                TxtPassword.Visibility = System.Windows.Visibility.Collapsed;
-                Btngo.Visibility = System.Windows.Visibility.Collapsed;
+                _viewModel.PropertyChanged -= ViewModel_PropertyChanged;
+                _viewModel.Cleanup();   // unsubscribe socket event — no memory leak
             }
         }
 
         #endregion
 
-        #region Loaded
+        #region WebSocket — Real-time View Lock
+
+        // ✅ Called whenever CLIENT_UPDATE fires isViewLocked via WebSocket
+        private void ViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(LedgerViewModel.IsViewLocked))
+            {
+                ApplyViewLockUI(_viewModel.IsViewLocked);
+            }
+        }
+
+        private void ApplyViewLockUI(bool isLocked)
+        {
+            if (isLocked)
+            {
+                Lbldetails.Text = CommonMessages.InvoiceLedgerWrongPassword;
+                Lbldetails.FontFamily = new System.Windows.Media.FontFamily("Microsoft Sans Serif");
+                Lbldetails.Foreground = System.Windows.Media.Brushes.Red;
+                Lbldetails.Margin = new System.Windows.Thickness(0, 10, 250, 0);
+                TxtPassword.Visibility = System.Windows.Visibility.Collapsed;
+                Btngo.Visibility = System.Windows.Visibility.Collapsed;
+            }
+            else
+            {
+                // ✅ Restore normal UI when unlocked via socket
+                Lbldetails.Text = "This report represents sample ledger format. It contains sample data only for education purpose. Ledger can be displayed in below structure.";
+                Lbldetails.FontFamily = new System.Windows.Media.FontFamily("Microsoft Sans Serif");
+                Lbldetails.Foreground = System.Windows.Media.Brushes.Black;
+                Lbldetails.Margin = new System.Windows.Thickness(0);
+                TxtPassword.Visibility = System.Windows.Visibility.Visible;
+                Btngo.Visibility = System.Windows.Visibility.Visible;
+                Btngo.IsEnabled = !string.IsNullOrEmpty(TxtPassword.Password);
+            }
+        }
+
+        #endregion
+
+
+        #region Loaded(existing)
 
         private async void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
