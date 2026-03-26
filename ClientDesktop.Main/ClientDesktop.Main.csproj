@@ -10,6 +10,13 @@
 		<RuntimeIdentifier>win-x86</RuntimeIdentifier>
 		<PlatformTarget>x86</PlatformTarget>
 		<ApplicationIcon>Assets\app_icon.ico</ApplicationIcon>
+
+		<Product>Client Desktop</Product>
+		<AssemblyTitle>Client Desktop</AssemblyTitle>
+		<Description>Client Desktop Application</Description>
+		<Company></Company>
+		<Copyright></Copyright>
+		<Version>1.0.0.0</Version>
 	</PropertyGroup>
 
 	<ItemGroup>

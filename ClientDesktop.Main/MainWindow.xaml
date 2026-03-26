@@ -17,17 +17,15 @@
         Icon="Assets/app_icon.ico">
 
     <WindowChrome.WindowChrome>
-        <WindowChrome CaptionHeight="32" ResizeBorderThickness="5" GlassFrameThickness="0" CornerRadius="0"/>
+        <WindowChrome CaptionHeight="30" ResizeBorderThickness="5" GlassFrameThickness="0" CornerRadius="0"/>
     </WindowChrome.WindowChrome>
 
     <Window.Resources>
 
-        <!-- ═══════════════════════════════════════════════════
-             TITLE BAR  ─  Top-level MenuItem
-        ═══════════════════════════════════════════════════ -->
+        <!-- ── Title-bar menu items ── -->
         <Style x:Key="TitleBarMenuItemStyle" TargetType="MenuItem">
             <Setter Property="Background"            Value="Transparent"/>
-            <Setter Property="Foreground"            Value="#333333"/>
+            <Setter Property="Foreground"            Value="#222222"/>
             <Setter Property="Padding"               Value="6,0"/>
             <Setter Property="FontSize"              Value="12"/>
             <Setter Property="OverridesDefaultStyle" Value="True"/>
@@ -38,10 +36,9 @@
 
                             <Border x:Name="Shell"
                                     Background="Transparent"
-                                    Height="30"
+                                    Height="28"
                                     VerticalAlignment="Center"
                                     Padding="0,3">
-
                                 <Border x:Name="Bd"
                                         Background="Transparent"
                                         CornerRadius="4"
@@ -53,7 +50,7 @@
                                 </Border>
                             </Border>
 
-                            <!-- Drop-down submenu popup -->
+                            <!-- Drop-down popup -->
                             <Popup x:Name="PART_Popup"
                                    AllowsTransparency="True"
                                    Focusable="False"
@@ -64,16 +61,16 @@
                                    HorizontalOffset="0"
                                    VerticalOffset="0">
                                 <Border Background="White"
-                                        BorderBrush="#C8C8C8"
+                                        BorderBrush="#CCCCCC"
                                         BorderThickness="1"
                                         Padding="2"
                                         SnapsToDevicePixels="True">
                                     <Border.Effect>
-                                        <DropShadowEffect Color="#30000000"
+                                        <DropShadowEffect Color="#28000000"
                                                           BlurRadius="10"
                                                           ShadowDepth="3"
                                                           Direction="270"
-                                                          Opacity="0.3"/>
+                                                          Opacity="0.25"/>
                                     </Border.Effect>
                                     <ItemsPresenter x:Name="ItemsPresenter"
                                                     KeyboardNavigation.DirectionalNavigation="Cycle"
@@ -85,10 +82,10 @@
 
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsHighlighted" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#D6D6D6"/>
+                                <Setter TargetName="Bd" Property="Background" Value="#CCD1D6"/>
                             </Trigger>
                             <Trigger Property="IsSubmenuOpen" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#C8C8C8"/>
+                                <Setter TargetName="Bd" Property="Background" Value="#BEC4CA"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Foreground" Value="#AAAAAA"/>
@@ -99,29 +96,35 @@
             </Setter>
         </Style>
 
-        <!-- ═══════════════════════════════════════════════════
-             CAPTION BUTTONS  (Minimize / Maximize / Close)
-        ═══════════════════════════════════════════════════ -->
         <Style x:Key="CaptionButtonStyle" TargetType="Button">
-            <Setter Property="Background"        Value="Transparent"/>
-            <Setter Property="BorderThickness"   Value="0"/>
-            <Setter Property="Foreground"        Value="#333333"/>
-            <Setter Property="Width"             Value="45"/>
+            <Setter Property="Background"      Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground"      Value="#444444"/>
+            <Setter Property="Width"           Value="42"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Border Background="Transparent" VerticalAlignment="Stretch">
+                            <Border x:Name="Bd"
+                                    Background="Transparent"
+                                    CornerRadius="4"
+                                    Height="26"
+                                    HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Center">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
                         </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#CCD1D6"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#BEC4CA"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#E5E5E5"/>
-                    <Setter Property="Foreground" Value="Black"/>
-                </Trigger>
-            </Style.Triggers>
         </Style>
 
         <Style x:Key="MinimizeButtonStyle" TargetType="Button" BasedOn="{StaticResource CaptionButtonStyle}">
@@ -129,7 +132,7 @@
             <Setter Property="Content">
                 <Setter.Value>
                     <Path Data="M 0,5 H 10"
-                          Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                          Stroke="#444444"
                           StrokeThickness="1" SnapsToDevicePixels="True"/>
                 </Setter.Value>
             </Setter>
@@ -140,7 +143,7 @@
             <Setter Property="Content">
                 <Setter.Value>
                     <Path Data="M 0,0 H 10 V 10 H 0 Z"
-                          Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                          Stroke="#444444"
                           StrokeThickness="1" Fill="Transparent" SnapsToDevicePixels="True"/>
                 </Setter.Value>
             </Setter>
@@ -150,7 +153,7 @@
                     <Setter Property="Content">
                         <Setter.Value>
                             <Path Data="M 2,2 L 2,0 L 10,0 L 10,8 L 8,8 M 0,2 L 8,2 L 8,10 L 0,10 Z"
-                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                  Stroke="#444444"
                                   StrokeThickness="1" Fill="Transparent" SnapsToDevicePixels="True"/>
                         </Setter.Value>
                     </Setter>
@@ -158,8 +161,12 @@
             </Style.Triggers>
         </Style>
 
-        <Style x:Key="CloseButtonStyle" TargetType="Button" BasedOn="{StaticResource CaptionButtonStyle}">
-            <Setter Property="ToolTip" Value="Close"/>
+        <Style x:Key="CloseButtonStyle" TargetType="Button">
+            <Setter Property="Background"      Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground"      Value="#444444"/>
+            <Setter Property="Width"           Value="42"/>
+            <Setter Property="ToolTip"         Value="Close"/>
             <Setter Property="Content">
                 <Setter.Value>
                     <Path Data="M 0,0 L 10,10 M 10,0 L 0,10"
@@ -167,16 +174,83 @@
                           StrokeThickness="1" SnapsToDevicePixels="True"/>
                 </Setter.Value>
             </Setter>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#E81123"/>
-                    <Setter Property="Foreground" Value="White"/>
-                </Trigger>
-                <Trigger Property="IsPressed" Value="True">
-                    <Setter Property="Background" Value="#F1707A"/>
-                    <Setter Property="Foreground" Value="White"/>
-                </Trigger>
-            </Style.Triggers>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="Transparent" VerticalAlignment="Stretch">
+                            <Border x:Name="Bd"
+                                    Background="Transparent"
+                                    CornerRadius="4"
+                                    Height="26"
+                                    HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Center"
+                                    Padding="0,3,0,0">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter TargetName="Bd" Property="Background" Value="#E81123"/>
+                                <Setter TargetName="Bd" Property="CornerRadius" Value="4"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#F1707A"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SubMenuItemStyle" TargetType="MenuItem">
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
+            <Setter Property="Background"            Value="Transparent"/>
+            <Setter Property="Foreground"            Value="#222222"/>
+            <Setter Property="Padding"               Value="4,5"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="MenuItem">
+                        <Border x:Name="Bd"
+                                Background="Transparent"
+                                CornerRadius="4"
+                                Margin="3,1"
+                                Padding="{TemplateBinding Padding}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="20"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <ContentPresenter Grid.Column="0"
+                                                  ContentSource="Icon"
+                                                  HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"
+                                                  Width="16" Height="16"/>
+                                <ContentPresenter Grid.Column="1"
+                                                  ContentSource="Header"
+                                                  RecognizesAccessKey="True"
+                                                  VerticalAlignment="Center"
+                                                  Margin="6,0,0,0"/>
+                                <TextBlock Grid.Column="2"
+                                           Text="{TemplateBinding InputGestureText}"
+                                           VerticalAlignment="Center"
+                                           Margin="16,0,2,0"
+                                           Foreground="#888888"
+                                           FontSize="11"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#CCD1D6"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Foreground" Value="#AAAAAA"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
     </Window.Resources>
@@ -203,19 +277,25 @@
         <!-- ═══════════════════════════════════════════════════
              TITLE BAR ROW
         ═══════════════════════════════════════════════════ -->
-        <Grid Grid.Row="0" Height="32" Background="#F0F0F0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
+        <Border Grid.Row="0" Height="30" Background="#E2E6EA" Padding="0,0,0,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <Border Grid.ColumnSpan="3"
+                    VerticalAlignment="Bottom"
+                    Height="0.4"
+                    Background="#444444"/>
 
-            <StackPanel Grid.Column="0"
+                <StackPanel Grid.Column="0"
                         Orientation="Horizontal"
                         VerticalAlignment="Center"
                         WindowChrome.IsHitTestVisibleInChrome="True">
 
-                <Image Source="Assets/app_icon.ico"
+                    <Image Source="Assets/app_icon.ico"
                        Width="20" Height="20"
                        Margin="6,0,2,0"
                        VerticalAlignment="Center"
@@ -224,115 +304,122 @@
                        RenderOptions.BitmapScalingMode="HighQuality"
                        SnapsToDevicePixels="True"/>
 
-                <Menu Background="Transparent"
+                    <Menu Background="Transparent"
                       VerticalAlignment="Center"
                       WindowChrome.IsHitTestVisibleInChrome="True">
 
-                    <MenuItem x:Name="MenuNewOrder"
+                        <MenuItem x:Name="MenuNewOrder"
                               Header="New Order"
                               Style="{StaticResource TitleBarMenuItemStyle}"
                               Command="{Binding OpenNewOrderCommand}"
                               Visibility="Collapsed"/>
 
-                    <MenuItem Header="Window"
+                        <MenuItem Header="Window"
                               Style="{StaticResource TitleBarMenuItemStyle}">
-                        <MenuItem Header="Market Watch"
+                            <MenuItem Header="Market Watch"
+                                  Style="{StaticResource SubMenuItemStyle}"
                                   InputGestureText="Ctrl+M"
                                   Command="{x:Static local:MainWindow.ToggleMarketWatchCommand}">
-                            <MenuItem.Icon>
-                                <Grid Width="15" Height="15">
-                                    <Path Data="M 1 6 L 4.5 1 L 8 6 L 6 6 L 6 11 L 3 11 L 3 6 Z"
+                                <MenuItem.Icon>
+                                    <Grid Width="15" Height="15">
+                                        <Path Data="M 1 6 L 4.5 1 L 8 6 L 6 6 L 6 11 L 3 11 L 3 6 Z"
                                           Fill="#00C000" Stroke="#006000" StrokeThickness="1"/>
-                                    <Path Data="M 10 10 L 10 5 L 12 5 L 12 10 L 14 10 L 11 14 L 8 10 Z"
+                                        <Path Data="M 10 10 L 10 5 L 12 5 L 12 10 L 14 10 L 11 14 L 8 10 Z"
                                           Fill="#FF4040" Stroke="#A00000" StrokeThickness="1"/>
-                                </Grid>
-                            </MenuItem.Icon>
-                        </MenuItem>
-                        <MenuItem Header="Navigator"
+                                    </Grid>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="Navigator"
+                                  Style="{StaticResource SubMenuItemStyle}"
                                   InputGestureText="Ctrl+N"
                                   Command="{x:Static local:MainWindow.ToggleNavigatorCommand}">
-                            <MenuItem.Icon>
-                                <Grid Width="16" Height="16">
-                                    <Path Data="M 4,5 V 13 M 4,8 H 8 M 4,13 H 8"
+                                <MenuItem.Icon>
+                                    <Grid Width="16" Height="16">
+                                        <Path Data="M 4,5 V 13 M 4,8 H 8 M 4,13 H 8"
                                           Stroke="#007ACC" StrokeThickness="1"/>
-                                    <Path Data="M 2,1 h 4 v 4 h -4 z M 8,6 h 4 v 4 h -4 z M 8,11 h 4 v 4 h -4 z"
+                                        <Path Data="M 2,1 h 4 v 4 h -4 z M 8,6 h 4 v 4 h -4 z M 8,11 h 4 v 4 h -4 z"
                                           Fill="#FFD700" Stroke="#B8860B" StrokeThickness="1"/>
-                                </Grid>
-                            </MenuItem.Icon>
-                        </MenuItem>
-                        <MenuItem Header="Toolbox"
+                                    </Grid>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="Details"
+                                  Style="{StaticResource SubMenuItemStyle}"
                                   InputGestureText="Ctrl+T"
                                   Command="{x:Static local:MainWindow.ToggleToolboxCommand}">
-                            <MenuItem.Icon>
-                                <Grid Width="16" Height="16">
-                                    <Path Data="M 2,3 H 14 V 8 H 2 Z"  Fill="White"/>
-                                    <Path Data="M 2,8 H 14 V 13 H 2 Z" Fill="#FFD700"/>
-                                    <Path Data="M 2,3 H 14 V 13 H 2 Z M 2,8 H 14"
+                                <MenuItem.Icon>
+                                    <Grid Width="16" Height="16">
+                                        <Path Data="M 2,3 H 14 V 8 H 2 Z"  Fill="White"/>
+                                        <Path Data="M 2,8 H 14 V 13 H 2 Z" Fill="#FFD700"/>
+                                        <Path Data="M 2,3 H 14 V 13 H 2 Z M 2,8 H 14"
                                           Stroke="#007ACC" StrokeThickness="1"/>
-                                    <Path Data="M 4,10.5 H 7 M 9,10.5 H 12"
+                                        <Path Data="M 4,10.5 H 7 M 9,10.5 H 12"
                                           Stroke="Black" StrokeThickness="1" SnapsToDevicePixels="True"/>
-                                </Grid>
-                            </MenuItem.Icon>
+                                    </Grid>
+                                </MenuItem.Icon>
+                            </MenuItem>
                         </MenuItem>
-                    </MenuItem>
 
-                </Menu>
-            </StackPanel>
+                    </Menu>
+                </StackPanel>
 
-            <TextBlock Grid.Column="1"
+                <TextBlock Grid.Column="1"
                        Text="{Binding Title, FallbackValue=''}"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Center"
-                       FontWeight="Bold"/>
+                       Foreground="#222222"
+                       FontWeight="Bold"
+                       FontSize="12"/>
 
-            <StackPanel Grid.Column="2"
+                <StackPanel Grid.Column="2"
                         Orientation="Horizontal"
                         WindowChrome.IsHitTestVisibleInChrome="True">
 
-                <Menu Background="Transparent" VerticalAlignment="Center" Margin="0,0,10,0">
-                    <MenuItem x:Name="UserMenu" Style="{StaticResource TitleBarMenuItemStyle}" Padding="6,0">
-                        <MenuItem.Header>
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <Grid Width="20" Height="20">
-                                    <Path x:Name="UserIconPath"
+                    <Menu Background="Transparent" VerticalAlignment="Center" Margin="0,0,10,0">
+                        <MenuItem x:Name="UserMenu" Style="{StaticResource TitleBarMenuItemStyle}" Padding="6,0">
+                            <MenuItem.Header>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Grid Width="20" Height="20">
+                                        <Path x:Name="UserIconPath"
                                           Data="M12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"
                                           Fill="#666666" Stretch="Uniform"
                                           Width="16" Height="16" VerticalAlignment="Center"/>
-                                </Grid>
-                                <TextBlock x:Name="TxtUserName"
+                                    </Grid>
+                                    <TextBlock x:Name="TxtUserName"
                                            Text="" Margin="5,0,0,0"
                                            VerticalAlignment="Center"
                                            FontWeight="SemiBold" Foreground="#333333"/>
-                            </StackPanel>
-                        </MenuItem.Header>
+                                </StackPanel>
+                            </MenuItem.Header>
 
-                        <MenuItem x:Name="MenuConnect" Header="Connect to Account" Click="MenuConnect_Click">
-                            <MenuItem.Icon>
-                                <Path Data="M10,17L15,12L10,7V10H3V14H10V17M18,19H21V5H18V19Z"
+                            <MenuItem x:Name="MenuConnect" Header="Connect to Account" Style="{StaticResource SubMenuItemStyle}" Click="MenuConnect_Click">
+                                <MenuItem.Icon>
+                                    <Path Data="M10,17L15,12L10,7V10H3V14H10V17M18,19H21V5H18V19Z"
                                       Fill="Green" Stretch="Uniform" Width="12" Height="12"/>
-                            </MenuItem.Icon>
-                        </MenuItem>
-                        <MenuItem x:Name="MenuDisconnect" Header="Disconnect" Click="MenuDisconnect_Click" Visibility="Collapsed">
-                            <MenuItem.Icon>
-                                <Path Data="M14 7 9 12 14 17V14H21V10H14V7M6 5H3V19H6V5Z"
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem x:Name="MenuDisconnect" Header="Disconnect" Style="{StaticResource SubMenuItemStyle}" Click="MenuDisconnect_Click" Visibility="Collapsed">
+                                <MenuItem.Icon>
+                                    <Path Data="M14 7 9 12 14 17V14H21V10H14V7M6 5H3V19H6V5Z"
                                       Fill="Red" Stretch="Uniform" Width="12" Height="12"/>
-                            </MenuItem.Icon>
-                        </MenuItem>
-                        <MenuItem x:Name="MenuChangePassword" Header="Change Password"
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem x:Name="MenuChangePassword" Header="Change Password"
+                                  Style="{StaticResource SubMenuItemStyle}"
                                   Command="{Binding ChangePasswordCommand}" Visibility="Collapsed">
-                            <MenuItem.Icon>
-                                <Path Data="M4.5 15C5.9 15 7 13.9 7 12.5S5.9 10 4.5 10 2 11.1 2 12.5 3.1 15 4.5 15ZM11 7.4 8.3 10.1C8.7 10.8 9 11.6 9 12.5 9 15 7 17 4.5 17S0 15 0 12.5 2 8 4.5 8C5.4 8 6.2 8.3 6.9 8.7L15.3.3 16.7 1.7 16.4 2 19.7 5.3 18.3 6.7 15 3.4 14.4 4 16.7 6.3 15.3 7.7 13 5.4 12.4 6 15.7 9.3 14.3 10.7 11 7.4ZM18 20C19.1 20 20 19.1 20 18S19.1 16 18 16 16 16.9 16 18 16.9 20 18 20ZM24 19H21.8C21.8 19.4 21.6 19.7 21.4 20L22.9 21.5 21.5 23 20 21.4C19.7 21.6 19.4 21.8 19 21.9V24H17V21.8C16.6 21.8 16.3 21.6 16 21.4L14.5 22.9 13 21.5 14.6 20C14.4 19.7 14.2 19.4 14.1 19H12V17H14.2C14.2 16.6 14.4 16.3 14.6 16L13.1 14.5 14.5 13 16 14.6C16.3 14.4 16.6 14.2 17 14.1V12H19V14.2C19.4 14.2 19.7 14.4 20 14.6L21.5 13.1 23 14.5 21.4 16C21.6 16.3 21.8 16.6 21.9 17H24V19Z"
+                                <MenuItem.Icon>
+                                    <Path Data="M4.5 15C5.9 15 7 13.9 7 12.5S5.9 10 4.5 10 2 11.1 2 12.5 3.1 15 4.5 15ZM11 7.4 8.3 10.1C8.7 10.8 9 11.6 9 12.5 9 15 7 17 4.5 17S0 15 0 12.5 2 8 4.5 8C5.4 8 6.2 8.3 6.9 8.7L15.3.3 16.7 1.7 16.4 2 19.7 5.3 18.3 6.7 15 3.4 14.4 4 16.7 6.3 15.3 7.7 13 5.4 12.4 6 15.7 9.3 14.3 10.7 11 7.4ZM18 20C19.1 20 20 19.1 20 18S19.1 16 18 16 16 16.9 16 18 16.9 20 18 20ZM24 19H21.8C21.8 19.4 21.6 19.7 21.4 20L22.9 21.5 21.5 23 20 21.4C19.7 21.6 19.4 21.8 19 21.9V24H17V21.8C16.6 21.8 16.3 21.6 16 21.4L14.5 22.9 13 21.5 14.6 20C14.4 19.7 14.2 19.4 14.1 19H12V17H14.2C14.2 16.6 14.4 16.3 14.6 16L13.1 14.5 14.5 13 16 14.6C16.3 14.4 16.6 14.2 17 14.1V12H19V14.2C19.4 14.2 19.7 14.4 20 14.6L21.5 13.1 23 14.5 21.4 16C21.6 16.3 21.8 16.6 21.9 17H24V19Z"
                                       Fill="#0078D7" Stretch="Uniform" Width="12" Height="12"/>
-                            </MenuItem.Icon>
+                                </MenuItem.Icon>
+                            </MenuItem>
                         </MenuItem>
-                    </MenuItem>
-                </Menu>
+                    </Menu>
 
-                <Button Style="{StaticResource MinimizeButtonStyle}" Click="Minimize_Click"/>
-                <Button x:Name="BtnMaximize" Style="{StaticResource MaximizeButtonStyle}" Click="Maximize_Click" Margin="0,-2,0,0"/>
-                <Button Style="{StaticResource CloseButtonStyle}" Click="Close_Click"/>
-            </StackPanel>
-        </Grid>
+                    <Button Style="{StaticResource MinimizeButtonStyle}" Click="Minimize_Click"/>
+                    <Button x:Name="BtnMaximize" Style="{StaticResource MaximizeButtonStyle}" Click="Maximize_Click"/>
+                    <Button Style="{StaticResource CloseButtonStyle}" Click="Close_Click"/>
+                </StackPanel>
+            </Grid>
+        </Border>
 
         <!-- ═══════════════════════════════════════════════════
              MAIN CONTENT  (DockingManager)
@@ -357,7 +444,7 @@
 
                             <dock:LayoutAnchorablePane DockHeight="*">
                                 <dock:LayoutAnchorable x:Name="NavigatorPane"
-                                                       Title="Navigation" ContentId="Navigator"
+                                                       Title="Navigator" ContentId="Navigator"
                                                        CanClose="False" CanAutoHide="False">
                                     <Grid>
                                         <navigation:NavigationView DataContext="{Binding NavigationVM}"/>
