@@ -438,7 +438,7 @@ namespace ClientDesktop.ViewModel
                               null;
                         vm.LimitRate = selectedRow.AveragePrice.ToString();
                     }
-              *  );
+               );
         }
 
         public void SortData(string sortBy, ListSortDirection direction)
