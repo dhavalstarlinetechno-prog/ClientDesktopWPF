@@ -383,6 +383,8 @@ namespace ClientDesktop.Services
                 Id = play["id"]?.ToString(),
                 SymbolName = play["symbolName"]?.ToString(),
                 CreatedAt = play["createdAt"]?.ToObject<DateTime?>(),
+                LastInAt = play["lastInAt"]?.ToObject<DateTime?>(),
+                UpdatedAt = play["updatedAt"]?.ToObject<DateTime?>(),
                 Side = play["side"]?.ToString(),
                 Status = play["status"]?.ToString(),
                 TotalVolume = (double)(play["totalVolume"] ?? 0),

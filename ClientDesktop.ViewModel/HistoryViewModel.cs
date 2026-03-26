@@ -10,6 +10,7 @@ using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Win32;
 using System.Collections.ObjectModel;
 using System.Data;
+using System.Globalization;
 using System.Windows;
 
 namespace ClientDesktop.ViewModel
@@ -348,7 +349,7 @@ namespace ClientDesktop.ViewModel
 
         // Strips trailing zeros: 0.863660000 → 0.86366
         private static string FormatPrice(decimal value)
-            => value.ToString("0.##########");
+            => value.ToString("N2");
 
         public void ExportToPdf(List<HistoryModel> data, HistoryType gridType)
         {
@@ -397,14 +398,14 @@ namespace ClientDesktop.ViewModel
                     dt.Rows.Add(
                         "",
                         sr++.ToString(),
-                        ist.ToString("dd/MM/yy HH:mm"),
+                        ist.ToString("dd'/'MM'/'yy HH:mm", CultureInfo.InvariantCulture),
                         item.RefId ?? "",
                         item.PositionId ?? "--",
                         item.SymbolName ?? "",
                         item.OrderType ?? "",
                         item.Side ?? "",
                         item.DealType ?? "",
-                        item.Volume.ToString(),
+                        item.Volume.ToString("N2"),
                         FormatPrice(item.Price),
                         item.UplineCommission.ToString("N2"),
                         item.Pnl.ToString("N2"),
@@ -429,6 +430,7 @@ namespace ClientDesktop.ViewModel
                 {
                     { "Volume", iText.Layout.Properties.TextAlignment.RIGHT },
                     { "Comm.",  iText.Layout.Properties.TextAlignment.RIGHT },
+                    { "Price", iText.Layout.Properties.TextAlignment.RIGHT },
                     { "Profit", iText.Layout.Properties.TextAlignment.RIGHT }
                 };
 

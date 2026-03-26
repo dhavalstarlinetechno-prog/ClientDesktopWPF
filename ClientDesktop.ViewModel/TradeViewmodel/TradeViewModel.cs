@@ -82,7 +82,7 @@ namespace ClientDesktop.ViewModel
                 var result = await _tradeService.GetSymbolDataAsync(_sessionService.UserId, symbolId);
                 if (!result.Success || result.SymbolData == null) return;
 
-                _currentSelectedSymbol = result.SymbolData;
+                CurrentSelectedSymbol = result.SymbolData;
                 MinValue = result.SymbolData.SymbolMinimumValue.ToString("F2");
                 StepValue = result.SymbolData.SymbolStepValue.ToString("F2");
                 OneValue = result.SymbolData.SymbolOneClickValue.ToString("F2");
@@ -215,15 +215,15 @@ namespace ClientDesktop.ViewModel
                  !double.TryParse(LimitRate, out double price) || price <= 0))
                 return (false, CommonMessages.EnterPrice);
 
-            if (_currentSelectedSymbol == null)
+            if (CurrentSelectedSymbol == null)
                 return (false, CommonMessages.SelectSymbol);
 
             if (!double.TryParse(LiveAsk, out _) || !double.TryParse(LiveBid, out _))
                 return (false, CommonMessages.PriceDataNotAvailable);
 
-            if (tradeQty > _currentSelectedSymbol.SymbolTotalValue)
+            if (tradeQty > CurrentSelectedSymbol.SymbolTotalValue)
                 return (false, CommonMessages.MaxLimitExceed + " " +
-                               _currentSelectedSymbol.SymbolTotalValue.ToString("F2"));
+                               CurrentSelectedSymbol.SymbolTotalValue.ToString("F2"));
 
             if (clientData == null)
                 return (false, CommonMessages.ClientDataNotFound);
@@ -238,12 +238,12 @@ namespace ClientDesktop.ViewModel
             if (clientData.CloseOnlyTradeLock && isNewTrade)
                 return (false, CommonMessages.CloseOnly);
 
-            if (_currentSelectedSymbol.SymbolTrade == "Disabled")
+            if (CurrentSelectedSymbol.SymbolTrade == "Disabled")
                 return (false, CommonMessages.TradeDisabled);
 
             if ((CurrentOrderTypeEnum == EnumTradeOrderType.Limit ||
                  CurrentOrderTypeEnum == EnumTradeOrderType.StopLimit) &&
-                 _currentSelectedSymbol.SymbolLimitstoplevel > 0)
+                 CurrentSelectedSymbol.SymbolLimitstoplevel > 0)
             {
                 if (!double.TryParse(LimitRate, out double enteredPrice))
                     return (false, CommonMessages.InvalidPrice);
@@ -252,8 +252,8 @@ namespace ClientDesktop.ViewModel
                     ? double.Parse(LiveAsk)
                     : double.Parse(LiveBid);
 
-                double limitStopLevel = _currentSelectedSymbol.SymbolLimitstoplevel /
-                                        Math.Pow(10, _currentSelectedSymbol.SymbolDigits);
+                double limitStopLevel = CurrentSelectedSymbol.SymbolLimitstoplevel /
+                                        Math.Pow(10, CurrentSelectedSymbol.SymbolDigits);
 
                 double minAllowed = currentMarketPrice - limitStopLevel;
                 double maxAllowed = currentMarketPrice + limitStopLevel;

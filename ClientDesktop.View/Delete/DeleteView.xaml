@@ -72,11 +72,13 @@
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                 <Button Content="Submit" 
+                        IsDefault="True"
                         Command="{Binding SubmitCommand}" 
                         Style="{StaticResource SubmitButtonStyle}" 
                         Width="100" Height="33" Margin="0,0,10,0"/>
 
                 <Button Content="Cancel" 
+                        IsCancel="True"
                         Command="{Binding CancelCommand}" 
                         Style="{StaticResource CancelButtonStyle}" 
                         Width="100" Height="33"/>

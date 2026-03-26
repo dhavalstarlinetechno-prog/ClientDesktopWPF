@@ -135,8 +135,18 @@ namespace ClientDesktop.ViewModel
             }
         }
 
-        /// <summary>Full symbol data fetched from API, used for validation constraints.</summary>
         private SymbolData _currentSelectedSymbol;
+        public SymbolData CurrentSelectedSymbol
+        {
+            get => _currentSelectedSymbol;
+            set
+            {
+                if (SetProperty(ref _currentSelectedSymbol, value))
+                {
+                    OnPropertyChanged(nameof(IsExpiryVisible));
+                }
+            }
+        }
 
         #endregion
 
@@ -343,7 +353,7 @@ namespace ClientDesktop.ViewModel
         public bool IsLimitActive => CurrentOrderTypeEnum == EnumTradeOrderType.Limit;
         public bool IsMarketActive => CurrentOrderTypeEnum == EnumTradeOrderType.Market;
         public bool IsStopLimitActive => CurrentOrderTypeEnum == EnumTradeOrderType.StopLimit;
-        public bool IsExpiryVisible => CurrentOrderTypeEnum != EnumTradeOrderType.Market && _currentSelectedSymbol != null && string.Equals(_currentSelectedSymbol.SecurityGTC, "GoodTillCancelled", StringComparison.OrdinalIgnoreCase);
+        public bool IsExpiryVisible => CurrentOrderTypeEnum != EnumTradeOrderType.Market && CurrentSelectedSymbol != null && string.Equals(CurrentSelectedSymbol.SecurityGTC, "GoodTillCancelled", StringComparison.OrdinalIgnoreCase);
 
         public bool IsSpecificDateVisible => SelectedExpiry == "Specific Date";
 

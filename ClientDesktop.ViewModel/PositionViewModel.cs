@@ -286,6 +286,7 @@ namespace ClientDesktop.ViewModel
                             row.AveragePrice = updatedPosition.AveragePrice;
                             row.AveragePriceDisplay = updatedPosition.AveragePrice.ToString($"F{updatedPosition.SymbolDigit}");
                             row.Volume = updatedPosition.TotalVolume;
+                            row.Time = updatedPosition.LastInAt.HasValue ? CommonHelper.ConvertUtcToIst(updatedPosition.LastInAt.Value) : updatedPosition.CreatedAt.HasValue ? CommonHelper.ConvertUtcToIst(updatedPosition.CreatedAt.Value) : null;
                             row.CurrentPrice = updatedPosition.CurrentPrice;
                             row.CurrentPriceDisplay = updatedPosition.CurrentPrice.ToString($"F{updatedPosition.SymbolDigit}");
                         }
@@ -357,7 +358,7 @@ namespace ClientDesktop.ViewModel
                             row.AveragePriceDisplay = updatedOrder.Price.ToString($"F{updatedOrder.SymbolDigit}");
                             row.CurrentPrice = updatedOrder.CurrentPrice;
                             row.CurrentPriceDisplay = updatedOrder.CurrentPrice.ToString($"F{updatedOrder.SymbolDigit}");
-                            row.SymbolExpiry = CommonHelper.ConvertUtcToIst(updatedOrder.SymbolExpiry.Value);
+                            row.SymbolExpiry = updatedOrder.SymbolExpiry.HasValue ? CommonHelper.ConvertUtcToIst(updatedOrder.SymbolExpiry.Value) : null;
                         }
                     }
                     else
@@ -382,7 +383,7 @@ namespace ClientDesktop.ViewModel
                             CurrentPrice = updatedOrder.CurrentPrice,
                             CurrentPriceDisplay = updatedOrder.CurrentPrice.ToString($"F{updatedOrder.SymbolDigit}"),
                             Pnl = null,
-                            SymbolExpiry = CommonHelper.ConvertUtcToIst(updatedOrder.SymbolExpiry.Value),  // ← ADD
+                            SymbolExpiry = updatedOrder.SymbolExpiry.HasValue ? CommonHelper.ConvertUtcToIst(updatedOrder.SymbolExpiry.Value) : null, 
                             Type = RowType.Order
                         };
                         GridRows.Add(newRow);
@@ -437,7 +438,7 @@ namespace ClientDesktop.ViewModel
                               null;
                         vm.LimitRate = selectedRow.AveragePrice.ToString();
                     }
-                );
+              *  );
         }
 
         public void SortData(string sortBy, ListSortDirection direction)
