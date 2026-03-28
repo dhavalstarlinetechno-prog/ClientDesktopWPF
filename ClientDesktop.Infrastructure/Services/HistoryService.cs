@@ -71,7 +71,7 @@ namespace ClientDesktop.Infrastructure.Services
         {
             try
             {
-                var dealer = _sessionService.ClientListData?.FirstOrDefault();
+                var dealer = _sessionService.CurrentClient;
                 if (dealer == null)
                 {
                     FileLogger.ApplicationLog( "FetchHistoryFromApiAsync", "DealerId not found.");

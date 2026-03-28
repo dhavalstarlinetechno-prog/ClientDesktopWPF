@@ -29,6 +29,7 @@ namespace ClientDesktop.Infrastructure.Services
         public string Password { get; private set; }
         public double LastSelectedQty { get; set; }
         public (string UserId, string password, string LicenseId) LastSelectedLogin { get; set; }
+        public ClientDetails CurrentClient { get; private set; }
 
         #endregion
 
@@ -79,6 +80,9 @@ namespace ClientDesktop.Infrastructure.Services
         public void SetClientList(List<ClientDetails> clients)
         {
             ClientListData = clients;
+
+            CurrentClient = ClientListData?
+        .FirstOrDefault(x => x.ClientId == UserId);
         }
 
         /// <summary>

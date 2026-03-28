@@ -400,15 +400,15 @@ namespace ClientDesktop.ViewModel
 
             Application.Current.Dispatcher.InvokeAsync(() =>
             {
-                var clientDetail = _sessionService.ClientListData.FirstOrDefault(q => q.ClientId == _sessionService.UserId);
-                if (clientDetail != null)
+                if (_sessionService.CurrentClient != null)
                 {
-                    clientDetail.CreditAmount = details.CreditAmount;
-                    clientDetail.UplineAmount = details.UplineAmount;
-                    clientDetail.Balance = details.Balance;
-                    clientDetail.OccupiedMarginAmount = details.OccupiedMarginAmount;
-                    clientDetail.UplineCommission = details.UplineCommission;
+                    _sessionService.CurrentClient.CreditAmount = details.CreditAmount;
+                    _sessionService.CurrentClient.UplineAmount = details.UplineAmount;
+                    _sessionService.CurrentClient.Balance = details.Balance;
+                    _sessionService.CurrentClient.OccupiedMarginAmount = details.OccupiedMarginAmount;
+                    _sessionService.CurrentClient.UplineCommission = details.UplineCommission;
                 }
+
                 UpdateFooterPnl();
             });
         }
@@ -620,7 +620,7 @@ namespace ClientDesktop.ViewModel
         {
             string tradeSummary = string.Empty;
 
-            var clientDetail = _sessionService.ClientListData.Where(q => q.ClientId == _sessionService.UserId).FirstOrDefault();
+            var clientDetail = _sessionService.CurrentClient;
             if (clientDetail == null)
                 return string.Empty;
 

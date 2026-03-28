@@ -119,7 +119,7 @@ namespace ClientDesktop.ViewModel
         {
             if (_sessionService == null) return;
 
-            var client = _sessionService.ClientListData?.Find(c => c.ClientId == _sessionService.UserId);
+            var client = _sessionService.CurrentClient;
             if (client == null) return;
 
             UserName = client.ClientName;

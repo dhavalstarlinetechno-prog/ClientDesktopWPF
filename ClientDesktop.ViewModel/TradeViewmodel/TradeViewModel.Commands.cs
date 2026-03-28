@@ -107,7 +107,7 @@ namespace ClientDesktop.ViewModel
 
             try
             {
-                var clientData = _sessionService.ClientListData?.Find(c => c.ClientId == _sessionService.UserId);
+                var clientData = _sessionService.CurrentClient;
                 string positionId = positionGridRow?.Id ?? string.Empty;
                 string baseAction = (actionType == TradeConstants.ActionBuy ||
                                       actionType == TradeConstants.ActionModify)
