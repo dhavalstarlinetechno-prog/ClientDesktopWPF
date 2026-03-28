@@ -540,7 +540,7 @@ namespace ClientDesktop.ViewModel
                 double calculatedPnl = CalculateFloatingPnl(tick.Bid, tick.Ask, row);
                 row.Pnl = (decimal)Math.Round(calculatedPnl, 2);
 
-                row.PnlColor = row.Pnl >= 0 ? "#009900" : "#EF5350";
+                row.PnlColor = (!row.Pnl.HasValue || row.Pnl >= 0) ? "#009900" : "#EF5350";
             }
         }
 
