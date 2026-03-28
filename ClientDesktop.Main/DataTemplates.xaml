@@ -55,6 +55,11 @@
         <nav:Ledger />
     </DataTemplate>
 
+    <!-- Feedback Template -->
+    <DataTemplate DataType="{x:Type vm:FeedbackViewModel}">
+        <nav:FeedbackView />
+    </DataTemplate>
+
     <!-- Delete Trade ViewModel Template -->
     <DataTemplate DataType="{x:Type vm:DeleteTradeViewModel}">
         <del:DeleteView />

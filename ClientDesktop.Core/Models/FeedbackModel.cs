@@ -1,4 +1,6 @@
-﻿namespace ClientDesktop.Core.Models
+﻿using Newtonsoft.Json;
+
+namespace ClientDesktop.Core.Models
 {
     public class FeedbackModel
     {
@@ -12,6 +14,7 @@
         public string ClientName { get; set; }
         public bool IsClosed { get; set; }
         public bool IsReadPending { get; set; }
+        public string FeedbackMessage { get; set; }
     }
 
     public class FeedbackResponse
@@ -28,6 +31,8 @@
         public int FeedbackId { get; set; }
         public string FeedbackSubject { get; set; }
         public string FeedbackMessage { get; set; }
+
+        //[JsonProperty("feedbackDate")]
         public DateTime CreatedOn { get; set; }
         public List<string> FilePath { get; set; }
         public List<ChatList> ChatList { get; set; }
@@ -68,4 +73,16 @@
         public List<string> FilePath { get; set; }
         public DateTime CreatedOn { get; set; }
     }
+    public class FeedbackListResponse
+    {
+        public List<FeedbackModel> Data { get; set; }
+        public object Exception { get; set; }
+        public string SuccessMessage { get; set; }
+        public int ReturnID { get; set; }
+        public int Action { get; set; }
+        public bool IsSuccess { get; set; }
+    }
+
+   
+
 }

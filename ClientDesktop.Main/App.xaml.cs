@@ -71,6 +71,7 @@ namespace ClientDesktop.Main
             services.AddSingleton<SymbolSpecificationService>();
             services.AddSingleton<SymbolService>();
             services.AddSingleton<InvoiceService>();
+            services.AddSingleton<FeedbackService>();
 
             // Api Service, Tradeservice , Socketservice
             services.AddSingleton<IApiService, ApiService>();
@@ -107,6 +108,7 @@ namespace ClientDesktop.Main
             services.AddTransient<TradeViewModel>();
             services.AddSingleton<NavigationViewModel>();
             services.AddTransient<DeleteTradeViewModel>();
+            services.AddTransient<FeedbackViewModel>();
 
             // Views (Windows)
             services.AddSingleton<MainWindow>();

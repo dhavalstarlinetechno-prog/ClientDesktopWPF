@@ -119,7 +119,7 @@ namespace ClientDesktop.ViewModel
                     _dialogService.ShowDialog<LedgerViewModel>("Ledger");
                     break;
                 case "Feedback":
-                    // Open Feedback Dialog
+                    _dialogService.ShowDialog<FeedbackViewModel>("Feedback");
                     break;
                 case "Disclaimer":
                     _dialogService.ShowDialog<DisclaimerViewModel>(string.Empty);

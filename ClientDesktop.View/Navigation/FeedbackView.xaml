@@ -1,0 +1,737 @@
+﻿<UserControl x:Class="ClientDesktop.View.Navigation.FeedbackView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:ClientDesktop.View.Navigation"
+             mc:Ignorable="d" 
+             Height="600" Width="1080" Loaded="UserControl_Loaded">
+
+    <UserControl.Resources>
+        <!-- Styles for toolbar buttons -->
+        <Style x:Key="ToolbarButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="40"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="#CCCCCC"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                              BorderBrush="{TemplateBinding BorderBrush}"
+                              BorderThickness="{TemplateBinding BorderThickness}"
+                              CornerRadius="3">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Style for action buttons (Submit, Reply, New Feedback) -->
+        <Style x:Key="ActionButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#6495ED"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                              CornerRadius="3">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Style for back button -->
+        <Style x:Key="BackButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#708090"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                              CornerRadius="3">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- DataGrid Style -->
+        <Style x:Key="FeedbackDataGridStyle" TargetType="DataGrid">
+            <Setter Property="AutoGenerateColumns" Value="False"/>
+            <Setter Property="IsReadOnly" Value="True"/>
+            <Setter Property="HeadersVisibility" Value="Column"/>
+            <Setter Property="GridLinesVisibility" Value="All"/>
+            <Setter Property="VerticalGridLinesBrush" Value="#CCCCCC"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#CCCCCC"/>
+            <Setter Property="BorderBrush" Value="#CCCCCC"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="RowHeaderWidth" Value="0"/>
+            <Setter Property="SelectionMode" Value="Single"/>
+            <Setter Property="SelectionUnit" Value="FullRow"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="CanUserSortColumns" Value="False"/>
+            <Setter Property="ColumnHeaderHeight" Value="35"/>
+
+            <Setter Property="ColumnHeaderStyle">
+                <Setter.Value>
+                    <Style TargetType="DataGridColumnHeader">
+                        <Setter Property="Background" Value="White"/>
+                        <Setter Property="Foreground" Value="Black"/>
+                        <Setter Property="FontWeight" Value="Normal"/>
+                        <Setter Property="Padding" Value="10,0"/>
+                        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                        <Setter Property="BorderBrush" Value="#CCCCCC"/>
+                        <Setter Property="BorderThickness" Value="0,0,1,0"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="DataGridColumnHeader">
+                                    <Grid>
+                                        <Border Background="{TemplateBinding Background}" 
+                                      BorderBrush="{TemplateBinding BorderBrush}" 
+                                      BorderThickness="{TemplateBinding BorderThickness}">
+                                            <ContentPresenter Margin="{TemplateBinding Padding}" 
+                                                    VerticalAlignment="Center" 
+                                                    HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"/>
+                                        </Border>
+                                    </Grid>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Setter.Value>
+            </Setter>
+
+            <Setter Property="RowStyle">
+                <Setter.Value>
+                    <Style TargetType="DataGridRow">
+                        <Setter Property="Background" Value="White"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="#007ACC"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Setter.Value>
+            </Setter>
+
+            <Setter Property="CellStyle">
+                <Setter.Value>
+                    <Style TargetType="DataGridCell">
+                        <Setter Property="Background" Value="White"/>
+                        <Setter Property="BorderThickness" Value="0"/>
+                        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="#007ACC"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="BorderThickness" Value="0"/>
+                            </Trigger>
+                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource Self}, Path=IsSelected}" Value="False">
+                                <Setter Property="Background" Value="White"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <!-- Main Feedback Panel -->
+        <Border x:Name="FeedbackPanel" 
+              BorderBrush="#CCCCCC" 
+              BorderThickness="1" 
+              Background="White">
+
+            <Grid>
+                <!-- DataGrid Panel (initially visible) -->
+                <Grid x:Name="DataGridPanel" Visibility="Visible">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Add Feedback Button -->
+                    <Button x:Name="BtnAddFeedback" 
+                          Content="New Feedback" 
+                          Style="{StaticResource ActionButtonStyle}"
+                          HorizontalAlignment="Right"
+                          Margin="10"
+                          Width="150"
+                          Height="37" Click="BtnAddFeedback_Click"/>
+
+                    <!-- DataGrid for Feedback Records -->
+                    <DataGrid x:Name="DgvFeedbackRecord" 
+                            Grid.Row="1"
+                            Style="{StaticResource CustomDataGrid}"   
+                            Margin="0"                        
+                            AutoGenerateColumns="False"
+                            BorderThickness="0,1,0,0"
+                            FontFamily="Microsoft Sans Serif"
+                            FontSize="13" MouseLeftButtonUp="DgvFeedbackRecord_MouseLeftButtonUp">
+
+                        <DataGrid.Resources>
+                            <Style TargetType="DataGridCell">
+                                <Style.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="Background" Value="#007ACC" />
+                                        <Setter Property="Foreground" Value="White" />
+                                        <Setter Property="BorderThickness" Value="0" />
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+
+                        </DataGrid.Resources>
+
+
+
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Sr"   
+                                              Binding="{Binding SrNo}" 
+                                              Width="40">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                        <Setter Property="HorizontalAlignment" Value="Left"/>
+                                        <Setter Property="TextAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+
+                            </DataGridTextColumn>
+
+                            <DataGridTextColumn Binding="{Binding FeedbackId}" 
+                                              Visibility="Collapsed">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                        <Setter Property="HorizontalAlignment" Value="Left"/>
+                                        <Setter Property="TextAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <DataGridTemplateColumn Header="Subject" Width="*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Subject}" 
+                                                  TextDecorations="Underline" 
+                                                  Cursor="Hand" 
+                                                  VerticalAlignment="Center"
+                                                  HorizontalAlignment="Left"
+                                                  Margin="5,0">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="#007ACC"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=DataGridRow}}" Value="True">
+                                                            <Setter Property="Foreground" Value="White"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <DataGridTextColumn Header="Date" 
+                                              Binding="{Binding Date}" 
+                                              Width="200">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                        <Setter Property="HorizontalAlignment" Value="Left"/>
+                                        <Setter Property="TextAlignment" Value="Left"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <DataGridTextColumn Header="Status" 
+                                              Binding="{Binding Status}" 
+                                              Width="120">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                        <Setter Property="HorizontalAlignment" Value="Left"/>
+                                        <Setter Property="TextAlignment" Value="Left"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <DataGridTemplateColumn Header="Action" Width="60">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button CommandParameter="{Binding FeedbackId}"
+                                              Background="Transparent" 
+                                              BorderThickness="0" 
+                                              HorizontalAlignment="Center"
+                                              Cursor="Hand">
+                                            <Viewbox Width="16" Height="16">
+                                                <Path Data="M6,19c0,1.1 0.9,2 2,2h8c1.1,0 2,-0.9 2,-2V7H6V19z M19,4h-3.5l-1,-1h-5l-1,1H5v2h14V4z"
+                                              Fill="#D32F2F" 
+                                              Stretch="Uniform"/>
+                                            </Viewbox>
+                                        </Button>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+
+                <!-- Feedback Form Panel (for adding new feedback) -->
+                <Grid x:Name="FeedbackFormPanel" Visibility="Collapsed" Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Subject -->
+                    <Label Grid.Row="0" Grid.Column="0" 
+                         Content="Subject:" 
+                         FontWeight="Bold" 
+                         FontSize="12"
+                         Margin="78,10,5,5"
+                         VerticalAlignment="Center"/>
+
+                    <TextBox x:Name="TxtSubject" 
+                           Grid.Row="0" Grid.Column="1" 
+                           Height="38" 
+                           FontSize="12"
+                           VerticalContentAlignment ="Center"
+                           Margin="5,10,10,5"/>
+
+                    <!-- Message -->
+                    <Label Grid.Row="1" Grid.Column="0" 
+                         Content="Message:" 
+                         FontWeight="Bold" 
+                         FontSize="12"
+                         Margin="68,5,5,5"
+                         VerticalAlignment="Top"/>
+
+                    <!-- Message with Toolbar -->
+                    <Grid Grid.Row="1" Grid.Column="1" Margin="5,5,10,5">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Panel1 - Formatting Toolbar -->
+                        <WrapPanel Grid.Row="0" Background="#F0F0F0" Margin="0,0,0,5">
+                            <Button x:Name="BtnBold" Content="B" Style="{StaticResource ToolbarButtonStyle}" Click="BtnBold_Click"/>
+                            <Button x:Name="BtnItalic" Content="I" Style="{StaticResource ToolbarButtonStyle}" Click="BtnItalic_Click"/>
+                            <Button x:Name="BtnUnderline" Content="U" Style="{StaticResource ToolbarButtonStyle}" Click="BtnUnderline_Click"/>
+                            <Button x:Name="BtnStrikeout" Content="S" Style="{StaticResource ToolbarButtonStyle}" Click="BtnStrikeout_Click"/>
+                            <Button x:Name="BtnMonospace" Content="M" Style="{StaticResource ToolbarButtonStyle}" Click="BtnMonospace_Click"/>
+                            <Button x:Name="BtnSuperscript" Content="X²" Style="{StaticResource ToolbarButtonStyle}" Click="BtnSuperscript_Click"/>
+                            <Button x:Name="BtnSubscript" Content="X₂" Style="{StaticResource ToolbarButtonStyle}" Click="BtnSubscript_Click"/>
+
+                            <ComboBox x:Name="CmbFontSize" Width="60" Height="30" Margin="2" SelectedIndex="4" VerticalContentAlignment="Center" SelectionChanged="CmbFontSize_SelectionChanged">
+                                <ComboBoxItem Content="8"/>
+                                <ComboBoxItem Content="9"/>
+                                <ComboBoxItem Content="10"/>
+                                <ComboBoxItem Content="11"/>
+                                <ComboBoxItem Content="12"/>
+                                <ComboBoxItem Content="14"/>
+                                <ComboBoxItem Content="16"/>
+                                <ComboBoxItem Content="18"/>
+                            </ComboBox>
+
+                            <Button x:Name="BtnColorPicker" Content="✏" Style="{StaticResource ToolbarButtonStyle}" Click="BtnColorPicker_Click"/>
+                            <Button x:Name="BtnEmoji" Content="😊" Style="{StaticResource ToolbarButtonStyle}" Click="BtnEmoji_Click"/>
+
+                            <Popup x:Name="EmojiPopup" Placement="Bottom" StaysOpen="False" AllowsTransparency="True">
+                                <Border Background="White" BorderBrush="#CCCCCC" BorderThickness="1" CornerRadius="5" Padding="5" Margin="0,5,0,0">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+
+                                        <!-- Close Button -->
+                                        <Button Content="X" Width="20" Height="20" HorizontalAlignment="Right" Background="Transparent" BorderThickness="0"  Click="BtnCloseEmoji_Click"/>
+
+                                        <!-- Emojis Container with ScrollViewer -->
+                                        <ScrollViewer Grid.Row="1" Width="240" Height="150" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                            <WrapPanel x:Name="EmojiWrapPanel">
+                                                <!-- Emojis will be added from C# code -->
+                                            </WrapPanel>
+                                        </ScrollViewer>
+                                    </Grid>
+                                </Border>
+                            </Popup>
+
+                            <Button x:Name="BtnUndo" Content="↶" Style="{StaticResource ToolbarButtonStyle}" Click="BtnUndo_Click"/>
+                            <Button x:Name="BtnRedo" Content="↷" Style="{StaticResource ToolbarButtonStyle}" Click="BtnRedo_Click"/>
+                        </WrapPanel>
+
+                        <!-- Message RichTextBox -->
+                        <RichTextBox x:Name="TxtMessage" 
+                                   Grid.Row="1" 
+                                   Height="117"
+                                   FontSize="12"
+                                   BorderBrush="#CCCCCC"
+                                   BorderThickness="1"
+                                   VerticalContentAlignment ="Center"
+                                   VerticalScrollBarVisibility="Auto"/>
+                    </Grid>
+
+                    <!-- Attachment -->
+                    <Label x:Name="LabelChosenFile" Grid.Row="2" Grid.Column="0" 
+                         Content="Attachment:" 
+                         FontWeight="Bold" 
+                         FontSize="12"
+                         Margin="74,5,5,5"
+                         VerticalAlignment="Center"/>
+
+                    <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Margin="5,5,10,5">
+                        <Button x:Name="BtnChooseFile" 
+                              Content="Choose File" 
+                              Width="156" 
+                              Height="35"
+                              Margin="0,0,10,0"/>
+
+                        <Label x:Name="LblChosenFile" 
+                             Content="No file chosen" 
+                             VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Picture Preview -->
+                    <Image x:Name="ImgPreview" 
+                         Grid.Row="3" Grid.Column="1" 
+                         Width="270" 
+                         Height="147"
+                         Margin="5,5,10,5"
+                         HorizontalAlignment="Left"
+                         Stretch="Uniform"/>
+
+                    <!-- Error Message -->
+                    <TextBlock x:Name="TxtErrorMessage" 
+                             Grid.Row="4" Grid.Column="1" 
+                             Foreground="Red"
+                             Margin="550,5,10,5"/>
+
+                    <!-- Submit Button -->
+                    <Button x:Name="BtnSubmit" 
+                          Grid.Row="5" Grid.Column="1" 
+                          Content="Submit" 
+                          Style="{StaticResource ActionButtonStyle}"
+                          Width="118" 
+                          Height="38"
+                          HorizontalAlignment="Right"
+                          Margin="5,10,10,10" Click="BtnSubmit_Click"/>
+                </Grid>
+
+                <!-- Reply Panel -->
+                <ScrollViewer x:Name="ReplyPanel"
+                            VerticalScrollBarVisibility="Auto"
+                            HorizontalScrollBarVisibility="Disabled"
+                            Visibility="Collapsed">
+
+                    <Grid Margin="10">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <!-- Back Button -->
+                            <RowDefinition Height="Auto"/>
+                            <!-- Details -->
+                            <RowDefinition Height="Auto"/>
+                            <!-- Hidden ID -->
+                            <RowDefinition Height="Auto"/>
+                            <!-- Chat + Reply -->
+                        </Grid.RowDefinitions>
+
+                        <!-- Back Button -->
+                        <Button x:Name="BtnBack"
+                              Grid.Row="0"
+                              Content="Back"
+                              Style="{StaticResource BackButtonStyle}"
+                              Width="80"
+                              Height="40"
+                              HorizontalAlignment="Right" Click="BtnBack_Click"/>
+
+                        <!-- Feedback Details -->
+                        <Grid Grid.Row="1" Margin="20,10,20,10">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="110"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Label Grid.Row="0" Grid.Column="0"
+                                 Content="Date:"
+                                 FontWeight="Bold"
+                                 HorizontalAlignment="Right"
+                                 VerticalAlignment="Center"
+                                 Padding="0,5,5,5"/>
+
+                            <TextBlock Grid.Row="0" Grid.Column="1"
+                                     x:Name="TxtDateValue"
+                                     VerticalAlignment="Center"
+                                     Margin="5,0"/>
+
+                            <Label Grid.Row="1" Grid.Column="0"
+                                 Content="Subject:"
+                                 FontWeight="Bold"
+                                 HorizontalAlignment="Right"
+                                 VerticalAlignment="Center"
+                                 Padding="0,5,5,5"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="1"
+                                     x:Name="TxtSubjectValue"
+                                     VerticalAlignment="Center"
+                                     Margin="5,0"/>
+
+                            <Label Grid.Row="2" Grid.Column="0"
+                                 Content="Message:"
+                                 FontWeight="Bold"
+                                 HorizontalAlignment="Right"
+                                 VerticalAlignment="Top"
+                                 Padding="0,0,5,5"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="1"
+                                     x:Name="TxtMessageValue"
+                                     TextWrapping="Wrap"
+                                     VerticalAlignment="Center"
+                                     HorizontalAlignment="Left"
+                                     Margin="5,-30,0,-30"/>
+
+                            <Label Grid.Row="3" Grid.Column="0"
+                                 Content="Attachment :"
+                                 FontWeight="Bold"
+                                 HorizontalAlignment="Right"
+                                 VerticalAlignment="Top"
+                                 Padding="0,5,5,5"/>
+
+                            <Image Grid.Row="3" Grid.Column="1"
+                                 x:Name="ImgAttachment"
+                                 Width="200" 
+                                 Height="120"
+                                 Stretch="Uniform" 
+                                 HorizontalAlignment="Left"
+                                 Margin="5,5,0,0"/>
+                        </Grid>
+
+                        <TextBlock x:Name="TxtFeedbackId"
+                                 Grid.Row="2"
+                                 Visibility="Collapsed"/>
+
+                        <!-- Feedback Chat Panel -->
+                        <StackPanel x:Name="FeedbackChatPanel"
+                                  Grid.Row="3"
+                                  Margin="141,10,0,0">
+
+                            <!-- Chat Panel -->
+                            <ListBox x:Name="ChatPanel"
+                                   Margin="0,0,0,10"
+                                   Background="Transparent"
+                                   BorderThickness="0"
+                                   ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                                   ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                   VirtualizingStackPanel.IsVirtualizing="True"
+                                   VirtualizingStackPanel.VirtualizationMode="Recycling">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="Focusable" Value="False"/>
+                                        <Setter Property="IsHitTestVisible" Value="False"/>
+                                        <Setter Property="Padding" Value="0"/>
+                                        <Setter Property="Margin" Value="0"/>
+                                        <Setter Property="BorderThickness" Value="0"/>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                            </ListBox>
+
+                            <!-- Reply Button -->
+                            <Button x:Name="BtnReply"
+                                  Content="Reply"
+                                  Style="{StaticResource ActionButtonStyle}"
+                                  Width="90"
+                                  Height="40"
+                                  HorizontalAlignment="Right"
+                                  Margin="0,0,10,10" Click="BtnReply_Click"/>
+
+                            <!-- GroupBox Panel -->
+                            <Grid x:Name="GroupBoxPanel" Visibility="Collapsed" Width="850" HorizontalAlignment="Right">
+                                <Border x:Name="GrpBoxReply"
+                                      BorderBrush="#CCCCCC"
+                                      BorderThickness="1"
+                                      Background="White"
+                                      Padding="10"
+                                      Margin="5">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+
+                                        <!-- Toolbar -->
+                                        <WrapPanel Grid.Row="0"
+                                                 Background="#F0F0F0"
+                                                 Margin="0,0,0,5">
+                                            <Button x:Name="ButtonReplayBold" Content="B" Style="{StaticResource ToolbarButtonStyle}" Click="ButtonReplayBold_Click"/>
+                                            <Button x:Name="ButtonReplayItalic" Content="I" Style="{StaticResource ToolbarButtonStyle}" Click="ButtonReplayItalic_Click"/>
+                                            <Button x:Name="ButtonReplayUnderLine" Content="U" Style="{StaticResource ToolbarButtonStyle}" Click="ButtonReplayUnderLine_Click"/>
+                                            <Button x:Name="ButtonReplayStrick" Content="S" Style="{StaticResource ToolbarButtonStyle}" Click="ButtonReplayStrick_Click"/>
+                                            <Button x:Name="ButtonReplayMonospace" Content="M" Style="{StaticResource ToolbarButtonStyle}" Click="ButtonReplayMonospace_Click"/>
+                                            <Button x:Name="ButtonReplaysuperscrip" Content="X²" Style="{StaticResource ToolbarButtonStyle}" Click="ButtonReplaysuperscrip_Click"/>
+                                            <Button x:Name="ButtonReplaysubscript" Content="X₂" Style="{StaticResource ToolbarButtonStyle}" Click="ButtonReplaysubscript_Click"/>
+
+                                            <ComboBox x:Name="CmbReplyFontSize" 
+                                                     Width="60" 
+                                                     Height="30" 
+                                                     Margin="2" 
+                                                     SelectedIndex="4"
+                                                     VerticalContentAlignment="Center" SelectionChanged="CmbReplyFontSize_SelectionChanged">
+                                                <ComboBoxItem Content="8"/>
+                                                <ComboBoxItem Content="9"/>
+                                                <ComboBoxItem Content="10"/>
+                                                <ComboBoxItem Content="11"/>
+                                                <ComboBoxItem Content="12"/>
+                                                <ComboBoxItem Content="14"/>
+                                                <ComboBoxItem Content="16"/>
+                                                <ComboBoxItem Content="18"/>
+                                            </ComboBox>
+
+                                            <Button x:Name="ButtonReplayFillColor" Content="✏" Style="{StaticResource ToolbarButtonStyle}" Click="ButtonReplayFillColor_Click"/>
+                                            <Button x:Name="ButtonReplayemoji" Content="😊" Style="{StaticResource ToolbarButtonStyle}" Click="ButtonReplayemoji_Click"/>
+
+                                            <Button x:Name="ButtonReplayUndo" Content="↶" Style="{StaticResource ToolbarButtonStyle}" Click="ButtonReplayUndo_Click"/>
+                                            <Button x:Name="ButtonReplayRedo" Content="↷" Style="{StaticResource ToolbarButtonStyle}" Click="ButtonReplayRedo_Click"/>
+                                        </WrapPanel>
+
+                                        <!-- Reply Text -->
+                                        <RichTextBox x:Name="TxtReply"
+                                                   Grid.Row="1"
+                                                   Height="80"
+                                                   BorderBrush="#CCCCCC"
+                                                   BorderThickness="1"
+                                                   Margin="0,0,0,5"
+                                                   VerticalScrollBarVisibility="Auto"/>
+
+                                        <!-- Emoji Popup -->
+                                        <Popup x:Name="ReplayeEmojiPopup" 
+                                             StaysOpen="False" 
+                                             PlacementTarget="{Binding ElementName=ButtonReplayemoji}" 
+                                             Placement="Bottom" 
+                                             Width="220" 
+                                             Height="220">
+                                            <Border Background="White" BorderBrush="Gray" BorderThickness="1" CornerRadius="5">
+                                                <Grid>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="*"/>
+                                                    </Grid.RowDefinitions>
+
+                                                    <Button x:Name="BtnReplayCloseEmoji" 
+                                                          Content="&#x2715;" 
+                                                          Grid.Row="0" 
+                                                          HorizontalAlignment="Right" 
+                                                          VerticalAlignment="Top" 
+                                                          Width="25" 
+                                                          Height="25" 
+                                                          Background="Transparent" 
+                                                          BorderBrush="Transparent" 
+                                                          Foreground="Gray" 
+                                                          FontWeight="Bold" 
+                                                          Cursor="Hand" Click="BtnReplayCloseEmoji_Click">
+                                                        <Button.Template>
+                                                            <ControlTemplate TargetType="Button">
+                                                                <Border Background="{TemplateBinding Background}">
+                                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                </Border>
+                                                                <ControlTemplate.Triggers>
+                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                        <Setter Property="Foreground" Value="Red"/>
+                                                                    </Trigger>
+                                                                </ControlTemplate.Triggers>
+                                                            </ControlTemplate>
+                                                        </Button.Template>
+                                                    </Button>
+
+                                                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                                        <WrapPanel x:Name="ReplayeEmojiWrapPanel" Margin="5"/>
+                                                    </ScrollViewer>
+                                                </Grid>
+                                            </Border>
+                                        </Popup>
+
+                                        <!-- File Upload -->
+                                        <StackPanel Grid.Row="2" Orientation="Vertical" Margin="0,0,0,0">
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                                                <Button x:Name="BtnFileUpload" 
+                                                      Content="Choose File"
+                                                      Width="156"
+                                                      Height="32"
+                                                      Margin="0,0,10,0"/>
+
+                                                <Label x:Name="LableReplayFileName" 
+                                                     Content="No file chosen" 
+                                                     VerticalAlignment="Center"/>
+                                            </StackPanel>
+
+                                            <!-- Image -->
+                                            <Image x:Name="ReplayPicturebox" 
+                                                 Width="123" 
+                                                 Height="84"
+                                                 Stretch="Uniform"
+                                                 HorizontalAlignment="Left"/>
+                                        </StackPanel>
+
+                                        <!-- Submit -->
+                                        <Button x:Name="BtnReplySubmit"
+                                              Grid.Row="4"
+                                              Content="Submit"
+                                              Style="{StaticResource ActionButtonStyle}"
+                                              Width="92"
+                                              Height="40"
+                                              HorizontalAlignment="Right"
+                                              Margin="0,10,10,10" Click="BtnReplySubmit_Click"/>
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+    </Grid>
+
+</UserControl>
