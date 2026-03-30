@@ -20,7 +20,7 @@ namespace ClientDesktop.Infrastructure.Helpers
             DataTable dataTable,
             string title,
             string sheetName = "Sheet1",
-            Dictionary<string, ExcelColumnAlignment>? columnAlignments = null)
+            Dictionary<string, EnumExcelColumnAlignment>? columnAlignments = null)
         {
             _sheets.Add(new SheetData
             {
@@ -190,7 +190,7 @@ namespace ClientDesktop.Infrastructure.Helpers
         private static XLAlignmentHorizontalValues ResolveAlignment(
             string colName,
             Type colType,
-            Dictionary<string, ExcelColumnAlignment>? overrides,
+            Dictionary<string, EnumExcelColumnAlignment>? overrides,
             bool autoDetect)
         {
             // Explicit override from caller
@@ -211,11 +211,11 @@ namespace ClientDesktop.Infrastructure.Helpers
             return XLAlignmentHorizontalValues.Left;
         }
 
-        private static XLAlignmentHorizontalValues ToXlAlign(ExcelColumnAlignment align) =>
+        private static XLAlignmentHorizontalValues ToXlAlign(EnumExcelColumnAlignment align) =>
             align switch
             {
-                ExcelColumnAlignment.Right => XLAlignmentHorizontalValues.Right,
-                ExcelColumnAlignment.Center => XLAlignmentHorizontalValues.Center,
+                EnumExcelColumnAlignment.Right => XLAlignmentHorizontalValues.Right,
+                EnumExcelColumnAlignment.Center => XLAlignmentHorizontalValues.Center,
                 _ => XLAlignmentHorizontalValues.Left
             };
 
@@ -252,6 +252,6 @@ namespace ClientDesktop.Infrastructure.Helpers
         public DataTable Table { get; set; }
         public string Title { get; set; }
         public string SheetName { get; set; } = "Sheet1";
-        public Dictionary<string, ExcelColumnAlignment>? ColumnAlignments { get; set; }
+        public Dictionary<string, EnumExcelColumnAlignment>? ColumnAlignments { get; set; }
     }
 }

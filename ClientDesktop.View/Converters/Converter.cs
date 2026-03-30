@@ -1,11 +1,11 @@
-﻿using System;
+﻿using ClientDesktop.Infrastructure.Helpers;
+using System.ComponentModel;
 using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Media;
-using ClientDesktop.Infrastructure.Helpers;
 
 namespace ClientDesktop.View.Converters
-{
+{   
     #region ProfitToColorConverter
 
     /// <summary>
@@ -228,7 +228,9 @@ namespace ClientDesktop.View.Converters
             if (value is DateTime utcDate)
             {
                 DateTime istTime = CommonHelper.ConvertUtcToIst(utcDate);
-                return istTime.ToString("dd/MM/yy HH:mm:ss", CultureInfo.InvariantCulture);
+                string format = parameter as string ?? "dd/MM/yy HH:mm:ss";
+
+                return istTime.ToString(format, CultureInfo.InvariantCulture);
             }
 
             return value;
@@ -243,6 +245,77 @@ namespace ClientDesktop.View.Converters
         }
 
         #endregion
+    }
+
+    #endregion
+
+    #region AmountFormatConverter
+
+    /// <summary>
+    /// Provides a value converter that formats numeric amounts as strings for display purposes.
+    /// </summary>
+    /// <remarks>This converter is typically used in data binding scenarios to present decimal or double
+    /// values in a standardized currency or amount format. It relies on a helper method to perform the formatting. The
+    /// converter does not support converting formatted strings back to numeric values and will throw a
+    /// NotImplementedException if ConvertBack is called.</remarks>
+    public class AmountFormatConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value == null) return "0.00";
+
+            if (value is decimal decValue)
+            {
+                return CommonHelper.FormatAmount(decValue);
+            }
+            else if (value is double doubleValue)
+            {
+                return CommonHelper.FormatAmount(doubleValue);
+            }
+
+            return value.ToString();
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    #endregion
+
+    #region EnumToDescriptionConverter
+
+    /// <summary>
+    /// Provides a value converter that returns the description of an enumeration value, using the DescriptionAttribute
+    /// if present, or the enum name otherwise.
+    /// </summary>
+    /// <remarks>This converter is typically used in data binding scenarios, such as WPF or Xamarin.Forms, to
+    /// display user-friendly descriptions for enum values in the UI. If the enum field is decorated with a
+    /// DescriptionAttribute, its value is used; otherwise, the enum field's name is returned. This class implements the
+    /// IValueConverter interface and is intended for one-way conversion only; ConvertBack is not implemented and will
+    /// throw a NotImplementedException if called.</remarks>
+    public class EnumToDescriptionConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value == null) return string.Empty;
+
+            var enumType = value.GetType();
+            var enumValue = Enum.GetName(enumType, value);
+
+            // Find the DescriptionAttribute if available
+            var field = enumType.GetField(enumValue);
+            var attribute = (DescriptionAttribute)Attribute.GetCustomAttribute(field, typeof(DescriptionAttribute));
+
+            // Return the description if found, otherwise return the enum name
+            return attribute != null ? attribute.Description : enumValue;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     #endregion

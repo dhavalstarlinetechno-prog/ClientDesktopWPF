@@ -13,6 +13,7 @@
         public DateTime? SymbolExpiryClose { get; set; }
         public int SymbolContractSize { get; set; }
         public double AveragePrice { get; set; }
+        public string DisplayAveragePrice => AveragePrice.ToString($"F{SymbolDigit}");
         public double AverageOutPrice { get; set; }
         public double CurrentPrice { get; set; }
         public string Status { get; set; }

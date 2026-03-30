@@ -171,7 +171,7 @@
 
     <Grid Margin="2,4,0,0">
         <TreeView BorderThickness="0" Background="Transparent" PreviewMouseLeftButtonUp="TreeView_PreviewMouseLeftButtonUp">
-            <TreeViewItem IsExpanded="False" ItemsSource="{Binding Servers}">
+            <TreeViewItem IsExpanded="False" ItemsSource="{Binding Servers}" IsSelected="True">
                 <TreeViewItem.ItemContainerStyle>
                     <Style TargetType="TreeViewItem" BasedOn="{StaticResource {x:Type TreeViewItem}}">
                         <Setter Property="IsExpanded" Value="False"/>

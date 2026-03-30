@@ -18,14 +18,14 @@ namespace ClientDesktop.Core.Interfaces
 
         /// <summary>
         /// Add a data grid from a DataTable.
-        /// columnAlignments: optional per-column alignment — new() { ["Amount"] = PdfColumnAlignment.Right }
+        /// columnAlignments: optional per-column alignment — new() { ["Amount"] = EnumPdfColumnAlignment.Right }
         /// footerData: summary key-values printed below the table.
         /// </summary>
         IPdfService AddGrid(
             DataTable dataTable,
             string? gridTitle = null,
             Dictionary<string, string>? footerData = null,
-            Dictionary<string, PdfColumnAlignment>? columnAlignments = null,
+            Dictionary<string, EnumPdfColumnAlignment>? columnAlignments = null,
             bool repeatHeader = true);
 
         /// <summary>

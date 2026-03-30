@@ -31,7 +31,7 @@ namespace ClientDesktop.Core.Interfaces
             DataTable dataTable,
             string title,
             string sheetName = "Sheet1",
-            Dictionary<string, ExcelColumnAlignment> columnAlignments = null);
+            Dictionary<string, EnumExcelColumnAlignment> columnAlignments = null);
 
         /// <summary>
         /// Save the Excel file. Opens WPF SaveFileDialog.

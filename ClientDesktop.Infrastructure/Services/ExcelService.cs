@@ -42,7 +42,7 @@ namespace ClientDesktop.Infrastructure.Services
             DataTable dataTable,
             string title,
             string sheetName = "Sheet1",
-            Dictionary<string, ExcelColumnAlignment>? columnAlignments = null)
+            Dictionary<string, EnumExcelColumnAlignment>? columnAlignments = null)
         {
             _builder.AddSheet(dataTable, title, sheetName, columnAlignments);
             return this;

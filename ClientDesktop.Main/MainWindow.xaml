@@ -287,8 +287,8 @@
                 
                 <Border Grid.ColumnSpan="3"
                     VerticalAlignment="Bottom"
-                    Height="0.4"
-                    Background="#444444"/>
+                    Height="1.5"
+                    Background="#CCD1D6"/>
 
                 <StackPanel Grid.Column="0"
                         Orientation="Horizontal"

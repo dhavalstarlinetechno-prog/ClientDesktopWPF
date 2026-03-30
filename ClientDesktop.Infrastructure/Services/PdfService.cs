@@ -55,7 +55,7 @@ namespace ClientDesktop.Infrastructure.Services
             DataTable dataTable,
             string? gridTitle = null,
             Dictionary<string, string>? footerData = null,
-            Dictionary<string, PdfColumnAlignment>? columnAlignments = null,
+            Dictionary<string, EnumPdfColumnAlignment>? columnAlignments = null,
             bool repeatHeader = true)
         {          
             var iTextAlignments = MapAlignments(columnAlignments);
@@ -131,11 +131,11 @@ namespace ClientDesktop.Infrastructure.Services
         #region Private Helpers
 
         /// <summary>
-        /// Converts Core layer's PdfColumnAlignment enum to iText7's TextAlignment.
+        /// Converts Core layer's EnumPdfColumnAlignment enum to iText7's TextAlignment.
         /// This mapping exists ONLY in PdfService — nowhere else in the codebase.
         /// </summary>
         private static Dictionary<string, TextAlignment>? MapAlignments(
-            Dictionary<string, PdfColumnAlignment>? source)
+            Dictionary<string, EnumPdfColumnAlignment>? source)
         {
             if (source is null or { Count: 0 }) return null;
 
@@ -144,8 +144,8 @@ namespace ClientDesktop.Infrastructure.Services
             {
                 result[kvp.Key] = kvp.Value switch
                 {
-                    PdfColumnAlignment.Right => TextAlignment.RIGHT,
-                    PdfColumnAlignment.Center => TextAlignment.CENTER,
+                    EnumPdfColumnAlignment.Right => TextAlignment.RIGHT,
+                    EnumPdfColumnAlignment.Center => TextAlignment.CENTER,
                     _ => TextAlignment.LEFT
                 };
             }

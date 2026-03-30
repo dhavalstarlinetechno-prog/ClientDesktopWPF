@@ -8,10 +8,8 @@ namespace ClientDesktop.Core.Enums
 {
     /// <summary>
     /// Excel column text alignment.
-    /// Core layer ka apna enum — ClosedXML ka koi reference nahi.
-    /// IPdfService ki tarah IPdfService bhi isi pattern ko follow karta hai.
     /// </summary>
-    public enum ExcelColumnAlignment
+    public enum EnumExcelColumnAlignment
     {
         Left,
         Center,

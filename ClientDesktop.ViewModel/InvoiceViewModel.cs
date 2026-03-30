@@ -147,13 +147,13 @@ namespace ClientDesktop.ViewModel
                 return;
             }
            
-            var securityAlignments = new Dictionary<string, PdfColumnAlignment>
+            var securityAlignments = new Dictionary<string, EnumPdfColumnAlignment>
             {
-                ["BVol"] = PdfColumnAlignment.Right,
-                ["SVol"] = PdfColumnAlignment.Right,
-                ["Rate"] = PdfColumnAlignment.Right,
-                ["Comm"] = PdfColumnAlignment.Right,
-                ["Net"] = PdfColumnAlignment.Right
+                ["BVol"] = EnumPdfColumnAlignment.Right,
+                ["SVol"] = EnumPdfColumnAlignment.Right,
+                ["Rate"] = EnumPdfColumnAlignment.Right,
+                ["Comm"] = EnumPdfColumnAlignment.Right,
+                ["Net"] = EnumPdfColumnAlignment.Right
             };
             
             _pdfService.Clear();
@@ -175,11 +175,11 @@ namespace ClientDesktop.ViewModel
            
             if (_summaryPdfTable != null && _summaryPdfTable.Rows.Count > 0)
             {
-                var summaryAlignments = new Dictionary<string, PdfColumnAlignment>
+                var summaryAlignments = new Dictionary<string, EnumPdfColumnAlignment>
                 {
-                    ["M2M"] = PdfColumnAlignment.Right,
-                    ["Comm"] = PdfColumnAlignment.Right,
-                    ["Total"] = PdfColumnAlignment.Right
+                    ["M2M"] = EnumPdfColumnAlignment.Right,
+                    ["Comm"] = EnumPdfColumnAlignment.Right,
+                    ["Total"] = EnumPdfColumnAlignment.Right
                 };
 
                 _pdfService
@@ -194,11 +194,11 @@ namespace ClientDesktop.ViewModel
            
             if (_carryPdfTable != null && _carryPdfTable.Rows.Count > 0)
             {
-                var carryAlignments = new Dictionary<string, PdfColumnAlignment>
+                var carryAlignments = new Dictionary<string, EnumPdfColumnAlignment>
                 {
-                    ["Type"] = PdfColumnAlignment.Right,
-                    ["Quantity"] = PdfColumnAlignment.Right,
-                    ["Net"] = PdfColumnAlignment.Right
+                    ["Type"] = EnumPdfColumnAlignment.Right,
+                    ["Quantity"] = EnumPdfColumnAlignment.Right,
+                    ["Net"] = EnumPdfColumnAlignment.Right
                 };
 
                 _pdfService

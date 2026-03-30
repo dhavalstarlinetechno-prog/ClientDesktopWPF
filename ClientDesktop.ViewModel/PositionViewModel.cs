@@ -5,37 +5,41 @@ using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Helpers;
 using ClientDesktop.Infrastructure.Services;
-using ClientDesktop.Services; 
+using ClientDesktop.Services;
 using CommunityToolkit.Mvvm.Messaging;
 using System.Collections;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Globalization;
-using System.Security.Cryptography;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
 
 namespace ClientDesktop.ViewModel
 {
+    /// <summary>
+    /// ViewModel for managing the positions and orders view.
+    /// </summary>
     public class PositionViewModel : ViewModelBase
     {
+        #region Fields
+
         private readonly SessionService _sessionService;
         private readonly PositionService _positionService;
         private readonly LiveTickService _liveTickService;
-        private ObservableCollection<PositionGridRow> _gridRows;
-        private readonly ISocketService _socketService; 
-
-        private ListCollectionView _positionCollectionView;
-
+        private readonly ISocketService _socketService;
         private readonly IDialogService _dialogService;
         private readonly HashSet<string> _subscribedSymbols = new HashSet<string>();
-        private Guid _currentLoadId = Guid.Empty;
 
+        private ObservableCollection<PositionGridRow> _gridRows;
+        private ListCollectionView _positionCollectionView;
+        private Guid _currentLoadId = Guid.Empty;
         private List<Position> _rawPositions = new List<Position>();
         private List<OrderModel> _rawOrders = new List<OrderModel>();
 
-        public ICommand DoubleClickCommand { get; }
+        #endregion
+
+        #region Properties
+
         public ObservableCollection<PositionGridRow> GridRows
         {
             get { return _gridRows; }
@@ -48,7 +52,19 @@ namespace ClientDesktop.ViewModel
             set { _positionCollectionView = value; OnPropertyChanged(); }
         }
 
-        // 2. ISocketService Injected in Constructor
+        #endregion
+
+        #region Commands
+
+        public ICommand DoubleClickCommand { get; }
+
+        #endregion
+
+        #region Constructor
+
+        /// <summary>
+        /// Initializes a new instance of the PositionViewModel class.
+        /// </summary>
         public PositionViewModel(SessionService sessionService, PositionService positionService, IDialogService dialogService, LiveTickService liveTickService, ISocketService socketService)
         {
             _sessionService = sessionService;
@@ -64,35 +80,23 @@ namespace ClientDesktop.ViewModel
 
             RegisterMessenger();
 
-            // Live Tick Events
             _liveTickService.OnTickReceived += HandleLiveTick;
             _liveTickService.OnReconnected += HandleLiveReconnected;
             _liveTickService.OnConnected += HandleLiveConnected;
 
-            // 3. Socket Events Wired
             _socketService.OnPositionUpdated += HandlePositionUpdated;
             _socketService.OnOrderUpdated += HandleOrderUpdated;
             _socketService.OnUpdateUserBalance += HandleUserBalance;
             _socketService.OnSocketReconnected += HandleSocketReconnection;
         }
 
-        private void RegisterMessenger()
-        {
-            WeakReferenceMessenger.Default.Register<UserAuthEvent>(this, (recipient, message) =>
-            {
-                if (message.IsLoggedIn)
-                {
-                    LoadCachedDataAsync();
-                    _currentLoadId = Guid.Empty;
-                    _subscribedSymbols.Clear();
-                }
-                else
-                {
-                    _subscribedSymbols.Clear();
-                }
-            });
-        }
+        #endregion
 
+        #region Public Methods
+
+        /// <summary>
+        /// Loads cached position and order data asynchronously.
+        /// </summary>
         public async void LoadCachedDataAsync()
         {
             await Task.Run(() =>
@@ -110,6 +114,9 @@ namespace ClientDesktop.ViewModel
             });
         }
 
+        /// <summary>
+        /// Loads live position and order data from the API asynchronously.
+        /// </summary>
         public async void LoadDataAsync()
         {
             Guid thisLoadId = Guid.NewGuid();
@@ -143,7 +150,6 @@ namespace ClientDesktop.ViewModel
 
                     await SubscribeToSymbolAsync().ConfigureAwait(false);
 
-                    // 4. Start Socket connection if not already connected
                     if (!_socketService.IsConnected)
                     {
                         _socketService.Start();
@@ -156,177 +162,10 @@ namespace ClientDesktop.ViewModel
             });
         }
 
-        private ObservableCollection<PositionGridRow> BuildGridRows(List<Position> positions, List<OrderModel> orders)
-        {
-            var list = new ObservableCollection<PositionGridRow>();
-
-            // --- A. ADD POSITIONS ---
-            foreach (var pos in positions)
-            {
-                string displaySide = pos.Side;
-                if (string.Equals(pos.Side, "Bid", StringComparison.OrdinalIgnoreCase)) displaySide = "Sell";
-                else if (string.Equals(pos.Side, "Ask", StringComparison.OrdinalIgnoreCase)) displaySide = "Buy";
-
-
-                list.Add(new PositionGridRow
-                {
-                    Id = pos.Id,
-                    SymbolId = pos.SymbolId,
-                    SymbolDigit = pos.SymbolDigit,
-                    SymbolName = pos.SymbolName,
-                    Time = pos.LastInAt.HasValue? CommonHelper.ConvertUtcToIst(pos.LastInAt.Value): null,
-                    Side = displaySide,
-                    OrderType = "Market",
-                    Volume = pos.TotalVolume,
-                    AveragePrice = pos.AveragePrice,
-                    AveragePriceDisplay = pos.AveragePrice.ToString($"F{pos.SymbolDigit}"),
-                    CurrentPrice = pos.CurrentPrice,
-                    CurrentPriceDisplay = pos.CurrentPrice.ToString($"F{pos.SymbolDigit}"),
-                    Pnl = pos.Pnl,
-                    Type = RowType.Position
-                });
-            }
-
-            // --- B. ADD FOOTER (Summary) ---
-            decimal totalPnl = positions.Sum(p => p.Pnl ?? 0);
-            double balance = 0;
-            double credit = 0;
-            double equity = balance + credit + (double)totalPnl;
-            double margin = 0;
-            double freeMargin = equity - margin;
-
-            string footerText = $"Balance: {balance:N2}   Eq: {equity:N2}   Credit: {credit:N2}   Margin: {margin:N2}   Free: {freeMargin:N2}";
-
-            list.Add(new PositionGridRow
-            {
-                SymbolName = footerText,
-                Type = RowType.Footer,
-                Pnl = totalPnl,
-                Volume = null,
-                AveragePrice = null,
-                CurrentPrice = null
-            });
-
-            // --- C. ADD ORDERS ---
-            foreach (var ord in orders)
-            {
-                string displaySide = ord.Side;
-                if (string.Equals(ord.Side, "Bid", StringComparison.OrdinalIgnoreCase)) displaySide = "Sell";
-                else if (string.Equals(ord.Side, "Ask", StringComparison.OrdinalIgnoreCase)) displaySide = "Buy";
-
-                list.Add(new PositionGridRow
-                {
-                    Id = ord.OrderId,
-                    SymbolId = ord.SymbolId,
-                    SymbolDigit = ord.SymbolDigit,
-                    SymbolName = ord.SymbolName,
-                    Time = CommonHelper.ConvertUtcToIst(ord.UpdatedAt),
-                    Side = displaySide,
-                    OrderType = ord.OrderType,
-                    Volume = ord.Volume,
-                    AveragePrice = ord.Price,
-                    AveragePriceDisplay = ord.Price.ToString($"F{ord.SymbolDigit}"),
-                    CurrentPrice = ord.CurrentPrice,
-                    CurrentPriceDisplay = ord.CurrentPrice.ToString($"F{ord.SymbolDigit}"),
-                    Pnl = null,
-                    SymbolExpiry = ord.SymbolExpiry.HasValue ? CommonHelper.ConvertUtcToIst(ord.SymbolExpiry.Value) : null,
-                    Type = RowType.Order
-                });
-            }
-
-            return list;
-        }
-
-        private void UpdateGridSilently(ObservableCollection<PositionGridRow> newList)
-        {
-            var currentSort = PositionCollectionView?.CustomSort;
-
-            GridRows = newList;
-            PositionCollectionView = new ListCollectionView(GridRows);
-
-            if (currentSort != null)
-            {
-                PositionCollectionView.CustomSort = currentSort;
-            }
-            OnPropertyChanged(nameof(PositionCollectionView));
-        }
-
-        #region Socket Handlers for Updating Local & UI
-
-        private void HandleSocketReconnection()
-        {
-            Application.Current.Dispatcher.InvokeAsync(() => LoadDataAsync());
-        }
-
-        private void HandlePositionUpdated(Position updatedPosition, bool isDeleted)
-        {   
-            if (updatedPosition == null) return;
-
-            Task.Run(() => _positionService.UpdateLocalPosition(updatedPosition, isDeleted));
-
-            Application.Current.Dispatcher.InvokeAsync(() =>
-            {
-                if (isDeleted)
-                {
-                    _rawPositions.RemoveAll(p => p.Id == updatedPosition.Id);
-                    var rowToRemove = GridRows.FirstOrDefault(r => r.Type == RowType.Position && r.Id == updatedPosition.Id);
-                    if (rowToRemove != null) GridRows.Remove(rowToRemove);
-                }
-                else
-                {
-                    var existingPos = _rawPositions.FirstOrDefault(p => p.Id == updatedPosition.Id);
-                    if (existingPos != null)
-                    {
-                        var index = _rawPositions.IndexOf(existingPos);
-                        _rawPositions[index] = updatedPosition;
-
-                        var row = GridRows.FirstOrDefault(r => r.Type == RowType.Position && r.Id == updatedPosition.Id);
-                        if (row != null)
-                        {
-                            row.AveragePrice = updatedPosition.AveragePrice;
-                            row.AveragePriceDisplay = updatedPosition.AveragePrice.ToString($"F{updatedPosition.SymbolDigit}");
-                            row.Volume = updatedPosition.TotalVolume;
-                            row.Time = updatedPosition.LastInAt.HasValue ? CommonHelper.ConvertUtcToIst(updatedPosition.LastInAt.Value) : updatedPosition.CreatedAt.HasValue ? CommonHelper.ConvertUtcToIst(updatedPosition.CreatedAt.Value) : null;
-                            row.CurrentPrice = updatedPosition.CurrentPrice;
-                            row.CurrentPriceDisplay = updatedPosition.CurrentPrice.ToString($"F{updatedPosition.SymbolDigit}");
-                        }
-                    }
-                    else
-                    {
-                        _rawPositions.Add(updatedPosition);
-                        string displaySide = updatedPosition.Side;
-                        if (string.Equals(updatedPosition.Side, "Bid", StringComparison.OrdinalIgnoreCase)) displaySide = "Sell";
-                        else if (string.Equals(updatedPosition.Side, "Ask", StringComparison.OrdinalIgnoreCase)) displaySide = "Buy";
-
-                        var newRow = new PositionGridRow
-                        {
-                            Id = updatedPosition.Id,
-                            SymbolId = updatedPosition.SymbolId,
-                            SymbolDigit = updatedPosition.SymbolDigit,
-                            SymbolName = updatedPosition.SymbolName,
-                            Time = updatedPosition.CreatedAt.HasValue? CommonHelper.ConvertUtcToIst(updatedPosition.CreatedAt.Value) : updatedPosition.LastInAt.HasValue ? CommonHelper.ConvertUtcToIst(updatedPosition.LastInAt.Value) : null,
-                            Side = displaySide,
-                            OrderType = "Market",
-                            Volume = updatedPosition.TotalVolume,
-                            AveragePrice = updatedPosition.AveragePrice,
-                            AveragePriceDisplay = updatedPosition.AveragePrice.ToString($"F{updatedPosition.SymbolDigit}"),
-                            CurrentPrice = updatedPosition.CurrentPrice,
-                            CurrentPriceDisplay = updatedPosition.CurrentPrice.ToString($"F{updatedPosition.SymbolDigit}"),
-                            Pnl = updatedPosition.Pnl,
-                            Type = RowType.Position
-                        };
-                        var footerRow = GridRows.FirstOrDefault(r => r.Type == RowType.Footer);
-                        int insertIndex = footerRow != null ? GridRows.IndexOf(footerRow) : GridRows.Count;
-                        GridRows.Insert(insertIndex, newRow);
-                    }
-                }
-
-                UpdateFooterPnl();
-                _ = SubscribeToSymbolAsync();
-            });
-        }
-
-        public void HandleOrderUpdated(OrderModel updatedOrder, bool isDeleted , string orderId)
+        /// <summary>
+        /// Handles updates for order data received from the socket.
+        /// </summary>
+        public void HandleOrderUpdated(OrderModel updatedOrder, bool isDeleted, string orderId)
         {
             Task.Run(() => _positionService.UpdateLocalOrder(updatedOrder, isDeleted));
 
@@ -381,7 +220,7 @@ namespace ClientDesktop.ViewModel
                             CurrentPrice = updatedOrder.CurrentPrice,
                             CurrentPriceDisplay = updatedOrder.CurrentPrice.ToString($"F{updatedOrder.SymbolDigit}"),
                             Pnl = null,
-                            SymbolExpiry = updatedOrder.SymbolExpiry.HasValue ? CommonHelper.ConvertUtcToIst(updatedOrder.SymbolExpiry.Value) : null, 
+                            SymbolExpiry = updatedOrder.SymbolExpiry.HasValue ? CommonHelper.ConvertUtcToIst(updatedOrder.SymbolExpiry.Value) : null,
                             Type = RowType.Order
                         };
                         GridRows.Add(newRow);
@@ -392,53 +231,9 @@ namespace ClientDesktop.ViewModel
             });
         }
 
-        private void HandleUserBalance(ClientDetails details)
-        {
-            if (details == null) return;
-
-            Application.Current.Dispatcher.InvokeAsync(() =>
-            {
-                if (_sessionService.CurrentClient != null)
-                {
-                    _sessionService.CurrentClient.CreditAmount = details.CreditAmount;
-                    _sessionService.CurrentClient.UplineAmount = details.UplineAmount;
-                    _sessionService.CurrentClient.Balance = details.Balance;
-                    _sessionService.CurrentClient.OccupiedMarginAmount = details.OccupiedMarginAmount;
-                    _sessionService.CurrentClient.UplineCommission = details.UplineCommission;
-                }
-
-                UpdateFooterPnl();
-            });
-        }
-
-        #endregion
-
-        private void PositionGridDoubleClick(PositionGridRow selectedRow)
-        {
-            if (selectedRow == null || selectedRow.Type == RowType.Footer)
-                return;
-
-            _dialogService.ShowDialog<TradeViewModel>(
-                    "Trade Order",
-                    configureViewModel: vm =>
-                    {
-                        _ = vm.LoadSymbolListAsync();
-
-                        vm.positionGridRow = selectedRow;
-                        vm.CurrentWindowModeEnum = selectedRow.Type == RowType.Position ? EnumTradeWindowMode.FromPosition : EnumTradeWindowMode.FromOrder;
-                        vm.CurrentOrderTypeEnum = selectedRow.IsPosition ? EnumTradeOrderType.Market :
-                              selectedRow.OrderType?.Contains("Stop", StringComparison.OrdinalIgnoreCase) == true ? EnumTradeOrderType.StopLimit :
-                              selectedRow.OrderType?.Contains("Limit", StringComparison.OrdinalIgnoreCase) == true ? EnumTradeOrderType.Limit :
-                              EnumTradeOrderType.Market;
-                        vm.OriginalOrderType = !selectedRow.IsOrder ? null :
-                              selectedRow.OrderType?.Contains("Stop", StringComparison.OrdinalIgnoreCase) == true ? EnumTradeOrderType.StopLimit :
-                              selectedRow.OrderType?.Contains("Limit", StringComparison.OrdinalIgnoreCase) == true ? EnumTradeOrderType.Limit :
-                              null;
-                        vm.LimitRate = selectedRow.AveragePrice.ToString();
-                    }
-               );
-        }
-
+        /// <summary>
+        /// Sets the sorting logic for the grid view.
+        /// </summary>
         public void SortData(string sortBy, ListSortDirection direction)
         {
             if (PositionCollectionView != null)
@@ -447,118 +242,9 @@ namespace ClientDesktop.ViewModel
             }
         }
 
-        private async Task SubscribeToSymbolAsync()
-        {
-            if (!_sessionService.IsLoggedIn || !_sessionService.IsInternetAvailable) return;
-
-            _subscribedSymbols.Clear();
-
-            var symbolsToSubscribe = GridRows
-                .Where(r => r.Type == RowType.Position || r.Type == RowType.Order)
-                .Select(r => r.SymbolName)
-                .Where(s => !string.IsNullOrWhiteSpace(s))
-                .Distinct()
-                .ToList();
-
-            foreach (var sym in symbolsToSubscribe)
-            {
-                await _liveTickService.SubscribeSymbolAsync(sym);
-                _subscribedSymbols.Add(sym);
-            }
-        }
-
-        private async Task UnsubscribeAllSymbolsAsync()
-        {
-            foreach (var symbol in _subscribedSymbols.ToList())
-            {
-                await _liveTickService.UnsubscribeSymbolAsync(symbol);
-            }
-            _subscribedSymbols.Clear();
-        }
-
-        private void HandleLiveTick(TickData tick)
-        {
-            if (string.IsNullOrEmpty(tick.SymbolName))
-                return;
-
-            Application.Current.Dispatcher.InvokeAsync(() =>
-            {
-                var rowsToUpdate = GridRows.Where(r =>
-                    (r.Type == RowType.Position || r.Type == RowType.Order)
-                    && r.SymbolName == tick.SymbolName).ToList();
-
-                foreach (var row in rowsToUpdate)
-                {
-                    UpdateRowPrice(row, tick);
-                }
-
-                UpdateFooterPnl();
-            }, System.Windows.Threading.DispatcherPriority.DataBind);
-        }
-
-        private void HandleLiveConnected()
-        {
-            LoadDataAsync();
-        }
-
-        private async void HandleLiveReconnected()
-        {
-            await SubscribeToSymbolAsync();
-        }
-
-        private void UpdateRowPrice(PositionGridRow row, TickData tick)
-        {
-            int digits = row.SymbolDigit;
-            double newPrice;
-
-            if (string.Equals(row.Side, "Buy", StringComparison.OrdinalIgnoreCase))
-            {
-                newPrice = tick.Ask;
-            }
-            else
-            {
-                newPrice = tick.Bid;
-            }
-
-            double oldPrice = row.CurrentPrice ?? newPrice;
-            if (newPrice > oldPrice)
-            {
-                row.PriceColor = "#009900";
-            }
-            else if (newPrice < oldPrice)
-            {
-                row.PriceColor = "#EF5350";
-            }
-
-            row.CurrentPrice = Math.Round(newPrice, digits);
-            row.CurrentPriceDisplay = newPrice.ToString($"F{digits}");
-
-            if (row.Type == RowType.Position && row.AveragePrice.HasValue && row.Volume.HasValue)
-            {
-                double calculatedPnl = CalculateFloatingPnl(tick.Bid, tick.Ask, row);
-                row.Pnl = (decimal)Math.Round(calculatedPnl, 2);
-
-                row.PnlColor = (!row.Pnl.HasValue || row.Pnl >= 0) ? "#009900" : "#EF5350";
-            }
-        }
-
-        private void UpdateFooterPnl()
-        {
-            var footerRow = GridRows.FirstOrDefault(r => r.Type == RowType.Footer);
-            if (footerRow == null)
-                return;
-
-            decimal totalPnl = GridRows
-                .Where(r => r.Type == RowType.Position)
-                .Sum(r => r.Pnl ?? 0);
-
-            footerRow.Pnl = totalPnl;
-            footerRow.PnlColor = totalPnl >= 0 ? "#009900" : "#EF5350";
-
-            string summaryText = CalculatePositionFooterSummary((double)totalPnl);
-            footerRow.SymbolName = summaryText;
-        }
-
+        /// <summary>
+        /// Calculates the floating profit and loss for a specific position.
+        /// </summary>
         public double CalculateFloatingPnl(double newBid, double newAsk, PositionGridRow row)
         {
             var position = _rawPositions.Find(q => q.Id == row.Id);
@@ -608,12 +294,428 @@ namespace ClientDesktop.ViewModel
             }
         }
 
+        /// <summary>
+        /// Calculates the adjusted price by adding the spread balance.
+        /// </summary>
         public static double AddSpreadBalance(double odds, int symbolDigits, double spreadBalance)
         {
             double multiplier = Math.Pow(10.0, symbolDigits);
             return (odds * multiplier + spreadBalance) / multiplier;
         }
 
+        /// <summary>
+        /// Calculates the upline balance based on client data.
+        /// </summary>
+        public static double CalculateUplineBalance(double? uplineAmount, double? uplineCommission, bool realtimeCommission)
+        {
+            double value = 0d;
+
+            if (uplineAmount != null && uplineCommission != null)
+                value = uplineAmount.Value +
+                        (realtimeCommission ? uplineCommission.Value : 0d);
+            else if (uplineAmount != null)
+                value = uplineAmount.Value;
+            else if (uplineCommission != null && realtimeCommission)
+                value = uplineCommission.Value;
+
+            return value;
+        }
+
+        /// <summary>
+        /// Cleans up resources by unsubscribing from all symbols.
+        /// </summary>
+        public async void Cleanup()
+        {
+            await UnsubscribeAllSymbolsAsync();
+        }
+
+        #endregion
+
+        #region Private Methods
+
+        /// <summary>
+        /// Registers listeners for application-wide signals.
+        /// </summary>
+        private void RegisterMessenger()
+        {
+            WeakReferenceMessenger.Default.Register<UserAuthEvent>(this, (recipient, message) =>
+            {
+                if (message.IsLoggedIn)
+                {
+                    LoadCachedDataAsync();
+                    _currentLoadId = Guid.Empty;
+                    _subscribedSymbols.Clear();
+                }
+                else
+                {
+                    _subscribedSymbols.Clear();
+                }
+            });
+        }
+
+        /// <summary>
+        /// Builds the grid rows from raw positions and orders data.
+        /// </summary>
+        private ObservableCollection<PositionGridRow> BuildGridRows(List<Position> positions, List<OrderModel> orders)
+        {
+            var list = new ObservableCollection<PositionGridRow>();
+
+            foreach (var pos in positions)
+            {
+                string displaySide = pos.Side;
+                if (string.Equals(pos.Side, "Bid", StringComparison.OrdinalIgnoreCase)) displaySide = "Sell";
+                else if (string.Equals(pos.Side, "Ask", StringComparison.OrdinalIgnoreCase)) displaySide = "Buy";
+
+                list.Add(new PositionGridRow
+                {
+                    Id = pos.Id,
+                    SymbolId = pos.SymbolId,
+                    SymbolDigit = pos.SymbolDigit,
+                    SymbolName = pos.SymbolName,
+                    Time = pos.LastInAt.HasValue ? CommonHelper.ConvertUtcToIst(pos.LastInAt.Value) : null,
+                    Side = displaySide,
+                    OrderType = "Market",
+                    Volume = pos.TotalVolume,
+                    AveragePrice = pos.AveragePrice,
+                    AveragePriceDisplay = pos.AveragePrice.ToString($"F{pos.SymbolDigit}"),
+                    CurrentPrice = pos.CurrentPrice,
+                    CurrentPriceDisplay = pos.CurrentPrice.ToString($"F{pos.SymbolDigit}"),
+                    Pnl = pos.Pnl,
+                    Type = RowType.Position
+                });
+            }
+
+            decimal totalPnl = positions.Sum(p => p.Pnl ?? 0);
+            double balance = 0;
+            double credit = 0;
+            double equity = balance + credit + (double)totalPnl;
+            double margin = 0;
+            double freeMargin = equity - margin;
+
+            string footerText = $"Balance: {balance:N2}   Eq: {equity:N2}   Credit: {credit:N2}   Margin: {margin:N2}   Free: {freeMargin:N2}";
+
+            list.Add(new PositionGridRow
+            {
+                SymbolName = footerText,
+                Type = RowType.Footer,
+                Pnl = totalPnl,
+                Volume = null,
+                AveragePrice = null,
+                CurrentPrice = null
+            });
+
+            foreach (var ord in orders)
+            {
+                string displaySide = ord.Side;
+                if (string.Equals(ord.Side, "Bid", StringComparison.OrdinalIgnoreCase)) displaySide = "Sell";
+                else if (string.Equals(ord.Side, "Ask", StringComparison.OrdinalIgnoreCase)) displaySide = "Buy";
+
+                list.Add(new PositionGridRow
+                {
+                    Id = ord.OrderId,
+                    SymbolId = ord.SymbolId,
+                    SymbolDigit = ord.SymbolDigit,
+                    SymbolName = ord.SymbolName,
+                    Time = CommonHelper.ConvertUtcToIst(ord.UpdatedAt),
+                    Side = displaySide,
+                    OrderType = ord.OrderType,
+                    Volume = ord.Volume,
+                    AveragePrice = ord.Price,
+                    AveragePriceDisplay = ord.Price.ToString($"F{ord.SymbolDigit}"),
+                    CurrentPrice = ord.CurrentPrice,
+                    CurrentPriceDisplay = ord.CurrentPrice.ToString($"F{ord.SymbolDigit}"),
+                    Pnl = null,
+                    SymbolExpiry = ord.SymbolExpiry.HasValue ? CommonHelper.ConvertUtcToIst(ord.SymbolExpiry.Value) : null,
+                    Type = RowType.Order
+                });
+            }
+
+            return list;
+        }
+
+        /// <summary>
+        /// Updates the collection view silently without breaking current sorting.
+        /// </summary>
+        private void UpdateGridSilently(ObservableCollection<PositionGridRow> newList)
+        {
+            var currentSort = PositionCollectionView?.CustomSort;
+
+            GridRows = newList;
+            PositionCollectionView = new ListCollectionView(GridRows);
+
+            if (currentSort != null)
+            {
+                PositionCollectionView.CustomSort = currentSort;
+            }
+            OnPropertyChanged(nameof(PositionCollectionView));
+        }
+
+        /// <summary>
+        /// Initiates data loading process upon socket reconnection.
+        /// </summary>
+        private void HandleSocketReconnection()
+        {
+            Application.Current.Dispatcher.InvokeAsync(() => LoadDataAsync());
+        }
+
+        /// <summary>
+        /// Handles position updates received from the socket.
+        /// </summary>
+        private void HandlePositionUpdated(Position updatedPosition, bool isDeleted)
+        {
+            if (updatedPosition == null) return;
+
+            Task.Run(() => _positionService.UpdateLocalPosition(updatedPosition, isDeleted));
+
+            Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                if (isDeleted)
+                {
+                    _rawPositions.RemoveAll(p => p.Id == updatedPosition.Id);
+                    var rowToRemove = GridRows.FirstOrDefault(r => r.Type == RowType.Position && r.Id == updatedPosition.Id);
+                    if (rowToRemove != null) GridRows.Remove(rowToRemove);
+                }
+                else
+                {
+                    var existingPos = _rawPositions.FirstOrDefault(p => p.Id == updatedPosition.Id);
+                    if (existingPos != null)
+                    {
+                        var index = _rawPositions.IndexOf(existingPos);
+                        _rawPositions[index] = updatedPosition;
+
+                        var row = GridRows.FirstOrDefault(r => r.Type == RowType.Position && r.Id == updatedPosition.Id);
+                        if (row != null)
+                        {
+                            row.AveragePrice = updatedPosition.AveragePrice;
+                            row.AveragePriceDisplay = updatedPosition.AveragePrice.ToString($"F{updatedPosition.SymbolDigit}");
+                            row.Volume = updatedPosition.TotalVolume;
+                            row.Time = updatedPosition.LastInAt.HasValue ? CommonHelper.ConvertUtcToIst(updatedPosition.LastInAt.Value) : updatedPosition.CreatedAt.HasValue ? CommonHelper.ConvertUtcToIst(updatedPosition.CreatedAt.Value) : null;
+                            row.CurrentPrice = updatedPosition.CurrentPrice;
+                            row.CurrentPriceDisplay = updatedPosition.CurrentPrice.ToString($"F{updatedPosition.SymbolDigit}");
+                        }
+                    }
+                    else
+                    {
+                        _rawPositions.Add(updatedPosition);
+                        string displaySide = updatedPosition.Side;
+                        if (string.Equals(updatedPosition.Side, "Bid", StringComparison.OrdinalIgnoreCase)) displaySide = "Sell";
+                        else if (string.Equals(updatedPosition.Side, "Ask", StringComparison.OrdinalIgnoreCase)) displaySide = "Buy";
+
+                        var newRow = new PositionGridRow
+                        {
+                            Id = updatedPosition.Id,
+                            SymbolId = updatedPosition.SymbolId,
+                            SymbolDigit = updatedPosition.SymbolDigit,
+                            SymbolName = updatedPosition.SymbolName,
+                            Time = updatedPosition.CreatedAt.HasValue ? CommonHelper.ConvertUtcToIst(updatedPosition.CreatedAt.Value) : updatedPosition.LastInAt.HasValue ? CommonHelper.ConvertUtcToIst(updatedPosition.LastInAt.Value) : null,
+                            Side = displaySide,
+                            OrderType = "Market",
+                            Volume = updatedPosition.TotalVolume,
+                            AveragePrice = updatedPosition.AveragePrice,
+                            AveragePriceDisplay = updatedPosition.AveragePrice.ToString($"F{updatedPosition.SymbolDigit}"),
+                            CurrentPrice = updatedPosition.CurrentPrice,
+                            CurrentPriceDisplay = updatedPosition.CurrentPrice.ToString($"F{updatedPosition.SymbolDigit}"),
+                            Pnl = updatedPosition.Pnl,
+                            Type = RowType.Position
+                        };
+                        var footerRow = GridRows.FirstOrDefault(r => r.Type == RowType.Footer);
+                        int insertIndex = footerRow != null ? GridRows.IndexOf(footerRow) : GridRows.Count;
+                        GridRows.Insert(insertIndex, newRow);
+                    }
+                }
+
+                UpdateFooterPnl();
+                _ = SubscribeToSymbolAsync();
+            });
+        }
+
+        /// <summary>
+        /// Processes updates for the user balance details.
+        /// </summary>
+        private void HandleUserBalance(ClientDetails details)
+        {
+            if (details == null) return;
+
+            Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                if (_sessionService.CurrentClient != null)
+                {
+                    _sessionService.CurrentClient.CreditAmount = details.CreditAmount;
+                    _sessionService.CurrentClient.UplineAmount = details.UplineAmount;
+                    _sessionService.CurrentClient.Balance = details.Balance;
+                    _sessionService.CurrentClient.OccupiedMarginAmount = details.OccupiedMarginAmount;
+                    _sessionService.CurrentClient.UplineCommission = details.UplineCommission;
+                }
+
+                UpdateFooterPnl();
+            });
+        }
+
+        /// <summary>
+        /// Handles the double click action on a grid row to open the trade window.
+        /// </summary>
+        private void PositionGridDoubleClick(PositionGridRow selectedRow)
+        {
+            if (selectedRow == null || selectedRow.Type == RowType.Footer)
+                return;
+
+            _dialogService.ShowDialog<TradeViewModel>(
+                    "Trade Order",
+                    configureViewModel: vm =>
+                    {
+                        _ = vm.LoadSymbolListAsync();
+
+                        vm.positionGridRow = selectedRow;
+                        vm.CurrentWindowModeEnum = selectedRow.Type == RowType.Position ? EnumTradeWindowMode.FromPosition : EnumTradeWindowMode.FromOrder;
+                        vm.CurrentOrderTypeEnum = selectedRow.IsPosition ? EnumTradeOrderType.Market :
+                              selectedRow.OrderType?.Contains("Stop", StringComparison.OrdinalIgnoreCase) == true ? EnumTradeOrderType.StopLimit :
+                              selectedRow.OrderType?.Contains("Limit", StringComparison.OrdinalIgnoreCase) == true ? EnumTradeOrderType.Limit :
+                              EnumTradeOrderType.Market;
+                        vm.OriginalOrderType = !selectedRow.IsOrder ? null :
+                              selectedRow.OrderType?.Contains("Stop", StringComparison.OrdinalIgnoreCase) == true ? EnumTradeOrderType.StopLimit :
+                              selectedRow.OrderType?.Contains("Limit", StringComparison.OrdinalIgnoreCase) == true ? EnumTradeOrderType.Limit :
+                              null;
+                        vm.LimitRate = selectedRow.AveragePrice.ToString();
+                    }
+               );
+        }
+
+        /// <summary>
+        /// Subscribes to live ticks for all currently displayed symbols.
+        /// </summary>
+        private async Task SubscribeToSymbolAsync()
+        {
+            if (!_sessionService.IsLoggedIn || !_sessionService.IsInternetAvailable) return;
+
+            _subscribedSymbols.Clear();
+
+            var symbolsToSubscribe = GridRows
+                .Where(r => r.Type == RowType.Position || r.Type == RowType.Order)
+                .Select(r => r.SymbolName)
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Distinct()
+                .ToList();
+
+            foreach (var sym in symbolsToSubscribe)
+            {
+                await _liveTickService.SubscribeSymbolAsync(sym);
+                _subscribedSymbols.Add(sym);
+            }
+        }
+
+        /// <summary>
+        /// Unsubscribes from all currently tracked symbols.
+        /// </summary>
+        private async Task UnsubscribeAllSymbolsAsync()
+        {
+            foreach (var symbol in _subscribedSymbols.ToList())
+            {
+                await _liveTickService.UnsubscribeSymbolAsync(symbol);
+            }
+            _subscribedSymbols.Clear();
+        }
+
+        /// <summary>
+        /// Handles the reception of a new tick for a symbol.
+        /// </summary>
+        private void HandleLiveTick(TickData tick)
+        {
+            if (string.IsNullOrEmpty(tick.SymbolName))
+                return;
+
+            Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                var rowsToUpdate = GridRows.Where(r =>
+                    (r.Type == RowType.Position || r.Type == RowType.Order)
+                    && r.SymbolName == tick.SymbolName).ToList();
+
+                foreach (var row in rowsToUpdate)
+                {
+                    UpdateRowPrice(row, tick);
+                }
+
+                UpdateFooterPnl();
+            }, System.Windows.Threading.DispatcherPriority.DataBind);
+        }
+
+        /// <summary>
+        /// Handles initial data loading upon live socket connection.
+        /// </summary>
+        private void HandleLiveConnected()
+        {
+            LoadDataAsync();
+        }
+
+        /// <summary>
+        /// Restores symbol subscriptions after a live socket reconnection.
+        /// </summary>
+        private async void HandleLiveReconnected()
+        {
+            await SubscribeToSymbolAsync();
+        }
+
+        /// <summary>
+        /// Updates the price attributes of a grid row based on recent tick data.
+        /// </summary>
+        private void UpdateRowPrice(PositionGridRow row, TickData tick)
+        {
+            int digits = row.SymbolDigit;
+            double newPrice;
+
+            if (string.Equals(row.Side, "Buy", StringComparison.OrdinalIgnoreCase))
+            {
+                newPrice = tick.Ask;
+            }
+            else
+            {
+                newPrice = tick.Bid;
+            }
+
+            double oldPrice = row.CurrentPrice ?? newPrice;
+            if (newPrice > oldPrice)
+            {
+                row.PriceColor = "#009900";
+            }
+            else if (newPrice < oldPrice)
+            {
+                row.PriceColor = "#EF5350";
+            }
+
+            row.CurrentPrice = Math.Round(newPrice, digits);
+            row.CurrentPriceDisplay = newPrice.ToString($"F{digits}");
+
+            if (row.Type == RowType.Position && row.AveragePrice.HasValue && row.Volume.HasValue)
+            {
+                double calculatedPnl = CalculateFloatingPnl(tick.Bid, tick.Ask, row);
+                row.Pnl = (decimal)Math.Round(calculatedPnl, 2);
+
+                row.PnlColor = (!row.Pnl.HasValue || row.Pnl >= 0) ? "#009900" : "#EF5350";
+            }
+        }
+
+        /// <summary>
+        /// Refreshes the summary footer containing total profit and loss information.
+        /// </summary>
+        private void UpdateFooterPnl()
+        {
+            var footerRow = GridRows.FirstOrDefault(r => r.Type == RowType.Footer);
+            if (footerRow == null)
+                return;
+
+            decimal totalPnl = GridRows
+                .Where(r => r.Type == RowType.Position)
+                .Sum(r => r.Pnl ?? 0);
+
+            footerRow.Pnl = totalPnl;
+            footerRow.PnlColor = totalPnl >= 0 ? "#009900" : "#EF5350";
+
+            string summaryText = CalculatePositionFooterSummary((double)totalPnl);
+            footerRow.SymbolName = summaryText;
+        }
+
+        /// <summary>
+        /// Formats and calculates the overall summary text for the footer row.
+        /// </summary>
         private string CalculatePositionFooterSummary(double finalTotalPnl)
         {
             string tradeSummary = string.Empty;
@@ -655,26 +757,13 @@ namespace ClientDesktop.ViewModel
             return tradeSummary;
         }
 
-        public static double CalculateUplineBalance(double? uplineAmount, double? uplineCommission, bool realtimeCommission)
-        {
-            double value = 0d;
+        #endregion
 
-            if (uplineAmount != null && uplineCommission != null)
-                value = uplineAmount.Value +
-                        (realtimeCommission ? uplineCommission.Value : 0d);
-            else if (uplineAmount != null)
-                value = uplineAmount.Value;
-            else if (uplineCommission != null && realtimeCommission)
-                value = uplineCommission.Value;
+        #region Nested Classes
 
-            return value;
-        }
-
-        public async void Cleanup()
-        {
-            await UnsubscribeAllSymbolsAsync();
-        }
-
+        /// <summary>
+        /// Custom comparer class used to sort position grid items based on chosen criteria.
+        /// </summary>
         private class PositionGridSorter : IComparer
         {
             private readonly string _sortBy;
@@ -739,5 +828,7 @@ namespace ClientDesktop.ViewModel
                 return result;
             }
         }
+
+        #endregion
     }
 }

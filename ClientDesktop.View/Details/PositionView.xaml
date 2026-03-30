@@ -150,7 +150,7 @@
                 <DataGridTemplateColumn Header="Type" Width="0.8*" SortMemberPath="Side" CanUserSort="False">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding Side}" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,5,0">
+                            <TextBlock Text="{Binding Side}" VerticalAlignment="Center" Margin="5,0,0,0">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Foreground" Value="{Binding Side, Converter={StaticResource OrderTypeColorConverter}}"/>
@@ -166,7 +166,7 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
 
-                <DataGridTextColumn Header="Order Type" Binding="{Binding OrderType}" ElementStyle="{StaticResource RightAlignCell}" Width="1*" SortMemberPath="OrderType" CanUserSort="False"/>
+                <DataGridTextColumn Header="Order Type" Binding="{Binding OrderType}" Width="1*" SortMemberPath="OrderType" CanUserSort="False"/>
                 <DataGridTextColumn Header="Volume" Binding="{Binding Volume , StringFormat=F2}" ElementStyle="{StaticResource RightAlignCell}" Width="0.8*" SortMemberPath="Volume" CanUserSort="False"/>
                 <DataGridTextColumn Header="Avg Price" Binding="{Binding AveragePriceDisplay}" ElementStyle="{StaticResource RightAlignCell}" Width="1*" SortMemberPath="AveragePrice"/>
                 <DataGridTextColumn Header="Price" Binding="{Binding CurrentPriceDisplay}" Width="1*" CanUserSort="False">

@@ -92,14 +92,14 @@ namespace ClientDesktop.Infrastructure.Helpers
 
         /// <summary>
         /// [FIX 1] columnAlignments accepts iText7 TextAlignment directly.
-        /// PdfService has already converted PdfColumnAlignment → TextAlignment before calling this.
+        /// PdfService has already converted EnumPdfColumnAlignment → TextAlignment before calling this.
         /// </summary>
         public PDFBuilder AddGrid(
             DataTable dataTable,
             string? gridTitle = null,
             Dictionary<string, string>? footerData = null,
             Dictionary<string, TextAlignment>? columnAlignments = null,
-            bool repeatHeader = true)   // ← TextAlignment, NOT PdfColumnAlignment
+            bool repeatHeader = true)   // ← TextAlignment, NOT EnumPdfColumnAlignment
         {
             _components.Add(new PdfComponent
             {

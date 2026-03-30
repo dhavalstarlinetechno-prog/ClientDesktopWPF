@@ -239,9 +239,9 @@ namespace ClientDesktop.ViewModel
             {                
                 DataTable dt = BuildPdfDataTable();
               
-                var columnAlignments = new Dictionary<string, PdfColumnAlignment>
+                var columnAlignments = new Dictionary<string, EnumPdfColumnAlignment>
                 {
-                    ["Amount"] = PdfColumnAlignment.Right
+                    ["Amount"] = EnumPdfColumnAlignment.Right
                 };
               
                 string title =
@@ -321,9 +321,9 @@ namespace ClientDesktop.ViewModel
                     $"Ledger History Report for User Id:{_sessionService.UserId}(Client)" +
                     $"  From: {fromDate:dd-MM-yyyy} To: {toDate:dd-MM-yyyy}";
 
-                var columnAlignments = new Dictionary<string, ExcelColumnAlignment>
+                var columnAlignments = new Dictionary<string, EnumExcelColumnAlignment>
                 {
-                    ["Amount"] = ExcelColumnAlignment.Right
+                    ["Amount"] = EnumExcelColumnAlignment.Right
                 };
 
                 _excelService

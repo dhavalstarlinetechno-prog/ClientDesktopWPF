@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace ClientDesktop.Models
+﻿namespace ClientDesktop.Models
 {
     public class HistoryModel
     {
@@ -17,7 +14,8 @@ namespace ClientDesktop.Models
         public string Side { get; set; }
 
         public decimal Price { get; set; }
-        public decimal Volume { get; set; }
+        public string DisplayPrice => Price.ToString($"F{SymbolDigits}");
+        public double Volume { get; set; }
         public decimal CurrentPrice { get; set; }
 
         public string DealStatus { get; set; }
