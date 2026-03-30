@@ -125,6 +125,12 @@ namespace ClientDesktop.View.Navigation
 
         private async void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
+            if (!_sessionService.IsLoggedIn || !_sessionService.IsInternetAvailable)
+            {
+                Window.GetWindow(this)?.Close();
+                return;
+            }
+
             if (_viewModel == null) return;
 
             await _viewModel.LoadLedgerUserDetailAsync();

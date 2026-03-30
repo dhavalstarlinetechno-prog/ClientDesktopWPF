@@ -71,6 +71,8 @@ namespace ClientDesktop.ViewModel
         }
         public async Task LoadFeedbackAsync()
         {
+            if (!_sessionService.IsInternetAvailable)
+                return;
             IsBusy = true;
             ErrorMessage = string.Empty;
             try
@@ -90,19 +92,11 @@ namespace ClientDesktop.ViewModel
                 IsBusy = false;
             }
         }
-        //public void RemoveFeedbackFromGrid(int feedbackId)
-        //{           
-        //    Application.Current.Dispatcher.Invoke(() =>
-        //    {
-        //        var itemToRemove = FeedbackList.FirstOrDefault(f => f.FeedbackId == feedbackId);
-        //        if (itemToRemove != null)
-        //        {
-        //            FeedbackList.Remove(itemToRemove);
-        //        }
-        //    });
-        //}
+       
         public async Task GetFeedbackDetailsAsync(int feedbackId)
         {
+            if (!_sessionService.IsInternetAvailable)
+                return;
             IsBusy = true;
             ErrorMessage = string.Empty;
 
@@ -127,6 +121,8 @@ namespace ClientDesktop.ViewModel
         }
         public async Task<FeedbackResponse> SubmitFeedbackAsync(string feedbackSubject,string htmlMessage, string filePath)
         {
+            if (!_sessionService.IsInternetAvailable)
+                return null;
             ErrorMessage = string.Empty;
         
             var response = await _FeedbackService.GenerateFeedbackAsync(feedbackSubject, htmlMessage, filePath);
@@ -145,6 +141,8 @@ namespace ClientDesktop.ViewModel
         }
         public async Task<FeedbackReplyResponse> SubmitFeedbackReplyAsync(int feedbackId, string feedbackMessage, string filePath)
         {
+            if (!_sessionService.IsInternetAvailable)
+                return null;
             IsBusy = true;
             ErrorMessage = string.Empty;
             try
@@ -165,11 +163,6 @@ namespace ClientDesktop.ViewModel
             {
                 IsBusy = false;
             }
-        }
-
-        //public void Close()
-        //{
-        //    OnRequestClose?.Invoke();
-        //}
+        }       
     }
 }

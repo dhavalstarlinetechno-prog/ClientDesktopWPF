@@ -89,9 +89,10 @@ namespace ClientDesktop.ViewModel
         {
             try
             {
-                IsBusy = true;
+                if (!_sessionService.IsInternetAvailable)
+                    return null;
 
-            
+                IsBusy = true;    
                 var result = await _symbolService.GetSymbolsAsync();
 
                 Folders.Clear();
@@ -120,6 +121,9 @@ namespace ClientDesktop.ViewModel
         {
             try
             {
+                if (!_sessionService.IsInternetAvailable)
+                    return null;
+
                 var result = await _symbolService.GetSubSymbolsAsync();
                 SubSymbols.Clear();
                 if (result?.Data != null)
@@ -144,6 +148,9 @@ namespace ClientDesktop.ViewModel
         {
             try
             {
+                if (!_sessionService.IsInternetAvailable)
+                    return null;
+
                 IsBusy = true;
 
                 // 1. Call the service method we created earlier
@@ -179,6 +186,9 @@ namespace ClientDesktop.ViewModel
         {
             try
             {
+                if (!_sessionService.IsInternetAvailable)
+                    return null;
+
                 IsBusy = true;
 
                 // 1. Call the service method we created earlier
@@ -214,6 +224,9 @@ namespace ClientDesktop.ViewModel
         {
             try
             {
+                if (!_sessionService.IsInternetAvailable)
+                    return null;
+
                 IsBusy = true;
 
                 // 1. Call the service method we created earlier

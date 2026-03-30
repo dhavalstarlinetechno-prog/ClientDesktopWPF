@@ -83,6 +83,11 @@ namespace ClientDesktop.View.Symbol
 
         private async void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
+            if (!_sessionService.IsLoggedIn || !_sessionService.IsInternetAvailable)
+            {
+                Window.GetWindow(this)?.Close();
+                return;
+            }
             _viewModel.IsBusy = true;
             var getTask = _viewModel.LoadSymbolsAsync();
             var getSubTreeTask = _viewModel.LoadSubSymbolsAsync();

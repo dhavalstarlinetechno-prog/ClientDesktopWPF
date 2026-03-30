@@ -55,7 +55,7 @@ namespace ClientDesktop.View.Navigation
         Invoicemodel invoice = new Invoicemodel();
         
         public InvoiceView()
-        {
+        {            
             InitializeComponent();
             Childpanel.Visibility = Visibility.Hidden;
             Btngo.IsEnabled = false;
@@ -72,6 +72,7 @@ namespace ClientDesktop.View.Navigation
 
             this.Unloaded += InvoiceView_Unloaded;
 
+            this.Loaded += InvoiceView_Loaded;
 
             //if (MainWindowViewModel.isViewLocked == true)
             //{
@@ -82,6 +83,14 @@ namespace ClientDesktop.View.Navigation
             //    TxtPassword.Visibility = System.Windows.Visibility.Collapsed;
             //    Btngo.Visibility = System.Windows.Visibility.Collapsed;
             //}
+        }
+        private void InvoiceView_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (!_sessionService.IsLoggedIn || !_sessionService.IsInternetAvailable)
+            {
+                Window.GetWindow(this)?.Close();
+                return;
+            }
         }
 
         private void ViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)

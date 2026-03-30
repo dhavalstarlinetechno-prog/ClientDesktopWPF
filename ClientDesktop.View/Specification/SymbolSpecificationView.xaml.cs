@@ -152,9 +152,15 @@ namespace ClientDesktop.View.Specification
         #region Events
         private async void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
-
+            
             if (DataContext is SymbolSpecificationViewModel vm)
             {
+                if (!vm._sessionService.IsLoggedIn || !vm._sessionService.IsInternetAvailable)
+                {
+                    Window.GetWindow(this)?.Close(); // ✅ Window band karega
+                    return;
+                }
+
                 await vm.LoadSymbolData();
 
                 if (vm.SymbolData != null)

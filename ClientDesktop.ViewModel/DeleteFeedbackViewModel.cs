@@ -72,6 +72,8 @@ namespace ClientDesktop.ViewModel
 
         private void GenerateConfirmationCode()
         {
+            if (!_sessionService.IsInternetAvailable)
+                return;
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
             var bytes = new byte[6];
             RandomNumberGenerator.Fill(bytes);
@@ -83,12 +85,16 @@ namespace ClientDesktop.ViewModel
 
         private bool CanSubmit()
         {
+            if (!_sessionService.IsInternetAvailable)
+                return false;
             if (IsBusy) return false;
             return UserInput == RandomString || UserInput == " ";
         }
 
         private async Task ExecuteDeleteAsync()
         {
+            if (!_sessionService.IsInternetAvailable)
+                return;
             IsBusy = true;
 
             try

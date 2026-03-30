@@ -42,8 +42,8 @@ namespace ClientDesktop.ViewModel
             }
         }
 
-
-
+        
+        
         private List<(string SecurityName, DataTable Table)> _securityPdfTables
             = new List<(string, DataTable)>();
 
@@ -88,6 +88,9 @@ namespace ClientDesktop.ViewModel
 
         public async Task<bool> VerifyPasswordAsync(string password)
         {
+            if (!_sessionService.IsInternetAvailable)
+                return false;
+
             string clientId = _sessionService.UserId;
             string licenseId = _sessionService.LicenseId;
 
@@ -108,6 +111,9 @@ namespace ClientDesktop.ViewModel
     
         public async Task LoadInvoiceDetailAsync(string fromdate, string todate)
         {
+            if (!_sessionService.IsInternetAvailable)
+                return;
+
             var result = await _invoiceService.InvoiceLoadData(fromdate, todate);
 
             if (result == null) return;

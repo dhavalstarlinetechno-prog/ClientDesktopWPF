@@ -8,7 +8,7 @@ namespace ClientDesktop.ViewModel
 {
     public class BanScriptViewModel : ViewModelBase, ICloseable
     {
-        private readonly SessionService _sessionService;
+        public readonly SessionService _sessionService;
         private readonly BanScriptService _banScriptService;
 
         public ObservableCollection<BanscriptGridRow> GridRows { get; set; }
@@ -40,6 +40,9 @@ namespace ClientDesktop.ViewModel
         {
             try
             {
+                if (!_sessionService.IsInternetAvailable)
+                    return;
+
                 IsDataLoaded = false;
 
                 GridRows.Clear();

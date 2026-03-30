@@ -13,7 +13,7 @@ namespace ClientDesktop.ViewModel
 {
     public class SymbolSpecificationViewModel : ViewModelBase
     {
-        private readonly SessionService _sessionService;
+        public readonly SessionService _sessionService;
         private readonly SymbolSpecificationService _symbolSpecificationService;       
         public Action CloseAction { get; set; }
        
@@ -49,6 +49,9 @@ namespace ClientDesktop.ViewModel
 
         public async Task LoadSymbolData()
         {
+            if (!_sessionService.IsInternetAvailable)
+                return;
+
             if (SymbolId <= 0)
                 return;
 

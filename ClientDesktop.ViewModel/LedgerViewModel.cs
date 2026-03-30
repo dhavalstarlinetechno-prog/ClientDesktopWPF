@@ -114,6 +114,9 @@ namespace ClientDesktop.ViewModel
 
         public async Task<bool> VerifyPasswordAsync(string password)
         {
+            if (!_sessionService.IsInternetAvailable)
+                return false;
+
             var result = await _ledgerService.VerifyUserPasswordAsync(
                 _sessionService.UserId, password, _sessionService.LicenseId);
 
@@ -130,6 +133,9 @@ namespace ClientDesktop.ViewModel
 
         public async Task LoadLedgerUserDetailAsync()
         {
+            if (!_sessionService.IsInternetAvailable)
+                return;
+
             var result = await _ledgerService.GetLedgerUserDetail();
             if (result != null)
                 LedgerUser = result;
@@ -139,10 +145,11 @@ namespace ClientDesktop.ViewModel
 
         #region Grid Population
      
-        public async Task<bool> LoadAndPopulateGridAsync(
-            DateTime fromDate,
-            DateTime toDate)
+        public async Task<bool> LoadAndPopulateGridAsync(DateTime fromDate,DateTime toDate)
         {
+            if (!_sessionService.IsInternetAvailable)
+                return false;
+
             IsBusy = true;
             GridRows.Clear();
 

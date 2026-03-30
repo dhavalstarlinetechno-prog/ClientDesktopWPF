@@ -31,6 +31,12 @@ namespace ClientDesktop.View.Navigation
         {
             if (DataContext is BanScriptViewModel vm)
             {
+                if (!vm._sessionService.IsLoggedIn || !vm._sessionService.IsInternetAvailable)
+                {
+                    Window.GetWindow(this)?.Close(); // ✅ Window band karega
+                    return;
+                }
+
                 await vm.LoadBanScriptData();
 
                 if (vm.GridRows == null || vm.GridRows.Count == 0)
