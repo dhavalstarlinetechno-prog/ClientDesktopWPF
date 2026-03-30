@@ -328,8 +328,6 @@ namespace ClientDesktop.ViewModel
 
         public void HandleOrderUpdated(OrderModel updatedOrder, bool isDeleted , string orderId)
         {
-            if (updatedOrder == null) return;
-
             Task.Run(() => _positionService.UpdateLocalOrder(updatedOrder, isDeleted));
 
             Application.Current.Dispatcher.InvokeAsync(() =>
@@ -337,7 +335,7 @@ namespace ClientDesktop.ViewModel
                 if (isDeleted)
                 {
                     _rawOrders.RemoveAll(o => o.OrderId == orderId);
-                    var rowToRemove = GridRows.FirstOrDefault(r => r.Type == RowType.Order && r.Id == updatedOrder.OrderId);
+                    var rowToRemove = GridRows.FirstOrDefault(r => r.Type == RowType.Order && r.Id == orderId);
                     if (rowToRemove != null) GridRows.Remove(rowToRemove);
                 }
                 else
@@ -348,7 +346,7 @@ namespace ClientDesktop.ViewModel
                         var index = _rawOrders.IndexOf(existingOrder);
                         _rawOrders[index] = updatedOrder;
 
-                        var row = GridRows.FirstOrDefault(r => r.Type == RowType.Order && r.Id == updatedOrder.OrderId);
+                        var row = GridRows.FirstOrDefault(r => r.Type == RowType.Order && r.Id == orderId);
                         if (row != null)
                         {
                             row.Time = updatedOrder.UpdatedAt;
