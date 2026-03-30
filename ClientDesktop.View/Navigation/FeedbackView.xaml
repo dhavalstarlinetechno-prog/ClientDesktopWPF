@@ -281,7 +281,7 @@
                             <DataGridTemplateColumn Header="Action" Width="60">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Button CommandParameter="{Binding FeedbackId}"
+                                        <Button Click="BtnDeleteFeedback_Click" CommandParameter="{Binding FeedbackId}"
                                               Background="Transparent" 
                                               BorderThickness="0" 
                                               HorizontalAlignment="Center"
@@ -644,7 +644,7 @@
                                                    BorderBrush="#CCCCCC"
                                                    BorderThickness="1"
                                                    Margin="0,0,0,5"
-                                                   VerticalScrollBarVisibility="Auto"/>
+                                                   VerticalScrollBarVisibility="Auto" TextChanged="TxtReply_TextChanged"/>
 
                                         <!-- Emoji Popup -->
                                         <Popup x:Name="ReplayeEmojiPopup" 

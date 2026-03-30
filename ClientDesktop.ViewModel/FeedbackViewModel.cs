@@ -8,6 +8,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace ClientDesktop.ViewModel
 {
@@ -47,7 +48,8 @@ namespace ClientDesktop.ViewModel
             }
         }       
         public Action OnFeedbackSubmittedSuccessfully { get; set; }
-        public Action OnRequestClose { get; set; }
+        public static Action<int> OnRecordDeletedExternally;
+        public Action OnRequestClose { get; set; }        
 
         private FeedbackData _selectedFeedbackDetails;
         public FeedbackData SelectedFeedbackDetails
@@ -56,7 +58,7 @@ namespace ClientDesktop.ViewModel
             set
             {
                 _selectedFeedbackDetails = value;
-                OnPropertyChanged(nameof(SelectedFeedbackDetails));
+                OnPropertyChanged(nameof(SelectedFeedbackDetails));            
             }
         }
         public FeedbackViewModel(SessionService sessionService, FeedbackService feedbackService)
@@ -64,6 +66,8 @@ namespace ClientDesktop.ViewModel
             _sessionService = sessionService;
             _FeedbackService = feedbackService;
             FeedbackList = new ObservableCollection<FeedbackModel>();
+
+            //OnRecordDeletedExternally = (id) => RemoveFeedbackFromGrid(id);
         }
         public async Task LoadFeedbackAsync()
         {
@@ -86,6 +90,17 @@ namespace ClientDesktop.ViewModel
                 IsBusy = false;
             }
         }
+        //public void RemoveFeedbackFromGrid(int feedbackId)
+        //{           
+        //    Application.Current.Dispatcher.Invoke(() =>
+        //    {
+        //        var itemToRemove = FeedbackList.FirstOrDefault(f => f.FeedbackId == feedbackId);
+        //        if (itemToRemove != null)
+        //        {
+        //            FeedbackList.Remove(itemToRemove);
+        //        }
+        //    });
+        //}
         public async Task GetFeedbackDetailsAsync(int feedbackId)
         {
             IsBusy = true;

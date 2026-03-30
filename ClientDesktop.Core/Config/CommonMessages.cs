@@ -6,6 +6,7 @@
         public static readonly string WrongPassword = "Wrong password !!";
         public static readonly string FeedbackEmpltyValidation = "Cannot be Empty..";
         public static readonly string DeleteFeedbackValidation = "Feedback Deleted Successfully!!";
+        public static readonly string FailedDeleteFeedbackValidation = "Failed to Delete Feedback";
         public static readonly string NoDataAvailable = "No Data Avaliable";
         public static readonly string NoValidDataAvailable = "No Valid Data Available";
         public static readonly string InvalidResponse = "Invalid Response From Server";

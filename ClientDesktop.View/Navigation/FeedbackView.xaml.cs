@@ -1,5 +1,7 @@
-﻿using ClientDesktop.Core.Models;
+﻿using ClientDesktop.Core.Interfaces;
+using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Helpers;
+using ClientDesktop.Infrastructure.Logger;
 using ClientDesktop.Infrastructure.Services;
 using ClientDesktop.ViewModel;
 using RtfPipe;
@@ -42,6 +44,7 @@ namespace ClientDesktop.View.Navigation
         private Stack<string> redoStack = new Stack<string>();
         private string ImagePath = string.Empty;
         private string ReplayImagePath = string.Empty;
+        private readonly IDialogService _dialogService;
 
         #endregion Variable
 
@@ -57,7 +60,14 @@ namespace ClientDesktop.View.Navigation
             {
                 _sessionService = AppServiceLocator.GetService<SessionService>();
                 _viewModel = AppServiceLocator.GetService<FeedbackViewModel>();
-                //this.DataContext = _viewModel;                
+                _dialogService = AppServiceLocator.GetService<IDialogService>();
+
+                FeedbackViewModel.OnRecordDeletedExternally = (id) =>
+                {
+                    this.Dispatcher.Invoke(() => {                    
+                        RefreshGridAfterDelete(id);
+                    });
+                };
             }
         }
 
@@ -430,6 +440,25 @@ namespace ClientDesktop.View.Navigation
             {
                 selection.ApplyPropertyValue(property, value);
             }
+        }       
+        private void RefreshGridAfterDelete(int feedbackId)
+        {
+            var updatedItems = DgvFeedbackRecord.Items
+                .Cast<dynamic>()
+                .Where(x => x.FeedbackId != feedbackId)
+                .Select((item, index) => new
+                {
+                    SrNo = index + 1,
+                    FeedbackId = (int)item.FeedbackId,
+                    Subject = (string)item.Subject,
+                    Date = (string)item.Date,
+                    Status = (string)item.Status
+                })
+                .ToList();
+
+            DgvFeedbackRecord.ItemsSource = null;
+            DgvFeedbackRecord.Items.Clear();
+            DgvFeedbackRecord.ItemsSource = updatedItems; // ✅ Ab set karo
         }
 
         #endregion Methods
@@ -470,7 +499,6 @@ namespace ClientDesktop.View.Navigation
         private async void BtnSubmit_Click(object sender, RoutedEventArgs e)
         {
             string subject = TxtSubject.Text?.Trim();
-
             string rtfContent = "";
             TextRange range = new TextRange(TxtMessage.Document.ContentStart, TxtMessage.Document.ContentEnd);
             using (MemoryStream ms = new MemoryStream())
@@ -484,13 +512,14 @@ namespace ClientDesktop.View.Navigation
                 }
             }
             string html = Rtf.ToHtml(rtfContent);
+            string plainText = range.Text.Trim();
             string file = this.ImagePath;
             bool isValid = true;
 
             bool isMatchFound = _viewModel.FeedbackList != null && _viewModel.FeedbackList.Any(f => string.Equals(f.FeedbackSubject, subject, StringComparison.OrdinalIgnoreCase));
             if (isMatchFound)
-            {
-                MessageBox.Show("Feedback Already Exists!!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            {             
+                FileLogger.Log("Feedback", "Feedback Already Exists!!");
             }
             else
             {
@@ -499,7 +528,7 @@ namespace ClientDesktop.View.Navigation
                     TxtSubject.Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 255, 102, 102));
                     isValid = false;
                 }
-                if (string.IsNullOrEmpty(html))
+                if (string.IsNullOrEmpty(plainText))
                 {
                     TxtMessage.Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 255, 102, 102));
                     isValid = false;
@@ -621,6 +650,8 @@ namespace ClientDesktop.View.Navigation
         {
             GroupBoxPanel.Visibility = Visibility.Visible;
             GrpBoxReply.Visibility = Visibility.Visible;
+            BtnReplySubmit.IsEnabled = false;
+            BtnReplySubmit.Foreground = new SolidColorBrush(Colors.Black);
             ScrollChatToBottom();
             if (ReplayPicturebox.Source != null)
             {                
@@ -639,6 +670,7 @@ namespace ClientDesktop.View.Navigation
         }
         private async void BtnReplySubmit_Click(object sender, RoutedEventArgs e)
         {
+            BtnReplySubmit.IsEnabled = false;   
             int feedbackid = Convert.ToInt32(TxtFeedbackId.Text);
             string rtfContent = "";
             TextRange range = new TextRange(TxtReply.Document.ContentStart, TxtReply.Document.ContentEnd);
@@ -1034,7 +1066,40 @@ namespace ClientDesktop.View.Navigation
                 ReplayeEmojiPopup.IsOpen = false;
             }            
         }
+        private void BtnDeleteFeedback_Click(object sender, RoutedEventArgs e)
+        {
+            var button = sender as Button;
+
+            if (button?.CommandParameter is int feedbackId && feedbackId > 0)
+            {
+                _dialogService?.ShowDialog<DeleteFeedbackViewModel>(
+                    "Delete Feedback",
+                    configureViewModel: vm =>
+                    {
+                        vm.FeedbackId = feedbackId;
+                    });
+            }
+        }
+        private void TxtReply_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (TxtReply == null) return;
+            TextRange range = new TextRange(TxtReply.Document.ContentStart, TxtReply.Document.ContentEnd);
+            string plainText = range.Text.Trim();
+            if (string.IsNullOrWhiteSpace(plainText))
+            {
+                BtnReplySubmit.IsEnabled = false;
+                BtnReplySubmit.Foreground = new SolidColorBrush(Colors.Black);
+                return;
+            }
+            else
+            {
+                BtnReplySubmit.IsEnabled = true;
+                BtnReplySubmit.Foreground = new SolidColorBrush(Colors.White);
+                TxtReply.Background = new SolidColorBrush(Colors.White);
+            }
+        }
 
         #endregion Events              
+
     }
 }

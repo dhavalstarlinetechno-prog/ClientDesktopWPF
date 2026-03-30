@@ -65,4 +65,9 @@
         <del:DeleteView />
     </DataTemplate>
 
+    <!-- Delete Trade Feedback ViewModel Template -->
+    <DataTemplate DataType="{x:Type vm:DeleteFeedbackViewModel}">
+        <del:DeleteView />
+    </DataTemplate>
+
 </ResourceDictionary>

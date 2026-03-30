@@ -2,6 +2,7 @@
 using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Helpers;
+using ClientDesktop.Infrastructure.Logger;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -171,6 +172,27 @@ namespace ClientDesktop.Infrastructure.Services
                     IsSuccess = false,
                     SuccessMessage = ex.Message
                 };
+            }
+        }
+
+        public async Task<FeedbackResponse> DeleteFeedbackAsync(int feedbackId)
+        {
+            try
+            {
+                // URL prepare karo (AppConfig mathi URL engine replace kari ne)
+                string baseUrl = CommonHelper.ToReplaceUrl(AppConfig.FeedbackDeleteURL, _sessionService.PrimaryDomain);
+                string url = $"{baseUrl}{feedbackId}";
+
+                // ApiService ni DeleteAsync call karo
+                // Jo body ma kai na mokalvu hoy to empty object '{}' mokli sakay
+                var response = await _apiService.DeleteAsync<FeedbackResponse>(url, new { id = feedbackId });
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(DeleteFeedbackAsync), ex);
+                return new FeedbackResponse { IsSuccess = false, Exception = ex.Message };
             }
         }
     }
