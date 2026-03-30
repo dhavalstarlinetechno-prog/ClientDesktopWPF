@@ -8,7 +8,7 @@ namespace ClientDesktop.Core.Config
         #region URLs
 
         public static readonly string MarketWatchSignalRUrl = "https://sglr:6020/offers";
-        public static readonly string ServerListURL = "https://api.tradeprint.in:6001/sso/server/listByOperator/SRK";
+        public static readonly string ServerListURL = "https://api.metaodds.net:6015/madmin/server/listByOperator/TNV";
         public static readonly string AuthURL = "https://api:6001/sso/auth";
         public static string symbolstreeviewwithclientrights = "https://api:6004/dealer/routemaster/symbolstreeviewwithclientrights";
         public static string getsymbolsbyrouteforclient = "https://api:6004/dealer/routemaster/getsymbolsbyrouteforclient/0";
