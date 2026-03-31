@@ -319,4 +319,22 @@ namespace ClientDesktop.View.Converters
     }
 
     #endregion
+
+    #region VolumeFormatConverter
+    public class VolumeFormatConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value == null) return string.Empty;
+
+            double d;
+            if (!double.TryParse(value.ToString(), out d)) return value.ToString();
+
+            return d == Math.Floor(d) ? d.ToString("F0") : d.ToString("F2");
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+            => throw new NotImplementedException();
+    }
+    #endregion
 }

@@ -75,6 +75,7 @@ namespace ClientDesktop.ViewModel
 
             GridRows = new ObservableCollection<PositionGridRow>();
             PositionCollectionView = new ListCollectionView(GridRows);
+            PositionCollectionView.CustomSort = new PositionGridSorter("Time", ListSortDirection.Descending);
 
             DoubleClickCommand = new RelayCommand(row => PositionGridDoubleClick((PositionGridRow?)row));
 
@@ -443,10 +444,7 @@ namespace ClientDesktop.ViewModel
             GridRows = newList;
             PositionCollectionView = new ListCollectionView(GridRows);
 
-            if (currentSort != null)
-            {
-                PositionCollectionView.CustomSort = currentSort;
-            }
+            PositionCollectionView.CustomSort = currentSort ?? new PositionGridSorter("Time", ListSortDirection.Descending);
             OnPropertyChanged(nameof(PositionCollectionView));
         }
 
@@ -492,6 +490,7 @@ namespace ClientDesktop.ViewModel
                             row.Time = updatedPosition.LastInAt.HasValue ? CommonHelper.ConvertUtcToIst(updatedPosition.LastInAt.Value) : updatedPosition.CreatedAt.HasValue ? CommonHelper.ConvertUtcToIst(updatedPosition.CreatedAt.Value) : null;
                             row.CurrentPrice = updatedPosition.CurrentPrice;
                             row.CurrentPriceDisplay = updatedPosition.CurrentPrice.ToString($"F{updatedPosition.SymbolDigit}");
+                            PositionCollectionView?.Refresh();
                         }
                     }
                     else
@@ -518,9 +517,7 @@ namespace ClientDesktop.ViewModel
                             Pnl = updatedPosition.Pnl,
                             Type = RowType.Position
                         };
-                        var footerRow = GridRows.FirstOrDefault(r => r.Type == RowType.Footer);
-                        int insertIndex = footerRow != null ? GridRows.IndexOf(footerRow) : GridRows.Count;
-                        GridRows.Insert(insertIndex, newRow);
+                        GridRows.Insert(0, newRow);
                     }
                 }
 
@@ -575,7 +572,7 @@ namespace ClientDesktop.ViewModel
                               selectedRow.OrderType?.Contains("Stop", StringComparison.OrdinalIgnoreCase) == true ? EnumTradeOrderType.StopLimit :
                               selectedRow.OrderType?.Contains("Limit", StringComparison.OrdinalIgnoreCase) == true ? EnumTradeOrderType.Limit :
                               null;
-                        vm.LimitRate = selectedRow.AveragePrice.ToString();
+                        vm.LimitRate = selectedRow.AveragePrice?.ToString($"F{selectedRow.SymbolDigit}");
                     }
                );
         }

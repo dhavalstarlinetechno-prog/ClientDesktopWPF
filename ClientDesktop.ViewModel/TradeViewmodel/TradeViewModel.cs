@@ -20,7 +20,7 @@ namespace ClientDesktop.ViewModel
         #region Injected Services & Private State
 
         private readonly SessionService _sessionService;
-        private readonly ITradeService _tradeService;  
+        private readonly ITradeService _tradeService;
         private readonly LiveTickService _liveTickService;
         private readonly IDialogService _dialogService;
 
@@ -83,11 +83,11 @@ namespace ClientDesktop.ViewModel
                 if (!result.Success || result.SymbolData == null) return;
 
                 CurrentSelectedSymbol = result.SymbolData;
-                MinValue = result.SymbolData.SymbolMinimumValue.ToString("F2");
-                StepValue = result.SymbolData.SymbolStepValue.ToString("F2");
-                OneValue = result.SymbolData.SymbolOneClickValue.ToString("F2");
-                TotalValue = result.SymbolData.SymbolTotalValue.ToString("F2");
-                LimitStopValue = result.SymbolData.SymbolLimitstoplevel.ToString("F2");
+                MinValue = result.SymbolData.SymbolMinimumValue.ToString("0.##");
+                StepValue = result.SymbolData.SymbolStepValue.ToString("0.##");
+                OneValue = result.SymbolData.SymbolOneClickValue.ToString("0.##");
+                TotalValue = result.SymbolData.SymbolTotalValue.ToString("0.##");
+                LimitStopValue = result.SymbolData.SymbolLimitstoplevel.ToString("0.##");
 
                 Quantity = positionGridRow != null
                     ? positionGridRow.Volume?.ToString()
