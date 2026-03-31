@@ -49,8 +49,8 @@
 
         </Style>
     </UserControl.Resources>
-    
-    
+
+
 
     <Grid>
         <!-- ================= PASSWORD / INFO PANEL ================= -->
@@ -101,7 +101,8 @@
                 Width="82"
                 Height="30"                      
                 Margin="10,0" 
-                FontFamily="Microsoft Sans Serif"        
+                FontFamily="Microsoft Sans Serif" 
+                IsDefault="True"            
                 Click="Btngo_Click"                      
                 Style="{StaticResource FixedBlueButtonStyle}"/>
                 </StackPanel>
@@ -165,7 +166,8 @@
                      Content="Go"
                      Width="82"
                      Height="30"                                 
-                     Margin="10,0" 
+                     Margin="10,0"
+                     IsDefault="True"       
                      Click="Btngetdata_Click" 
                      FontFamily="Microsoft Sans Serif"           
                      Style="{StaticResource FixedBlueButtonStyle}"/>
@@ -234,9 +236,25 @@
                    CanUserAddRows="False"
                    CanUserDeleteRows="False"
                    VerticalScrollBarVisibility="Auto"                  
-                   BorderThickness="0"/>
+                   BorderThickness="0">
 
-               <TextBlock x:Name="TxtNoData"
+                    <DataGrid.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="BorderThickness" Value="0"/>
+                            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="BorderBrush" Value="Transparent"/>
+                                    <Setter Property="Foreground" Value="Black"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.CellStyle>
+
+                </DataGrid>
+
+                <TextBlock x:Name="TxtNoData"
                Text="No Data Available"
                FontSize="24"             
                Foreground="Gray"
@@ -246,5 +264,5 @@
             </Grid>
         </Border>
     </Grid>
-    
+
 </UserControl>

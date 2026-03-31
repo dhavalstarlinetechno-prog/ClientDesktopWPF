@@ -99,7 +99,7 @@
 
                     <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-80,0,0">
                         <PasswordBox x:Name="TxtPassword" Width="188" Height="24" VerticalContentAlignment="Center" FontFamily="Microsoft Sans Serif" PasswordChanged="TxtPassword_PasswordChanged"/>
-                        <Button x:Name="Btngo" Content="Go" Width="82" Height="30" Margin="10,0,0,0" FontFamily="Microsoft Sans Serif" Click="Btngo_Click" Style="{StaticResource FixedBlueButtonStyle}"/>
+                        <Button x:Name="Btngo" Content="Go" Width="82" Height="30" Margin="10,0,0,0" FontFamily="Microsoft Sans Serif" Click="Btngo_Click" IsDefault="True" Style="{StaticResource FixedBlueButtonStyle}"/>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -143,7 +143,7 @@
                             <ComboBoxItem Content="Last Previous Week"/>
                         </ComboBox>
 
-                        <Button x:Name="Btngetdata" Content="Go" Grid.Row="0" Grid.Column="2" Width="82" Height="30" Margin="10,0,0,0" Click="Btngetdata_Click" Style="{StaticResource FixedBlueButtonStyle}"/>
+                        <Button x:Name="Btngetdata" Content="Go" Grid.Row="0" Grid.Column="2" Width="82" Height="30" Margin="10,0,0,0" IsDefault="True" Click="Btngetdata_Click" Style="{StaticResource FixedBlueButtonStyle}"/>
 
                         <Button x:Name="PdfExportBtn" Grid.Row="0" Grid.RowSpan="2" Grid.Column="4" ToolTip="Export to PDF" Width="40" Height="40" 
                                 Background="Transparent" BorderThickness="0" 
@@ -177,9 +177,10 @@
                                                 <TextBlock Text="{Binding SecurityName}" FontWeight="Bold" Margin="0,15,0,5" FontSize="14" />
                                                 <DataGrid ItemsSource="{Binding SecurityData}" 
                                                           Style="{StaticResource CustomDataGrid}"
-                                                          Margin="0,0,0,20" ColumnWidth="*" CanUserSortColumns="False"                                                                                                             
+                                                          Margin="0,0,0,20" ColumnWidth="*" CanUserSortColumns="False"
+                                                          ScrollViewer.VerticalScrollBarVisibility="Disabled"                                                        
                                                           LoadingRow="SecurityDataGrid_LoadingRow"
-                                                          SelectionChanged="DataGrid_SelectionChanged">
+                                                          SelectionChanged="DataGrid_SelectionChanged" PreviewMouseWheel="DataGrid_PreviewMouseWheel">
                                                     <DataGrid.Columns>
                                                         <DataGridTextColumn Header="Date" Binding="{Binding Date}" Width="180" MinWidth="180" ElementStyle="{StaticResource LeftAlignedCellStyle}"/>
                                                         <DataGridTextColumn Header="Type" Binding="{Binding Type}" ElementStyle="{StaticResource LeftAlignedCellStyle}"/>
@@ -189,6 +190,21 @@
                                                         <DataGridTextColumn Header="Comm" Binding="{Binding Comm}" ElementStyle="{StaticResource RightAlignedCellStyle}" HeaderStyle="{StaticResource RightAlignedHeaderStyle}"/>
                                                         <DataGridTextColumn Header="Net" Binding="{Binding Net}" ElementStyle="{StaticResource RightAlignedCellStyle}" HeaderStyle="{StaticResource RightAlignedHeaderStyle}"/>
                                                     </DataGrid.Columns>
+                                                    
+                                                    <DataGrid.CellStyle>
+                                                        <Style TargetType="DataGridCell">
+                                                            <Setter Property="BorderThickness" Value="0"/>
+                                                            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                                            <Style.Triggers>
+                                                                <Trigger Property="IsSelected" Value="True">
+                                                                    <Setter Property="Background" Value="Transparent"/>
+                                                                    <Setter Property="BorderBrush" Value="Transparent"/>
+                                                                    <Setter Property="Foreground" Value="Black"/>
+                                                                </Trigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </DataGrid.CellStyle>
+                                                    
                                                 </DataGrid>
                                             </StackPanel>
                                         </DataTemplate>
@@ -201,15 +217,32 @@
                                     <DataGrid x:Name="SummaryDataGrid"
                                               Style="{StaticResource CustomDataGrid}"                                          
                                               CanUserSortColumns="False"
-                                              Margin="0,0,0,20" ColumnWidth="*"                                                                                           
+                                              Margin="0,0,0,20" ColumnWidth="*" 
+                                              ScrollViewer.VerticalScrollBarVisibility="Disabled"  
                                               LoadingRow="SummaryDataGrid_LoadingRow"
-                                              SelectionChanged="DataGrid_SelectionChanged">
+                                              SelectionChanged="DataGrid_SelectionChanged"
+                                              PreviewMouseWheel="DataGrid_PreviewMouseWheel">
                                         <DataGrid.Columns>
                                             <DataGridTextColumn Header="Symbol" Binding="{Binding Symbol}" Width="400" MinWidth="400" ElementStyle="{StaticResource LeftAlignedCellStyle}"/>
                                             <DataGridTextColumn Header="M2M" Binding="{Binding M2M}" ElementStyle="{StaticResource RightAlignedCellStyle}" HeaderStyle="{StaticResource RightAlignedHeaderStyle}"/>
                                             <DataGridTextColumn Header="Comm" Binding="{Binding Comm}" ElementStyle="{StaticResource RightAlignedCellStyle}" HeaderStyle="{StaticResource RightAlignedHeaderStyle}"/>
                                             <DataGridTextColumn Header="Total" Binding="{Binding Total}" ElementStyle="{StaticResource RightAlignedCellStyle}" HeaderStyle="{StaticResource RightAlignedHeaderStyle}"/>
                                         </DataGrid.Columns>
+                                        
+                                        <DataGrid.CellStyle>
+                                            <Style TargetType="DataGridCell">
+                                                <Setter Property="BorderThickness" Value="0"/>
+                                                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsSelected" Value="True">
+                                                        <Setter Property="Background" Value="Transparent"/>
+                                                        <Setter Property="BorderBrush" Value="Transparent"/>
+                                                        <Setter Property="Foreground" Value="Black"/>
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </DataGrid.CellStyle>
+                                        
                                     </DataGrid>
                                 </StackPanel>
 
@@ -218,16 +251,33 @@
                                     <TextBlock Text="CARRY FORWARD" FontWeight="Bold" FontSize="15" HorizontalAlignment="Center" Margin="0,20,0,10" />
                                     <DataGrid x:Name="CarryForwardDataGrid"
                                               Style="{StaticResource CustomDataGrid}"
-                                              Margin="0,0,0,20" ColumnWidth="*"                                          
+                                              Margin="0,0,0,20" ColumnWidth="*" 
+                                              ScrollViewer.VerticalScrollBarVisibility="Disabled"  
                                               CanUserSortColumns="False"
                                               LoadingRow="CarryForwardDataGrid_LoadingRow"
-                                              SelectionChanged="DataGrid_SelectionChanged">
+                                              SelectionChanged="DataGrid_SelectionChanged"
+                                              PreviewMouseWheel="DataGrid_PreviewMouseWheel">
                                         <DataGrid.Columns>
                                             <DataGridTextColumn Header="Symbol" Binding="{Binding Symbol}" Width="400" MinWidth="400" ElementStyle="{StaticResource LeftAlignedCellStyle}"/>
                                             <DataGridTextColumn Header="Type" Binding="{Binding Type}" ElementStyle="{StaticResource RightAlignedCellStyle}" HeaderStyle="{StaticResource RightAlignedHeaderStyle}"/>
                                             <DataGridTextColumn Header="Quantity" Binding="{Binding Quantity}" ElementStyle="{StaticResource RightAlignedCellStyle}" HeaderStyle="{StaticResource RightAlignedHeaderStyle}"/>
                                             <DataGridTextColumn Header="Net" Binding="{Binding Net}" ElementStyle="{StaticResource RightAlignedCellStyle}" HeaderStyle="{StaticResource RightAlignedHeaderStyle}"/>
                                         </DataGrid.Columns>
+                                        
+                                        <DataGrid.CellStyle>
+                                            <Style TargetType="DataGridCell">
+                                                <Setter Property="BorderThickness" Value="0"/>
+                                                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsSelected" Value="True">
+                                                        <Setter Property="Background" Value="Transparent"/>
+                                                        <Setter Property="BorderBrush" Value="Transparent"/>
+                                                        <Setter Property="Foreground" Value="Black"/>
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </DataGrid.CellStyle>
+                                        
                                     </DataGrid>
                                 </StackPanel>
 

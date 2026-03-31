@@ -127,9 +127,10 @@
                         <Style TargetType="DataGridColumnHeader">
                             <Setter Property="Background" Value="CornflowerBlue"/>
                             <Setter Property="Foreground" Value="White"/>
-                            <Setter Property="FontWeight" Value="Regular"/>
+                            <Setter Property="FontWeight" Value="Bold"/>
                             <Setter Property="FontSize" Value="13"/>
                             <Setter Property="VerticalAlignment" Value="Center"/>
+                            <Setter Property="Padding" Value="10,0,0,0"/>
                         </Style>
                     </DataGrid.ColumnHeaderStyle>
                 </DataGrid>

@@ -120,7 +120,7 @@ namespace ClientDesktop.View.Navigation
 
         #endregion
 
-
+        
         #region Loaded(existing)
 
         private async void UserControl_Loaded(object sender, RoutedEventArgs e)
@@ -163,7 +163,7 @@ namespace ClientDesktop.View.Navigation
                 Mainpanel.Visibility = Visibility.Collapsed;
                 ChildPanel.Visibility = Visibility.Visible;
                 Lblprintamount.Visibility = Visibility.Visible;
-                Lblprintamount.Text = LblAmountFormatted?.ToString(); // Added null check
+                //Lblprintamount.Text = LblAmountFormatted?.ToString();
                 DgvLedgerRecord.ColumnHeaderHeight = 35;
                 _viewModel.GridRows.Clear();
 

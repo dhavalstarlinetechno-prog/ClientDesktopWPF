@@ -113,8 +113,7 @@ namespace ClientDesktop.View.Navigation
                 Btngo.Visibility = System.Windows.Visibility.Collapsed;
             }
             else
-            {
-                // ✅ Restore normal UI when unlocked via socket
+            {                
                 Lbltext.Text = "This report represents sample invoice format. It contains sample data only for education purpose. Invoice can be displayed in below structure";
                 Lbltext.FontFamily = new System.Windows.Media.FontFamily("Microsoft Sans Serif");
                 Lbltext.Foreground = System.Windows.Media.Brushes.Black;
@@ -561,10 +560,7 @@ namespace ClientDesktop.View.Navigation
             {
                 CarryForwardPanel.Visibility = Visibility.Visible;
             }
-
-            // ──────────────────────────────────────────────────────────────────
-            // Hand off all PDF data to ViewModel  ← KEY CALL
-            // ──────────────────────────────────────────────────────────────────
+          
             string pdfTitle = $"{_sessionService.UserId} - {_sessionService.Username}";
             string pdfSubTitle = Lblfrom.Content?.ToString() ?? string.Empty;
 
@@ -658,8 +654,7 @@ namespace ClientDesktop.View.Navigation
 
             Lblfrom.Content = $"From {thisWeekStart:dd-MM-yyyy} To {thisWeekEnd:dd-MM-yyyy}";
         }
-
-        /// <summary>Converts a List&lt;T&gt; to DataTable using reflection.</summary>
+      
         public DataTable ToDataTable<T>(List<T> items)
         {
             var dt = new DataTable(typeof(T).Name);
@@ -882,6 +877,31 @@ namespace ClientDesktop.View.Navigation
                                 "Error",
                                 MessageBoxButton.OK,
                                 MessageBoxImage.Error);
+            }
+        }
+
+        private void DataGrid_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (!e.Handled)
+            {
+                e.Handled = true;
+                
+                var eventArg = new MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta)
+                {
+                    RoutedEvent = UIElement.MouseWheelEvent,
+                    Source = sender
+                };
+                
+                DependencyObject parent = VisualTreeHelper.GetParent((DependencyObject)sender);
+                while (parent != null && !(parent is ScrollViewer))
+                {
+                    parent = VisualTreeHelper.GetParent(parent);
+                }
+                
+                if (parent is ScrollViewer scrollViewer)
+                {
+                    scrollViewer.RaiseEvent(eventArg);
+                }
             }
         }
     }
