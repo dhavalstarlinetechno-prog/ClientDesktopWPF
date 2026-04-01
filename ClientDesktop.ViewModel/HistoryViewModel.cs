@@ -1,6 +1,7 @@
 ﻿using ClientDesktop.Core.Base;
 using ClientDesktop.Core.Enums;
 using ClientDesktop.Core.Events;
+using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Helpers;
 using ClientDesktop.Infrastructure.Logger;
@@ -27,7 +28,7 @@ namespace ClientDesktop.ViewModel
 
         private readonly SessionService _sessionService;
         private readonly HistoryService _historyService;
-        private readonly PDFBuilder _pdfBuilder = new PDFBuilder();
+        private readonly IPdfService _pdfService;
 
         private bool _isLoading;
         private double _clientCredit;
@@ -219,10 +220,11 @@ namespace ClientDesktop.ViewModel
         /// <summary>
         /// Initializes a new instance of the HistoryViewModel class.
         /// </summary>
-        public HistoryViewModel(SessionService sessionService, HistoryService historyService)
+        public HistoryViewModel(SessionService sessionService, HistoryService historyService, IPdfService pdfService)
         {
             _sessionService = sessionService;
             _historyService = historyService;
+            _pdfService = pdfService;
 
             RequestCommand = new AsyncRelayCommand(_ => ExecuteRequestAsync());
             ChangeViewCommand = new RelayCommand(ExecuteChangeView);
@@ -332,7 +334,7 @@ namespace ClientDesktop.ViewModel
             {
                 if (data == null || data.Count <= 1)
                 {
-                    MessageBox.Show("No data to export", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    FileLogger.Log("Export", "No data to export");
                     return;
                 }
 
@@ -346,10 +348,17 @@ namespace ClientDesktop.ViewModel
                 if (footerRow?.Comment != null && footerRow.Comment.Contains("Credit:"))
                 {
                     var parts = footerRow.Comment.Split(new[] { "Credit:", "Balance:" }, StringSplitOptions.None);
+
                     if (parts.Length >= 2)
-                        decimal.TryParse(parts[1].Trim().Split(' ')[0].Replace(",", ""), out credit);
+                    {
+                        string cleanCredit = parts[1].Replace(" ", "").Replace("\u00A0", "").Replace(",", "").Trim();
+                        decimal.TryParse(cleanCredit, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out credit);
+                    }
                     if (parts.Length >= 3)
-                        decimal.TryParse(parts[2].Replace("INR", "").Trim().Replace(",", ""), out balance);
+                    {
+                        string cleanBalance = parts[2].Replace("INR", "").Replace(" ", "").Replace("\u00A0", "").Replace(",", "").Trim();
+                        decimal.TryParse(cleanBalance, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out balance);
+                    }
                 }
 
                 SaveFileDialog saveDialog = new SaveFileDialog
@@ -361,6 +370,8 @@ namespace ClientDesktop.ViewModel
 
                 if (saveDialog.ShowDialog() != true)
                     return;
+
+                string filePath = saveDialog.FileName; 
 
                 using (var workbook = new XLWorkbook())
                 {
@@ -392,8 +403,8 @@ namespace ClientDesktop.ViewModel
                         sheet.Cell(rowIndex, 1).Value = sr++;
 
                         var dateCell = sheet.Cell(rowIndex, 2);
-                        dateCell.Value = item.CreatedOn;
-                        dateCell.Style.DateFormat.Format = "dd/MM/yy HH:mm";
+                        dateCell.Value = CommonHelper.ConvertUtcToIst(item.CreatedOn);
+                        dateCell.Style.DateFormat.Format = @"dd\/MM\/yy HH:mm"; 
 
                         sheet.Cell(rowIndex, 3).Value = item.RefId;
                         sheet.Cell(rowIndex, 4).Value = item.PositionId ?? "--";
@@ -410,13 +421,13 @@ namespace ClientDesktop.ViewModel
                     }
 
                     sheet.Cell(rowIndex, 1).Value = "Profit:";
-                    sheet.Cell(rowIndex, 2).Value = totalProfit.ToString("N2");
+                    sheet.Cell(rowIndex, 2).Value = CommonHelper.FormatAmount(totalProfit);
                     sheet.Cell(rowIndex, 3).Value = "Credit:";
-                    sheet.Cell(rowIndex, 4).Value = credit.ToString("N2");
+                    sheet.Cell(rowIndex, 4).Value = CommonHelper.FormatAmount(credit);
                     sheet.Cell(rowIndex, 5).Value = "Balance:";
-                    sheet.Cell(rowIndex, 6).Value = balance.ToString("N3") + "INR";
-                    sheet.Cell(rowIndex, 11).Value = totalComm;
-                    sheet.Cell(rowIndex, 12).Value = totalProfit;
+                    sheet.Cell(rowIndex, 6).Value = CommonHelper.FormatAmount(balance) + " INR";
+                    sheet.Cell(rowIndex, 11).Value = CommonHelper.FormatAmount(totalComm);
+                    sheet.Cell(rowIndex, 12).Value = CommonHelper.FormatAmount(totalProfit);
                     sheet.Cell(rowIndex, 13).Value = "";
 
                     var footerRange = sheet.Range(rowIndex, 1, rowIndex, 13);
@@ -424,14 +435,14 @@ namespace ClientDesktop.ViewModel
                     footerRange.Style.Fill.BackgroundColor = XLColor.LightGray;
 
                     sheet.Columns().AdjustToContents();
-                    workbook.SaveAs(saveDialog.FileName);
+                    workbook.SaveAs(filePath);
                 }
 
-                MessageBox.Show("Excel exported successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                FileLogger.Log("Export", "Excel exported successfully!");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Export error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                FileLogger.ApplicationLog(nameof(ExportToExcel), $"Excel export error: {ex}");
             }
         }
 
@@ -444,7 +455,7 @@ namespace ClientDesktop.ViewModel
             {
                 if (data == null || data.Count <= 1)
                 {
-                    MessageBox.Show("No data to export", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    FileLogger.Log("Export", "No data to export");
                     return;
                 }
 
@@ -457,10 +468,17 @@ namespace ClientDesktop.ViewModel
                 if (footerRow?.Comment != null && footerRow.Comment.Contains("Credit:"))
                 {
                     var parts = footerRow.Comment.Split(new[] { "Credit:", "Balance:" }, StringSplitOptions.None);
+
                     if (parts.Length >= 2)
-                        decimal.TryParse(parts[1].Trim().Split(' ')[0].Replace(",", ""), out credit);
+                    {
+                        string cleanCredit = parts[1].Replace(" ", "").Replace("\u00A0", "").Replace(",", "").Trim();
+                        decimal.TryParse(cleanCredit, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out credit);
+                    }
                     if (parts.Length >= 3)
-                        decimal.TryParse(parts[2].Replace("INR", "").Trim().Replace(",", ""), out balance);
+                    {
+                        string cleanBalance = parts[2].Replace("INR", "").Replace(" ", "").Replace("\u00A0", "").Replace(",", "").Trim();
+                        decimal.TryParse(cleanBalance, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out balance);
+                    }
                 }
 
                 SaveFileDialog saveDialog = new SaveFileDialog
@@ -472,6 +490,8 @@ namespace ClientDesktop.ViewModel
 
                 if (saveDialog.ShowDialog() != true)
                     return;
+
+                string filePath = saveDialog.FileName;
 
                 using (var workbook = new XLWorkbook())
                 {
@@ -503,14 +523,13 @@ namespace ClientDesktop.ViewModel
                         sheet.Cell(rowIndex, 1).Value = sr++;
 
                         var updateCell = sheet.Cell(rowIndex, 2);
-                        updateCell.Value = item.UpdatedAt;
-                        updateCell.Style.DateFormat.Format = "dd/MM/yy HH:mm";
-
+                        updateCell.Value = CommonHelper.ConvertUtcToIst(item.UpdatedAt);
+                        updateCell.Style.DateFormat.Format = @"dd\/MM\/yy HH:mm:ss"; 
                         var lastOutCell = sheet.Cell(rowIndex, 3);
                         if (item.LastOutAt.HasValue)
                         {
-                            lastOutCell.Value = item.LastOutAt.Value;
-                            lastOutCell.Style.DateFormat.Format = "dd/MM/yy HH:mm";
+                            lastOutCell.Value = CommonHelper.ConvertUtcToIst(item.LastOutAt.Value);
+                            lastOutCell.Style.DateFormat.Format = @"dd\/MM\/yy HH:mm:ss"; 
                         }
                         else
                         {
@@ -529,13 +548,13 @@ namespace ClientDesktop.ViewModel
                     }
 
                     sheet.Cell(rowIndex, 1).Value = "Profit:";
-                    sheet.Cell(rowIndex, 2).Value = totalProfit.ToString("N2");
+                    sheet.Cell(rowIndex, 2).Value = CommonHelper.FormatAmount(totalProfit);
                     sheet.Cell(rowIndex, 3).Value = "Credit:";
-                    sheet.Cell(rowIndex, 4).Value = credit.ToString("N2");
+                    sheet.Cell(rowIndex, 4).Value = CommonHelper.FormatAmount(credit);
                     sheet.Cell(rowIndex, 5).Value = "Balance:";
-                    sheet.Cell(rowIndex, 6).Value = balance.ToString("N3") + "INR";
+                    sheet.Cell(rowIndex, 6).Value = CommonHelper.FormatAmount(balance) + " INR";
                     sheet.Cell(rowIndex, 9).Value = "";
-                    sheet.Cell(rowIndex, 10).Value = totalProfit;
+                    sheet.Cell(rowIndex, 10).Value = CommonHelper.FormatAmount(totalProfit);
                     sheet.Cell(rowIndex, 11).Value = "";
 
                     var footerRange = sheet.Range(rowIndex, 1, rowIndex, 11);
@@ -543,14 +562,14 @@ namespace ClientDesktop.ViewModel
                     footerRange.Style.Fill.BackgroundColor = XLColor.LightGray;
 
                     sheet.Columns().AdjustToContents();
-                    workbook.SaveAs(saveDialog.FileName);
+                    workbook.SaveAs(filePath);
                 }
 
-                MessageBox.Show("Excel exported successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                FileLogger.Log("Export", "Excel exported successfully!");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Export error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                FileLogger.ApplicationLog(nameof(ExportPositionToExcel), $"Excel export error: {ex}");
             }
         }
 
@@ -563,7 +582,7 @@ namespace ClientDesktop.ViewModel
             {
                 if (data == null || data.Count <= 1)
                 {
-                    MessageBox.Show("No data to export", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    FileLogger.Log("Export", "No data to export");
                     return;
                 }
 
@@ -575,8 +594,17 @@ namespace ClientDesktop.ViewModel
                 if (footerRow?.Comment != null && footerRow.Comment.Contains("Credit:"))
                 {
                     var parts = footerRow.Comment.Split(new[] { "Credit:", "Balance:" }, StringSplitOptions.None);
-                    if (parts.Length >= 2) decimal.TryParse(parts[1].Trim().Split(' ')[0].Replace(",", ""), out credit);
-                    if (parts.Length >= 3) decimal.TryParse(parts[2].Replace("INR", "").Trim().Replace(",", ""), out balance);
+
+                    if (parts.Length >= 2)
+                    {
+                        string cleanCredit = parts[1].Replace(" ", "").Replace("\u00A0", "").Replace(",", "").Trim();
+                        decimal.TryParse(cleanCredit, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out credit);
+                    }
+                    if (parts.Length >= 3)
+                    {
+                        string cleanBalance = parts[2].Replace("INR", "").Replace(" ", "").Replace("\u00A0", "").Replace(",", "").Trim();
+                        decimal.TryParse(cleanBalance, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out balance);
+                    }
                 }
 
                 var dt = new DataTable();
@@ -609,56 +637,62 @@ namespace ClientDesktop.ViewModel
                         item.OrderType ?? "",
                         item.Side ?? "",
                         item.DealType ?? "",
-                        item.Volume.ToString("N2"),
+                        CommonHelper.FormatAmount((double)item.Volume),
                         item.DisplayPrice,
-                        item.UplineCommission.ToString("N2"),
-                        item.Pnl.ToString("N2"),
+                        CommonHelper.FormatAmount(item.UplineCommission),
+                        CommonHelper.FormatAmount(item.Pnl),
                         item.Comment ?? ""
                     );
                 }
 
                 dt.Rows.Add(
                     "GrandTotal",
-                    "Profit:", totalProfit.ToString("N2"),
-                    "Credit:", credit.ToString("N2"),
-                    "Balance:", balance.ToString("N3") + " INR",
-                    "", "", "",
-                    totalComm.ToString("N2"),
-                    totalProfit.ToString("N2"),
+                    "",
+                    "Profit:",
+                    CommonHelper.FormatAmount(totalProfit),
+                    "Credit:",
+                    CommonHelper.FormatAmount(credit),
+                    "Balance:",
+                    CommonHelper.FormatAmount(balance) + " INR",
+                    "",
+                    "",
+                    "",
+                    CommonHelper.FormatAmount(totalComm),
+                    CommonHelper.FormatAmount(totalProfit),
                     ""
                 );
-
-                var alignments = new Dictionary<string, iText.Layout.Properties.TextAlignment>
+                    
+                var alignments = new Dictionary<string, EnumPdfColumnAlignment>
                 {
-                    { "Volume", iText.Layout.Properties.TextAlignment.RIGHT },
-                    { "Comm.",  iText.Layout.Properties.TextAlignment.RIGHT },
-                    { "Price", iText.Layout.Properties.TextAlignment.RIGHT },
-                    { "Profit", iText.Layout.Properties.TextAlignment.RIGHT }
+                    { "Volume", EnumPdfColumnAlignment.Right },
+                    { "Comm.",  EnumPdfColumnAlignment.Right },
+                    { "Price",  EnumPdfColumnAlignment.Right },
+                    { "Profit", EnumPdfColumnAlignment.Right }
                 };
 
-                _pdfBuilder
-                    .Clear()
-                    .AddSubTitle("History", fontSize: 16, centerAlign: false)
-                    .AddSpacing(6)
-                    .AddGrid(dt, null, null, alignments);
-
-                _pdfBuilder.CellFontSize = 7.5f;
-                _pdfBuilder.HeaderFontSize = 8f;
-                _pdfBuilder.HeaderPadding = 4f;
-                _pdfBuilder.CellPadding = 3f;
-                _pdfBuilder.ShowVerticalBorders = true;
-                _pdfBuilder.ColumnWidths = new Dictionary<string, float>
+                _pdfService.CellFontSize = 7.5f;
+                _pdfService.HeaderFontSize = 8f;
+                _pdfService.HeaderPadding = 4f;
+                _pdfService.CellPadding = 3f;
+                _pdfService.ShowVerticalBorders = true;
+                _pdfService.ColumnWidths = new Dictionary<string, float>
                 {
                     { "Sr",   0.4f },
                     { "Time", 1.6f }
                 };
 
-                _pdfBuilder.BuildPDF($"{gridType}_History", landscape: true, autoFormat: true);
+                _pdfService
+                    .Clear()
+                    .AddSubTitle("History", fontSize: 16, centerAlign: false)
+                    .AddSpacing(6)
+                    .AddGrid(dt, null, null, alignments)
+                    .BuildPDF($"{gridType}_History", landscape: true, autoFormat: true);
+
+                FileLogger.Log("Export", "PDF exported successfully!");
             }
             catch (Exception ex)
             {
-                FileLogger.ApplicationLog(nameof(ExportToPdf), ex);
-                MessageBox.Show($"PDF export error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                FileLogger.ApplicationLog(nameof(ExportToPdf), $"PDF export error: {ex}");
             }
         }
 
@@ -671,7 +705,7 @@ namespace ClientDesktop.ViewModel
             {
                 if (data == null || data.Count <= 1)
                 {
-                    MessageBox.Show("No data to export", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    FileLogger.Log("Export", "No data to export");
                     return;
                 }
 
@@ -682,8 +716,17 @@ namespace ClientDesktop.ViewModel
                 if (footerRow?.Comment != null && footerRow.Comment.Contains("Credit:"))
                 {
                     var parts = footerRow.Comment.Split(new[] { "Credit:", "Balance:" }, StringSplitOptions.None);
-                    if (parts.Length >= 2) decimal.TryParse(parts[1].Trim().Split(' ')[0].Replace(",", ""), out credit);
-                    if (parts.Length >= 3) decimal.TryParse(parts[2].Replace("INR", "").Trim().Replace(",", ""), out balance);
+
+                    if (parts.Length >= 2)
+                    {
+                        string cleanCredit = parts[1].Replace(" ", "").Replace("\u00A0", "").Replace(",", "").Trim();
+                        decimal.TryParse(cleanCredit, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out credit);
+                    }
+                    if (parts.Length >= 3)
+                    {
+                        string cleanBalance = parts[2].Replace("INR", "").Replace(" ", "").Replace("\u00A0", "").Replace(",", "").Trim();
+                        decimal.TryParse(cleanBalance, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out balance);
+                    }
                 }
 
                 var dt = new DataTable();
@@ -703,9 +746,9 @@ namespace ClientDesktop.ViewModel
                 int sr = 1;
                 foreach (var item in data.Where(x => x.RefId != "FOOTER"))
                 {
-                    string displayTime = CommonHelper.ConvertUtcToIst(item.UpdatedAt).ToString("dd/MM/yy HH:mm");
+                    string displayTime = CommonHelper.ConvertUtcToIst(item.UpdatedAt).ToString("dd/MM/yy HH:mm:ss");
                     string lastOutTime = item.LastOutAt.HasValue
-                                        ? CommonHelper.ConvertUtcToIst(item.LastOutAt.Value).ToString("dd/MM/yy HH:mm")
+                                        ? CommonHelper.ConvertUtcToIst(item.LastOutAt.Value).ToString("dd/MM/yy HH:mm:ss")
                                         : "--";
                     dt.Rows.Add(
                         "",
@@ -718,50 +761,55 @@ namespace ClientDesktop.ViewModel
                         item.SymbolName ?? "",
                         item.DisplayAveragePrice,
                         "",
-                        item.Pnl.ToString("N2"),
+                        CommonHelper.FormatAmount(item.Pnl),
                         item.Comment ?? ""
                     );
                 }
 
                 dt.Rows.Add(
                     "GrandTotal",
-                    "Profit:", totalProfit.ToString("N2"),
-                    "Credit:", credit.ToString("N2"),
-                    "Balance:", balance.ToString("N3") + " INR",
-                    "", "", "",
-                    totalProfit.ToString("N2"),
+                    "",
+                    "Profit:",
+                    CommonHelper.FormatAmount(totalProfit),
+                    "Credit:",
+                    CommonHelper.FormatAmount(credit),
+                    "Balance:",
+                    CommonHelper.FormatAmount(balance) + " INR",
+                    "",
+                    "",
+                    CommonHelper.FormatAmount(totalProfit),
                     ""
                 );
 
-                var alignments = new Dictionary<string, iText.Layout.Properties.TextAlignment>
+                var alignments = new Dictionary<string, EnumPdfColumnAlignment>
                 {
-                    { "Profit", iText.Layout.Properties.TextAlignment.RIGHT }
+                    { "Profit", EnumPdfColumnAlignment.Right }
                 };
 
-                _pdfBuilder
-                    .Clear()
-                    .AddSubTitle("Position", fontSize: 16, centerAlign: false)
-                    .AddSpacing(6)
-                    .AddGrid(dt, null, null, alignments);
-
-                _pdfBuilder.CellFontSize = 7.5f;
-                _pdfBuilder.HeaderFontSize = 8f;
-                _pdfBuilder.HeaderPadding = 4f;
-                _pdfBuilder.CellPadding = 3f;
-                _pdfBuilder.ShowVerticalBorders = true;
-                _pdfBuilder.ColumnWidths = new Dictionary<string, float>
+                _pdfService.CellFontSize = 7.5f;
+                _pdfService.HeaderFontSize = 8f;
+                _pdfService.HeaderPadding = 4f;
+                _pdfService.CellPadding = 3f;
+                _pdfService.ShowVerticalBorders = true;
+                _pdfService.ColumnWidths = new Dictionary<string, float>
                 {
                     { "Sr",            0.4f },
                     { "Time",          1.6f },
                     { "Last Out Time", 1.6f }
                 };
 
-                _pdfBuilder.BuildPDF("Position_History", landscape: true, autoFormat: true);
+                _pdfService
+                    .Clear()
+                    .AddSubTitle("Position", fontSize: 16, centerAlign: false)
+                    .AddSpacing(6)
+                    .AddGrid(dt, null, null, alignments)
+                    .BuildPDF("Position_History", landscape: true, autoFormat: true);
+
+                FileLogger.Log("Export", "PDF exported successfully!");
             }
             catch (Exception ex)
             {
-                FileLogger.ApplicationLog(nameof(ExportPositionToPdf), ex);
-                MessageBox.Show($"PDF export error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                FileLogger.ApplicationLog(nameof(ExportPositionToPdf), $"PDF export error: {ex}");
             }
         }
 

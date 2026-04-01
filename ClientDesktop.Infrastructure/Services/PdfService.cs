@@ -22,6 +22,17 @@ namespace ClientDesktop.Infrastructure.Services
 
         #endregion
 
+        #region Styling Properties Implementation
+
+        public float CellFontSize { get => _builder.CellFontSize; set => _builder.CellFontSize = value; }
+        public float HeaderFontSize { get => _builder.HeaderFontSize; set => _builder.HeaderFontSize = value; }
+        public float HeaderPadding { get => _builder.HeaderPadding; set => _builder.HeaderPadding = value; }
+        public float CellPadding { get => _builder.CellPadding; set => _builder.CellPadding = value; }
+        public bool ShowVerticalBorders { get => _builder.ShowVerticalBorders; set => _builder.ShowVerticalBorders = value; }
+        public Dictionary<string, float> ColumnWidths { get => _builder.ColumnWidths; set => _builder.ColumnWidths = value; }
+
+        #endregion
+
         #region Constructor
 
         public PdfService()

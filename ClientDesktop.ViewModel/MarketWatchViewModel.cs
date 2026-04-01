@@ -225,7 +225,8 @@ namespace ClientDesktop.ViewModel
         /// </summary>
         public void SetSymbolVisibility(string symbolName, bool isVisible)
         {
-            if (!_sessionService.IsLoggedIn || !_sessionService.IsInternetAvailable || !_isSignalRConnected || !_isMarketWatchDataUpdated || string.IsNullOrWhiteSpace(symbolName)) return;
+            if (!_sessionService.IsLoggedIn || !_isMarketWatchDataUpdated || string.IsNullOrWhiteSpace(symbolName))
+                return;
 
             lock (_nativeVisibleSymbols)
             {
@@ -235,7 +236,10 @@ namespace ClientDesktop.ViewModel
                     _nativeVisibleSymbols.Remove(symbolName);
             }
 
-            DebounceSync();
+            if (_sessionService.IsInternetAvailable && _isSignalRConnected)
+            {
+                DebounceSync();
+            }
         }
 
         #endregion

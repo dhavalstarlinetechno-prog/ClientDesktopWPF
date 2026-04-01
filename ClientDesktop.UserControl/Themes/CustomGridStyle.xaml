@@ -95,7 +95,7 @@
 
         <Style.Triggers>
             <Trigger Property="IsSelected" Value="True">
-                <Setter Property="Background" Value="#0078D7"/>
+                <Setter Property="Background" Value="#007acc"/>
                 <Setter Property="Foreground" Value="White"/>
             </Trigger>
 

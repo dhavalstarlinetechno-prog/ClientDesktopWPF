@@ -10,6 +10,14 @@ namespace ClientDesktop.Core.Interfaces
     /// </summary>
     public interface IPdfService
     {
+        // --- Styling Properties ---
+        float CellFontSize { get; set; }
+        float HeaderFontSize { get; set; }
+        float HeaderPadding { get; set; }
+        float CellPadding { get; set; }
+        bool ShowVerticalBorders { get; set; }
+        Dictionary<string, float> ColumnWidths { get; set; }
+
         /// <summary>Add a bold uppercase title.</summary>
         IPdfService AddTitle(string title, int fontSize = 18, bool centerAlign = true);
 

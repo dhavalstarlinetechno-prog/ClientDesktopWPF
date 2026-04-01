@@ -342,7 +342,7 @@
                                     </Grid>
                                 </MenuItem.Icon>
                             </MenuItem>
-                            <MenuItem Header="Details"
+                            <MenuItem Header="Toolbox"
                                   Style="{StaticResource SubMenuItemStyle}"
                                   InputGestureText="Ctrl+T"
                                   Command="{x:Static local:MainWindow.ToggleToolboxCommand}">
@@ -408,7 +408,7 @@
                                   Command="{Binding ChangePasswordCommand}" Visibility="Collapsed">
                                 <MenuItem.Icon>
                                     <Path Data="M4.5 15C5.9 15 7 13.9 7 12.5S5.9 10 4.5 10 2 11.1 2 12.5 3.1 15 4.5 15ZM11 7.4 8.3 10.1C8.7 10.8 9 11.6 9 12.5 9 15 7 17 4.5 17S0 15 0 12.5 2 8 4.5 8C5.4 8 6.2 8.3 6.9 8.7L15.3.3 16.7 1.7 16.4 2 19.7 5.3 18.3 6.7 15 3.4 14.4 4 16.7 6.3 15.3 7.7 13 5.4 12.4 6 15.7 9.3 14.3 10.7 11 7.4ZM18 20C19.1 20 20 19.1 20 18S19.1 16 18 16 16 16.9 16 18 16.9 20 18 20ZM24 19H21.8C21.8 19.4 21.6 19.7 21.4 20L22.9 21.5 21.5 23 20 21.4C19.7 21.6 19.4 21.8 19 21.9V24H17V21.8C16.6 21.8 16.3 21.6 16 21.4L14.5 22.9 13 21.5 14.6 20C14.4 19.7 14.2 19.4 14.1 19H12V17H14.2C14.2 16.6 14.4 16.3 14.6 16L13.1 14.5 14.5 13 16 14.6C16.3 14.4 16.6 14.2 17 14.1V12H19V14.2C19.4 14.2 19.7 14.4 20 14.6L21.5 13.1 23 14.5 21.4 16C21.6 16.3 21.8 16.6 21.9 17H24V19Z"
-                                      Fill="#0078D7" Stretch="Uniform" Width="12" Height="12"/>
+                                      Fill="#007acc" Stretch="Uniform" Width="12" Height="12"/>
                                 </MenuItem.Icon>
                             </MenuItem>
                         </MenuItem>

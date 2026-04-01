@@ -93,7 +93,7 @@
                                     </DataTrigger>
 
                                     <Trigger Property="IsSelected" Value="True">
-                                        <Setter TargetName="DGR_Border" Property="Background" Value="#0078D7"/>
+                                        <Setter TargetName="DGR_Border" Property="Background" Value="#007acc"/>
                                         <Setter Property="Foreground" Value="White"/>
                                     </Trigger>
 
@@ -117,7 +117,7 @@
                                             <Condition Binding="{Binding Type}" Value="Position"/>
                                             <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource Self}}" Value="True"/>
                                         </MultiDataTrigger.Conditions>
-                                        <Setter TargetName="DGR_Border" Property="Background" Value="#0078D7"/>
+                                        <Setter TargetName="DGR_Border" Property="Background" Value="#007acc"/>
                                         <Setter Property="Foreground" Value="White"/>
                                     </MultiDataTrigger>
 
@@ -126,7 +126,7 @@
                                             <Condition Binding="{Binding Type}" Value="Order"/>
                                             <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource Self}}" Value="True"/>
                                         </MultiDataTrigger.Conditions>
-                                        <Setter TargetName="DGR_Border" Property="Background" Value="#0078D7"/>
+                                        <Setter TargetName="DGR_Border" Property="Background" Value="#007acc"/>
                                         <Setter Property="Foreground" Value="White"/>
                                     </MultiDataTrigger>
 

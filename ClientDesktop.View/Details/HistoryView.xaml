@@ -193,9 +193,11 @@
                                             <Setter TargetName="DGR_Border" Property="Background" Value="#D3D3D3"/>
                                             <Setter TargetName="DGR_Border" Property="BorderThickness" Value="0"/>
                                             <Setter TargetName="FooterText"  Property="Visibility" Value="Visible"/>
+                                            <Setter Property="IsHitTestVisible" Value="False"/>
+                                            <Setter Property="Focusable" Value="False"/>
                                         </DataTrigger>
                                         <Trigger Property="IsSelected" Value="True">
-                                            <Setter TargetName="DGR_Border" Property="Background" Value="#0078D7"/>
+                                            <Setter TargetName="DGR_Border" Property="Background" Value="#007acc"/>
                                             <Setter Property="Foreground" Value="White"/>
                                         </Trigger>
                                     </ControlTemplate.Triggers>
@@ -532,9 +534,11 @@
                                             <Setter TargetName="DGR_Border"  Property="Background" Value="#D3D3D3"/>
                                             <Setter TargetName="DGR_Border"  Property="BorderThickness" Value="0"/>
                                             <Setter TargetName="FooterText"  Property="Visibility" Value="Visible"/>
+                                            <Setter Property="IsHitTestVisible" Value="False"/>
+                                            <Setter Property="Focusable" Value="False"/>
                                         </DataTrigger>
                                         <Trigger Property="IsSelected" Value="True">
-                                            <Setter TargetName="DGR_Border" Property="Background" Value="#0078D7"/>
+                                            <Setter TargetName="DGR_Border" Property="Background" Value="#007acc"/>
                                             <Setter Property="Foreground" Value="White"/>
                                         </Trigger>
                                     </ControlTemplate.Triggers>

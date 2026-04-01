@@ -7,26 +7,136 @@
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="1000">
 
+    <UserControl.Resources>
+
+        <Style x:Key="CustomTabControl" TargetType="TabControl">
+            <Setter Property="Background"          Value="White"/>
+            <Setter Property="BorderThickness"     Value="0"/>
+            <Setter Property="Padding"             Value="0"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabControl">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <Border Grid.Row="0" Background="White" BorderThickness="0">
+                                <ContentPresenter x:Name="PART_SelectedContentHost"
+                                                  ContentSource="SelectedContent"
+                                                  SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                            </Border>
+
+                            <Border Grid.Row="1"
+                                    Background="#F0F0F0"
+                                    BorderThickness="0,1,0,0"
+                                    BorderBrush="#CCD1D6">
+                                <TabPanel x:Name="HeaderPanel"
+                                          IsItemsHost="True"
+                                          Background="Transparent"
+                                          Margin="8,2,8,2"
+                                          KeyboardNavigation.TabIndex="1"/>
+                            </Border>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="CustomTabItemStyle" TargetType="TabItem">
+            <Setter Property="Background"          Value="Transparent"/>
+            <Setter Property="Foreground"          Value="#555555"/>
+            <Setter Property="FontSize"            Value="12"/>
+            <Setter Property="BorderThickness"     Value="0"/>
+            <Setter Property="Padding"             Value="12,2"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+
+            <Setter Property="FontWeight" Value="Normal"/>
+
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="Bd"
+                        Background="Transparent"
+                        CornerRadius="3"
+                        Padding="{TemplateBinding Padding}"
+                        SnapsToDevicePixels="True">
+
+                            <TextBlock Text="{TemplateBinding Header}"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               FontSize="{TemplateBinding FontSize}"
+                               Foreground="{TemplateBinding Foreground}"
+                               FontWeight="Normal"
+                               x:Name="HeaderText"/>
+
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource Self}}" Value="True"/>
+                                    <Condition Binding="{Binding IsKeyboardFocusWithin, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True"/>
+                                </MultiDataTrigger.Conditions>
+                                <Setter TargetName="Bd" Property="Background" Value="#007acc"/>
+                                <Setter TargetName="HeaderText" Property="Foreground" Value="White"/>
+                                <Setter TargetName="HeaderText" Property="FontWeight" Value="SemiBold"/>
+                            </MultiDataTrigger>
+
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource Self}}" Value="True"/>
+                                    <Condition Binding="{Binding IsKeyboardFocusWithin, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="False"/>
+                                </MultiDataTrigger.Conditions>
+                                <Setter TargetName="Bd" Property="Background" Value="#66A3D1"/>
+                                <Setter TargetName="HeaderText" Property="Foreground" Value="White"/>
+                                <Setter TargetName="HeaderText" Property="FontWeight" Value="SemiBold"/>
+                            </MultiDataTrigger>
+
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsSelected" Value="False"/>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="Bd" Property="Background" Value="#CCD1D6"/>
+                                <Setter TargetName="HeaderText" Property="Foreground" Value="#222222"/>
+                            </MultiTrigger>
+
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="HeaderText" Property="Foreground" Value="#AAAAAA"/>
+                            </Trigger>
+
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+    </UserControl.Resources>
+
     <Grid Background="White">
-        <TabControl x:Name="MainTabControl" 
-                    TabStripPlacement="Bottom" 
-                    Style="{StaticResource CustomTabControl}" 
+        <TabControl x:Name="MainTabControl"
+                    TabStripPlacement="Bottom"
+                    Style="{StaticResource CustomTabControl}"
                     Background="White"
                     BorderThickness="0">
 
-            <TabItem x:Name="TabPosition" Header="Position" Style="{StaticResource CustomTabItem}">
+            <TabItem x:Name="TabPosition" Header="Position" Style="{StaticResource CustomTabItemStyle}">
                 <views:PositionView />
             </TabItem>
 
-            <TabItem x:Name="TabHistory" Header="History" Style="{StaticResource CustomTabItem}">
+            <TabItem x:Name="TabHistory" Header="History" Style="{StaticResource CustomTabItemStyle}">
                 <views:HistoryView />
             </TabItem>
 
-            <TabItem x:Name="TabMessage" Header="Message" Style="{StaticResource CustomTabItem}">
+            <TabItem x:Name="TabMessage" Header="Message" Style="{StaticResource CustomTabItemStyle}">
                 <views:MessageView />
             </TabItem>
 
-            <TabItem x:Name="TabJournal" Header="Journal" Style="{StaticResource CustomTabItem}">
+            <TabItem x:Name="TabJournal" Header="Journal" Style="{StaticResource CustomTabItemStyle}">
                 <views:JournalView />
             </TabItem>
 
