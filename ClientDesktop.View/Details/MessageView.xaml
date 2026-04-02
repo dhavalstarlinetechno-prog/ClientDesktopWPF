@@ -21,7 +21,7 @@
                 <TextBlock Text="End Date: " VerticalAlignment="Center" Margin="0,0,5,0" FontSize="13"/>
                 <DatePicker SelectedDate="{Binding EndDate}" Style="{StaticResource CustomDatePickerStyle}" Width="120" Margin="0,0,10,0"/>
 
-                <Button Content="Go" Command="{Binding FilterCommand}" 
+                <Button Content="Go" Command="{Binding FilterCommand}" Style="{StaticResource CommonActionButtonStyle}"
                         Width="50" Background="#007ACC" Foreground="White"/>
             </StackPanel>
         </Border>

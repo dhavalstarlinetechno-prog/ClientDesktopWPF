@@ -44,9 +44,9 @@ namespace ClientDesktop.ViewModel
             Messages.Clear();
 
             // Dummy Rows
-            Messages.Add(new MessageItem { IsSelected = false, From = "Admin", Title = "Maintenance", Message = "Server maintenance at 12:00 AM", Date = DateTime.Now });
-            Messages.Add(new MessageItem { IsSelected = false, From = "System", Title = "Login", Message = "New login detected from IP 192.168.1.1", Date = DateTime.Now.AddHours(-2) });
-            Messages.Add(new MessageItem { IsSelected = true, From = "Broker", Title = "Margin Alert", Message = "Your margin level is below 100%", Date = DateTime.Now.AddDays(-1) });
+            //Messages.Add(new MessageItem { IsSelected = false, From = "Admin", Title = "Maintenance", Message = "Server maintenance at 12:00 AM", Date = DateTime.Now });
+            //Messages.Add(new MessageItem { IsSelected = false, From = "System", Title = "Login", Message = "New login detected from IP 192.168.1.1", Date = DateTime.Now.AddHours(-2) });
+            //Messages.Add(new MessageItem { IsSelected = true, From = "Broker", Title = "Margin Alert", Message = "Your margin level is below 100%", Date = DateTime.Now.AddDays(-1) });
 
             OnPropertyChanged(nameof(Messages));
         }
