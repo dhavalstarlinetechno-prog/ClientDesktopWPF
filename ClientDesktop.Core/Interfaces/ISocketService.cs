@@ -17,5 +17,6 @@ namespace ClientDesktop.Services
         event Action<string> OnForceLogout;
         event Action<ClientDetails> OnUpdateUserBalance;
         event Action<bool> OnViewLockChanged;
+        event Action<FeedbackReplyData> OnFeedbackReplyReceived;
     }
 }

@@ -37,6 +37,7 @@ namespace ClientDesktop.Services
         public event Action<ClientDetails> OnUpdateUserBalance;
 
         public event Action<bool> OnViewLockChanged;
+        public event Action<FeedbackReplyData> OnFeedbackReplyReceived;
         private readonly IApiService _apiService;
         private readonly SessionService _sessionService;
         #endregion
@@ -319,6 +320,12 @@ namespace ClientDesktop.Services
                     case "BAN_SCRIPT_DELETE":
                         string masterNameDel = playLoad["masterSymbolName"]?.ToString();
                         _socketData.BanScripts.RemoveAll(b => b.masterSymbolName == masterNameDel);
+                        break;
+
+                    case "REPLY_FEEDBACK":
+                        var feedbackReply = playLoad?.ToObject<FeedbackReplyData>();
+                        if (feedbackReply != null)
+                            OnFeedbackReplyReceived?.Invoke(feedbackReply);
                         break;
 
                     case "FORCE_LOGOUT":

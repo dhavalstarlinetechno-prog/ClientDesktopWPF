@@ -2,6 +2,7 @@
 using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Services;
+using ClientDesktop.Services;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -14,9 +15,12 @@ namespace ClientDesktop.ViewModel
 {
     public class FeedbackViewModel : ViewModelBase, ICloseable
     {
+        #region Variable
+
         private readonly SessionService _sessionService;
         private readonly FeedbackService _FeedbackService;
         private ObservableCollection<FeedbackModel> _feedbackList;
+        private readonly ISocketService _socketService;
         public ObservableCollection<FeedbackModel> FeedbackList
         {
             get => _feedbackList;
@@ -48,6 +52,7 @@ namespace ClientDesktop.ViewModel
             }
         }       
         public Action OnFeedbackSubmittedSuccessfully { get; set; }
+
         public static Action<int> OnRecordDeletedExternally;
         public Action OnRequestClose { get; set; }        
 
@@ -61,14 +66,71 @@ namespace ClientDesktop.ViewModel
                 OnPropertyChanged(nameof(SelectedFeedbackDetails));            
             }
         }
-        public FeedbackViewModel(SessionService sessionService, FeedbackService feedbackService)
+
+        private int _currentFeedbackId = 0;
+        public int CurrentFeedbackId
+        {
+            get => _currentFeedbackId;
+            private set { _currentFeedbackId = value; OnPropertyChanged(nameof(CurrentFeedbackId)); }
+        }
+
+        public event Action<ChatList> OnNewReplyReceived;
+
+        #endregion Variable
+
+        #region Constructor 
+
+        public FeedbackViewModel(SessionService sessionService, FeedbackService feedbackService, ISocketService socketService)
         {
             _sessionService = sessionService;
             _FeedbackService = feedbackService;
+            _socketService = socketService;
             FeedbackList = new ObservableCollection<FeedbackModel>();
 
             //OnRecordDeletedExternally = (id) => RemoveFeedbackFromGrid(id);
         }
+
+        #endregion Constructor
+
+        #region SocketLogic
+        public void SubscribeToFeedbackSocket()
+        {
+            if (_socketService == null) return;          
+            _socketService.OnFeedbackReplyReceived -= HandleSocketFeedbackReply;
+            _socketService.OnFeedbackReplyReceived += HandleSocketFeedbackReply;
+        }
+        public void UnsubscribeFromFeedbackSocket()
+        {
+            if (_socketService == null) return;
+            _socketService.OnFeedbackReplyReceived -= HandleSocketFeedbackReply;
+        }
+        private void HandleSocketFeedbackReply(FeedbackReplyData data)
+        {           
+            if (data == null || data.FeedbackId != CurrentFeedbackId)
+                return;
+            
+            var chatItem = new ChatList
+            {
+                operatorId = data.OperatorId,
+                feedbackId = data.FeedbackId,
+                userName = data.UserName,
+                userRole = data.UserRole,
+                feedbackMessage = data.FeedbackMessage,
+                isReply = data.IsReply,
+                isRead = data.IsRead,
+                filePath = data.FilePath ?? new List<string>(),
+                createdOn = data.CreatedOn
+            };           
+            Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                OnNewReplyReceived?.Invoke(chatItem);
+            });
+        }
+        public bool IsSocketConnected => _socketService?.IsConnected ?? false;
+
+        #endregion SocketLogic
+
+        #region Methods
         public async Task LoadFeedbackAsync()
         {
             if (!_sessionService.IsInternetAvailable)
@@ -91,8 +153,7 @@ namespace ClientDesktop.ViewModel
             {
                 IsBusy = false;
             }
-        }
-       
+        }       
         public async Task GetFeedbackDetailsAsync(int feedbackId)
         {
             if (!_sessionService.IsInternetAvailable)
@@ -105,13 +166,14 @@ namespace ClientDesktop.ViewModel
                 var data = await _FeedbackService.GetFeedbackDetailsAsync(feedbackId);
 
                 if (data != null)
-                {
-                    // Response bind ho gaya selected model pe
+                {                    
                     SelectedFeedbackDetails = data;
+                    CurrentFeedbackId = feedbackId;
                 }
                 else
                 {
                     ErrorMessage = "Failed to load feedback details.";
+                    CurrentFeedbackId = 0;
                 }
             }
             finally
@@ -119,50 +181,59 @@ namespace ClientDesktop.ViewModel
                 IsBusy = false;
             }
         }
-        public async Task<FeedbackResponse> SubmitFeedbackAsync(string feedbackSubject,string htmlMessage, string filePath)
+        public async Task<FeedbackResponse> SubmitFeedbackAsync(string feedbackSubject, string htmlMessage, string filePath)
         {
-            if (!_sessionService.IsInternetAvailable)
-                return null;
-            ErrorMessage = string.Empty;
-        
-            var response = await _FeedbackService.GenerateFeedbackAsync(feedbackSubject, htmlMessage, filePath);
+            if (!_sessionService.IsInternetAvailable) return null;
 
-            if (response != null && response.IsSuccess)
-            {
-                // Triggers View Code-Behind to Clear Grid/Fields
-                OnFeedbackSubmittedSuccessfully?.Invoke();
-            }
-            else
-            {
-                ErrorMessage = response?.Exception ?? response?.SuccessMessage ?? "Failed to submit feedback.";
-            }
-
-            return response;
-        }
-        public async Task<FeedbackReplyResponse> SubmitFeedbackReplyAsync(int feedbackId, string feedbackMessage, string filePath)
-        {
-            if (!_sessionService.IsInternetAvailable)
-                return null;
             IsBusy = true;
             ErrorMessage = string.Empty;
+
             try
             {
-                var response = await _FeedbackService.ReplyFeedbackAsync(feedbackId, feedbackMessage, filePath);
+                var response = await _FeedbackService.GenerateFeedbackAsync(feedbackSubject, htmlMessage, filePath);
 
                 if (response != null && response.IsSuccess)
-                {
                     OnFeedbackSubmittedSuccessfully?.Invoke();
-                }
                 else
-                {
-                    ErrorMessage = response?.SuccessMessage ?? "Failed to send reply.";
-                }
+                    ErrorMessage = response?.Exception ?? response?.SuccessMessage ?? "Failed to submit feedback.";
+
                 return response;
             }
             finally
             {
                 IsBusy = false;
             }
-        }       
+        }
+        public async Task<FeedbackReplyResponse> SubmitFeedbackReplyAsync(int feedbackId, string feedbackMessage, string filePath)
+        {
+            if (!_sessionService.IsInternetAvailable) return null;
+
+            IsBusy = true;
+            ErrorMessage = string.Empty;
+
+            try
+            {
+                var response = await _FeedbackService.ReplyFeedbackAsync(feedbackId, feedbackMessage, filePath);
+
+                if (response != null && response.IsSuccess)
+                    OnFeedbackSubmittedSuccessfully?.Invoke();
+                else
+                    ErrorMessage = response?.SuccessMessage ?? "Failed to send reply.";
+
+                return response;
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+        public void ResetCurrentFeedback()
+        {
+            CurrentFeedbackId = 0;
+            SelectedFeedbackDetails = null;
+            UnsubscribeFromFeedbackSocket();
+        }
+
+        #endregion Methods
     }
 }
