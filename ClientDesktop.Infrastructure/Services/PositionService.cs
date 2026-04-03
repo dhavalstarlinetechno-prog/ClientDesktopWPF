@@ -15,10 +15,17 @@ namespace ClientDesktop.Infrastructure.Services
 
         public PositionService(IApiService apiService, SessionService sessionService)
         {
-            _apiService = apiService;
-            _sessionService = sessionService;
-            _positionRepo = new FileRepository<List<Position>>();
-            _orderRepo = new FileRepository<List<OrderModel>>();
+            try
+            {
+                _apiService = apiService;
+                _sessionService = sessionService;
+                _positionRepo = new FileRepository<List<Position>>();
+                _orderRepo = new FileRepository<List<OrderModel>>();
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(PositionService), ex);
+            }
         }
 
         #region Public Methods (Main Logic)
@@ -54,7 +61,8 @@ namespace ClientDesktop.Infrastructure.Services
             }
             catch (Exception ex)
             {
-                FileLogger.ApplicationLog(nameof(GetPositionsAsync), $"GetPositions Error: {ex.Message}");
+                // Pass the actual exception object
+                FileLogger.ApplicationLog(nameof(GetPositionsAsync), ex);
 
                 // Fallback to Cache on Exception
                 if (cachedPositions != null && cachedPositions.Count > 0)
@@ -95,7 +103,8 @@ namespace ClientDesktop.Infrastructure.Services
             }
             catch (Exception ex)
             {
-                FileLogger.ApplicationLog(nameof(GetOrdersAsync), $"GetOrders Error: {ex.Message}");
+                // Pass the actual exception object
+                FileLogger.ApplicationLog(nameof(GetOrdersAsync), ex);
 
                 // Fallback to Cache on Exception
                 if (cachedOrders != null && cachedOrders.Count > 0)
@@ -111,12 +120,28 @@ namespace ClientDesktop.Infrastructure.Services
 
         public List<Position> GetCachedPositions()
         {
-            return LoadStoredPositions() ?? new List<Position>();
+            try
+            {
+                return LoadStoredPositions() ?? new List<Position>();
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(GetCachedPositions), ex);
+                return new List<Position>();
+            }
         }
 
         public List<OrderModel> GetCachedOrders()
         {
-            return LoadStoredOrders() ?? new List<OrderModel>();
+            try
+            {
+                return LoadStoredOrders() ?? new List<OrderModel>();
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(GetCachedOrders), ex);
+                return new List<OrderModel>();
+            }
         }
 
         public void UpdateLocalPosition(Position position, bool isDeleted)
@@ -140,7 +165,7 @@ namespace ClientDesktop.Infrastructure.Services
             }
             catch (Exception ex)
             {
-                FileLogger.ApplicationLog(nameof(UpdateLocalPosition), $"UpdateLocalPosition Error: {ex.Message}");
+                FileLogger.ApplicationLog(nameof(UpdateLocalPosition), ex);
             }
         }
 
@@ -165,7 +190,7 @@ namespace ClientDesktop.Infrastructure.Services
             }
             catch (Exception ex)
             {
-                FileLogger.ApplicationLog(nameof(UpdateLocalOrder), $"UpdateLocalOrder Error: {ex.Message}");
+                FileLogger.ApplicationLog(nameof(UpdateLocalOrder), ex);
             }
         }
 
@@ -176,35 +201,73 @@ namespace ClientDesktop.Infrastructure.Services
         // Common Path Generator
         private string GetStoragePath()
         {
-            string folderName = AESHelper.ToBase64UrlSafe(_sessionService.LicenseId);
-            string fileName = AESHelper.ToBase64UrlSafe(_sessionService.UserId);
-            string relativePath = Path.Combine(folderName, fileName);
+            try
+            {
+                string folderName = AESHelper.ToBase64UrlSafe(_sessionService.LicenseId);
+                string fileName = AESHelper.ToBase64UrlSafe(_sessionService.UserId);
+                string relativePath = Path.Combine(folderName, fileName);
 
-            return relativePath;
+                return relativePath;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(GetStoragePath), ex);
+                return string.Empty;
+            }
         }
 
         // --- POSITION METHODS ---
 
         private List<Position> LoadStoredPositions()
         {
-            return _positionRepo.Load(GetStoragePath(), "position");
+            try
+            {
+                return _positionRepo.Load(GetStoragePath(), "position");
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(LoadStoredPositions), ex);
+                return new List<Position>();
+            }
         }
 
         private void SaveStoredPositions(List<Position> data)
         {
-            _positionRepo.Save(GetStoragePath(), data, "position");
+            try
+            {
+                _positionRepo.Save(GetStoragePath(), data, "position");
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(SaveStoredPositions), ex);
+            }
         }
 
         // --- ORDER METHODS ---
 
         private List<OrderModel> LoadStoredOrders()
         {
-            return _orderRepo.Load(GetStoragePath(), "order");
+            try
+            {
+                return _orderRepo.Load(GetStoragePath(), "order");
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(LoadStoredOrders), ex);
+                return new List<OrderModel>();
+            }
         }
 
         private void SaveStoredOrders(List<OrderModel> data)
         {
-            _orderRepo.Save(GetStoragePath(), data, "order");
+            try
+            {
+                _orderRepo.Save(GetStoragePath(), data, "order");
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(SaveStoredOrders), ex);
+            }
         }
 
         #endregion

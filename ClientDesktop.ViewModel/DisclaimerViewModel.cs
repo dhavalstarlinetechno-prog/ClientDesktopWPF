@@ -1,5 +1,6 @@
 ﻿using ClientDesktop.Core.Base;
 using ClientDesktop.Core.Interfaces;
+using ClientDesktop.Infrastructure.Logger;
 using System.Windows.Input;
 
 namespace ClientDesktop.ViewModel
@@ -19,20 +20,41 @@ namespace ClientDesktop.ViewModel
 
         public DisclaimerViewModel()
         {
-            CloseCommand = new RelayCommand(OnClose);
-            AcknowledgeCommand = new RelayCommand(OnAcknowledge);
+            try
+            {
+                CloseCommand = new RelayCommand(OnClose);
+                AcknowledgeCommand = new RelayCommand(OnAcknowledge);
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(DisclaimerViewModel), ex);
+            }
         }
 
         private void OnClose(object parameter)
         {
-            IsAcknowledged = false;
-            CloseAction?.Invoke();
+            try
+            {
+                IsAcknowledged = false;
+                CloseAction?.Invoke();
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(OnClose), ex);
+            }
         }
 
         private void OnAcknowledge(object parameter)
         {
-            IsAcknowledged = true;
-            CloseAction?.Invoke();
+            try
+            {
+                IsAcknowledged = true;
+                CloseAction?.Invoke();
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(OnAcknowledge), ex);
+            }
         }
     }
 }

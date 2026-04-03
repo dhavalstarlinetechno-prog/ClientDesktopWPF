@@ -1,4 +1,5 @@
-﻿using iText.IO.Font.Constants;
+﻿using ClientDesktop.Infrastructure.Logger;
+using iText.IO.Font.Constants;
 using iText.Kernel.Colors;
 using iText.Kernel.Font;
 using iText.Kernel.Geom;
@@ -8,11 +9,7 @@ using iText.Layout.Borders;
 using iText.Layout.Element;
 using iText.Layout.Properties;
 using Microsoft.Win32;
-using System;
-using System.Collections.Generic;
 using System.Data;
-using System.IO;
-using System.Linq;
 
 namespace ClientDesktop.Infrastructure.Helpers
 {
@@ -68,25 +65,39 @@ namespace ClientDesktop.Infrastructure.Helpers
 
         public PDFBuilder AddTitle(string title, int fontSize = 18, bool centerAlign = true)
         {
-            _components.Add(new PdfComponent
+            try
             {
-                Type = ComponentType.Title,
-                Text = title,
-                FontSize = fontSize,
-                CenterAlign = centerAlign
-            });
+                _components.Add(new PdfComponent
+                {
+                    Type = ComponentType.Title,
+                    Text = title,
+                    FontSize = fontSize,
+                    CenterAlign = centerAlign
+                });
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(AddTitle), ex);
+            }
             return this;
         }
 
         public PDFBuilder AddSubTitle(string subTitle, int fontSize = 13, bool centerAlign = false)
         {
-            _components.Add(new PdfComponent
+            try
             {
-                Type = ComponentType.SubTitle,
-                Text = subTitle,
-                FontSize = fontSize,
-                CenterAlign = centerAlign
-            });
+                _components.Add(new PdfComponent
+                {
+                    Type = ComponentType.SubTitle,
+                    Text = subTitle,
+                    FontSize = fontSize,
+                    CenterAlign = centerAlign
+                });
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(AddSubTitle), ex);
+            }
             return this;
         }
 
@@ -101,52 +112,87 @@ namespace ClientDesktop.Infrastructure.Helpers
             Dictionary<string, TextAlignment>? columnAlignments = null,
             bool repeatHeader = true)   // ← TextAlignment, NOT EnumPdfColumnAlignment
         {
-            _components.Add(new PdfComponent
+            try
             {
-                Type = ComponentType.Grid,
-                Text = gridTitle,
-                DataTable = dataTable,
-                FooterData = footerData,
-                ColumnAlignments = columnAlignments,
-                RepeatHeader = repeatHeader
-            });
+                _components.Add(new PdfComponent
+                {
+                    Type = ComponentType.Grid,
+                    Text = gridTitle,
+                    DataTable = dataTable,
+                    FooterData = footerData,
+                    ColumnAlignments = columnAlignments,
+                    RepeatHeader = repeatHeader
+                });
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(AddGrid), ex);
+            }
             return this;
         }
 
         public PDFBuilder AddInfoSection(Dictionary<string, string> data, int columns = 2)
         {
-            _components.Add(new PdfComponent
+            try
             {
-                Type = ComponentType.InfoSection,
-                FooterData = data,
-                Columns = columns
-            });
+                _components.Add(new PdfComponent
+                {
+                    Type = ComponentType.InfoSection,
+                    FooterData = data,
+                    Columns = columns
+                });
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(AddInfoSection), ex);
+            }
             return this;
         }
 
         public PDFBuilder AddSpacing(float spacing = 10)
         {
-            _components.Add(new PdfComponent
+            try
             {
-                Type = ComponentType.Spacing,
-                Spacing = spacing
-            });
+                _components.Add(new PdfComponent
+                {
+                    Type = ComponentType.Spacing,
+                    Spacing = spacing
+                });
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(AddSpacing), ex);
+            }
             return this;
         }
 
         public PDFBuilder AddFooterNote(string note)
         {
-            _components.Add(new PdfComponent
+            try
             {
-                Type = ComponentType.FooterNote,
-                Text = note
-            });
+                _components.Add(new PdfComponent
+                {
+                    Type = ComponentType.FooterNote,
+                    Text = note
+                });
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(AddFooterNote), ex);
+            }
             return this;
         }
 
         public PDFBuilder Clear()
         {
-            _components.Clear();
+            try
+            {
+                _components.Clear();
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(Clear), ex);
+            }
             return this;
         }
 
@@ -156,24 +202,32 @@ namespace ClientDesktop.Infrastructure.Helpers
         /// </summary>
         public void BuildPDF(string baseFileName, bool landscape = true, bool autoFormat = true)
         {
-            var dialog = new SaveFileDialog
+            try
             {
-                Filter = "PDF Files (*.pdf)|*.pdf",
-                FileName = $"{baseFileName}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf"
-            };
+                var dialog = new SaveFileDialog
+                {
+                    Filter = "PDF Files (*.pdf)|*.pdf",
+                    FileName = $"{baseFileName}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf"
+                };
 
-            if (dialog.ShowDialog() == true)
-            {
-                try
+                if (dialog.ShowDialog() == true)
                 {
                     byte[] bytes = GeneratePdfBytes(landscape, autoFormat);
-                    File.WriteAllBytes(dialog.FileName, bytes);
-                    OnPdfSaved?.Invoke(dialog.FileName);
+                    if (bytes != null && bytes.Length > 0)
+                    {
+                        File.WriteAllBytes(dialog.FileName, bytes);
+                        OnPdfSaved?.Invoke(dialog.FileName);
+                    }
+                    else
+                    {
+                        OnError?.Invoke("Failed to generate PDF content.");
+                    }
                 }
-                catch (Exception ex)
-                {
-                    OnError?.Invoke(ex.Message);
-                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(BuildPDF), ex);
+                OnError?.Invoke(ex.Message);
             }
         }
 
@@ -189,110 +243,160 @@ namespace ClientDesktop.Infrastructure.Helpers
         /// </summary>
         public byte[] GeneratePdfBytes(bool landscape = true, bool autoFormat = true)
         {
-            var ms = new MemoryStream();
+            try
+            {
+                var ms = new MemoryStream();
 
-            // [FIX 2a] SetCloseStream(false) — iText7 will NOT close 'ms'
-            var writer = new PdfWriter(ms);
-            writer.SetCloseStream(false);
+                // [FIX 2a] SetCloseStream(false) — iText7 will NOT close 'ms'
+                var writer = new PdfWriter(ms);
+                writer.SetCloseStream(false);
 
-            // [FIX 2b] No 'using' — doc.Close() handles full cascade
-            var pdfDoc = new PdfDocument(writer);
-            PageSize size = landscape ? PageSize.A4.Rotate() : PageSize.A4;
-            var doc = new Document(pdfDoc, size);
-            doc.SetMargins(30, 20, 30, 20); // top, right, bottom, left
+                // [FIX 2b] No 'using' — doc.Close() handles full cascade
+                var pdfDoc = new PdfDocument(writer);
+                PageSize size = landscape ? PageSize.A4.Rotate() : PageSize.A4;
+                var doc = new Document(pdfDoc, size);
+                doc.SetMargins(30, 20, 30, 20); // top, right, bottom, left
 
-            foreach (var component in _components)
-                ProcessComponent(doc, component, autoFormat);
+                foreach (var component in _components)
+                    ProcessComponent(doc, component, autoFormat);
 
-            // doc.Close() → pdfDoc.Close() → writer.Close() (ms stays open)
-            doc.Close();
+                // doc.Close() → pdfDoc.Close() → writer.Close() (ms stays open)
+                doc.Close();
 
-            byte[] result = ms.ToArray();
-            ms.Dispose();
-            return result;
+                byte[] result = ms.ToArray();
+                ms.Dispose();
+                return result;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(GeneratePdfBytes), ex);
+                return Array.Empty<byte>();
+            }
         }
 
 
         private void ProcessComponent(Document doc, PdfComponent comp, bool autoFormat)
         {
-            switch (comp.Type)
+            try
             {
-                case ComponentType.Title: RenderTitle(doc, comp); break;
-                case ComponentType.SubTitle: RenderSubTitle(doc, comp); break;
-                case ComponentType.Grid: RenderGrid(doc, comp, autoFormat); break;
-                case ComponentType.InfoSection: RenderInfoSection(doc, comp); break;
-                case ComponentType.FooterNote: RenderFooterNote(doc, comp); break;
-                case ComponentType.Spacing:
-                    doc.Add(new Paragraph(" ").SetMarginTop(comp.Spacing));
-                    break;
+                switch (comp.Type)
+                {
+                    case ComponentType.Title: RenderTitle(doc, comp); break;
+                    case ComponentType.SubTitle: RenderSubTitle(doc, comp); break;
+                    case ComponentType.Grid: RenderGrid(doc, comp, autoFormat); break;
+                    case ComponentType.InfoSection: RenderInfoSection(doc, comp); break;
+                    case ComponentType.FooterNote: RenderFooterNote(doc, comp); break;
+                    case ComponentType.Spacing:
+                        doc.Add(new Paragraph(" ").SetMarginTop(comp.Spacing));
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(ProcessComponent), ex);
             }
         }
 
         private static void RenderTitle(Document doc, PdfComponent comp)
         {
-            PdfFont font = PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD);
-            TextAlignment align = comp.CenterAlign ? TextAlignment.CENTER : TextAlignment.LEFT;
+            try
+            {
+                PdfFont font = PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD);
+                TextAlignment align = comp.CenterAlign ? TextAlignment.CENTER : TextAlignment.LEFT;
 
-            doc.Add(new Paragraph(comp.Text!.ToUpper())
-                .SetFont(font)
-                .SetFontSize(comp.FontSize)
-                .SetFontColor(ColorConstants.BLACK)
-                .SetTextAlignment(align)
-                .SetPaddingTop(8)
-                .SetPaddingBottom(8)
-                .SetMarginBottom(4));
+                doc.Add(new Paragraph(comp.Text!.ToUpper())
+                    .SetFont(font)
+                    .SetFontSize(comp.FontSize)
+                    .SetFontColor(ColorConstants.BLACK)
+                    .SetTextAlignment(align)
+                    .SetPaddingTop(8)
+                    .SetPaddingBottom(8)
+                    .SetMarginBottom(4));
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(RenderTitle), ex);
+            }
         }
 
         private static void RenderSubTitle(Document doc, PdfComponent comp)
         {
-            PdfFont font = PdfFontFactory.CreateFont(StandardFonts.HELVETICA);
-            TextAlignment align = comp.CenterAlign ? TextAlignment.CENTER : TextAlignment.LEFT;
+            try
+            {
+                PdfFont font = PdfFontFactory.CreateFont(StandardFonts.HELVETICA);
+                TextAlignment align = comp.CenterAlign ? TextAlignment.CENTER : TextAlignment.LEFT;
 
-            doc.Add(new Paragraph(comp.Text!)
-                .SetFont(font)
-                .SetFontSize(comp.FontSize)
-                .SetFontColor(ColorConstants.DARK_GRAY)
-                .SetTextAlignment(align)
-                .SetMarginBottom(6));
+                doc.Add(new Paragraph(comp.Text!)
+                    .SetFont(font)
+                    .SetFontSize(comp.FontSize)
+                    .SetFontColor(ColorConstants.DARK_GRAY)
+                    .SetTextAlignment(align)
+                    .SetMarginBottom(6));
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(RenderSubTitle), ex);
+            }
         }
 
         private void RenderGrid(Document doc, PdfComponent comp, bool autoFormat)
         {
-            if (!string.IsNullOrWhiteSpace(comp.Text))
+            try
             {
-                PdfFont titleFont = PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD);
-                doc.Add(new Paragraph(comp.Text)
-                    .SetFont(titleFont)
-                    .SetFontSize(13)
-                    .SetMarginTop(6)
-                    .SetMarginBottom(8));
-            }
+                if (!string.IsNullOrWhiteSpace(comp.Text))
+                {
+                    PdfFont titleFont = PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD);
+                    doc.Add(new Paragraph(comp.Text)
+                        .SetFont(titleFont)
+                        .SetFontSize(13)
+                        .SetMarginTop(6)
+                        .SetMarginBottom(8));
+                }
 
-            if (comp.DataTable is { Columns.Count: > 0 })
+                if (comp.DataTable is { Columns.Count: > 0 })
+                {
+                    Table table = BuildPdfTable(comp.DataTable, autoFormat, comp.ColumnAlignments, comp.RepeatHeader);
+                    doc.Add(table);
+                }
+
+                if (comp.FooterData?.Count > 0)
+                    RenderKeyValuePairs(doc, comp.FooterData, 2, marginTop: 4);
+            }
+            catch (Exception ex)
             {
-                Table table = BuildPdfTable(comp.DataTable, autoFormat, comp.ColumnAlignments, comp.RepeatHeader);
-                doc.Add(table);
+                FileLogger.ApplicationLog(nameof(RenderGrid), ex);
             }
-
-            if (comp.FooterData?.Count > 0)
-                RenderKeyValuePairs(doc, comp.FooterData, 2, marginTop: 4);
         }
 
         private static void RenderInfoSection(Document doc, PdfComponent comp)
         {
-            if (comp.FooterData?.Count > 0)
-                RenderKeyValuePairs(doc, comp.FooterData, comp.Columns, marginTop: 0);
+            try
+            {
+                if (comp.FooterData?.Count > 0)
+                    RenderKeyValuePairs(doc, comp.FooterData, comp.Columns, marginTop: 0);
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(RenderInfoSection), ex);
+            }
         }
 
         private static void RenderFooterNote(Document doc, PdfComponent comp)
         {
-            PdfFont font = PdfFontFactory.CreateFont(StandardFonts.HELVETICA_OBLIQUE);
-            doc.Add(new Paragraph(comp.Text!)
-                .SetFont(font)
-                .SetFontSize(9)
-                .SetFontColor(ColorConstants.GRAY)
-                .SetTextAlignment(TextAlignment.CENTER)
-                .SetMarginTop(20));
+            try
+            {
+                PdfFont font = PdfFontFactory.CreateFont(StandardFonts.HELVETICA_OBLIQUE);
+                doc.Add(new Paragraph(comp.Text!)
+                    .SetFont(font)
+                    .SetFontSize(9)
+                    .SetFontColor(ColorConstants.GRAY)
+                    .SetTextAlignment(TextAlignment.CENTER)
+                    .SetMarginTop(20));
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(RenderFooterNote), ex);
+            }
         }
 
 
@@ -302,122 +406,130 @@ namespace ClientDesktop.Infrastructure.Helpers
             Dictionary<string, TextAlignment>? columnAlignments,
             bool repeatHeader)
         {
-            // [FIX 3] Filter metadata columns — only display columns go to PDF
-            var displayColumns = dt.Columns
-                .Cast<DataColumn>()
-                .Where(c => !_skipColumns.Contains(c.ColumnName))
-                .ToList();
-
-            if (displayColumns.Count == 0) return new Table(1);
-
-            int colCount = displayColumns.Count;
-
-            // Use ColumnWidths override if provided, else 1f each (default — same behavior as before)
-            float[] widthArray = displayColumns
-                .Select(c => ColumnWidths.TryGetValue(c.ColumnName, out float w) ? w : 1f)
-                .ToArray();
-
-            var table = new Table(UnitValue.CreatePercentArray(widthArray))
-                        .UseAllAvailableWidth()
-                        .SetMarginBottom(10);
-
-            PdfFont headerFont = PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD);
-            PdfFont cellFont = PdfFontFactory.CreateFont(StandardFonts.HELVETICA);
-            PdfFont boldFont = PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD);
-
-            // ── Header row ──────────────────────────────────────────────────
-            foreach (var col in displayColumns)
+            try
             {
-                TextAlignment align = ResolveAlignment(col, columnAlignments, autoFormat);
+                // [FIX 3] Filter metadata columns — only display columns go to PDF
+                var displayColumns = dt.Columns
+                    .Cast<DataColumn>()
+                    .Where(c => !_skipColumns.Contains(c.ColumnName))
+                    .ToList();
 
-                Cell headerCell = new Cell()
-                    .Add(new Paragraph(col.ColumnName)
-                        .SetFont(headerFont)
-                        .SetFontSize(HeaderFontSize))
-                    .SetBackgroundColor(HeaderBgColor)
-                    .SetFontColor(HeaderForeColor)
-                    .SetPadding(HeaderPadding)
-                    .SetTextAlignment(align)
-                    .SetBorder(Border.NO_BORDER)
-                    .SetBorderBottom(ShowVerticalBorders ? new SolidBorder(ColorConstants.BLACK, 0.5f) : Border.NO_BORDER)
-                    .SetBorderRight(ShowVerticalBorders ? new SolidBorder(ColorConstants.BLACK, 0.5f) : Border.NO_BORDER)
-                    .SetBorderLeft(ShowVerticalBorders ? new SolidBorder(ColorConstants.BLACK, 0.5f) : Border.NO_BORDER);
+                if (displayColumns.Count == 0) return new Table(1);
 
-                if (repeatHeader)
-                {
-                    table.AddHeaderCell(headerCell);
-                }
-                else
-                {
-                    table.AddCell(headerCell);
-                }
-            }
+                int colCount = displayColumns.Count;
 
-            // ── Data rows with RowType-based styling ────────────────────────
-            bool hasRowType = dt.Columns.Contains("RowType");
-            bool isAlternateRow = false;
+                // Use ColumnWidths override if provided, else 1f each (default — same behavior as before)
+                float[] widthArray = displayColumns
+                    .Select(c => ColumnWidths.TryGetValue(c.ColumnName, out float w) ? w : 1f)
+                    .ToArray();
 
-            foreach (DataRow row in dt.Rows)
-            {
-                // [FIX 4] Determine row style
-                string rowType = hasRowType ? row["RowType"]?.ToString() ?? "" : "";
-                Color rowBg;
-                bool isBold = false;
-                float fontSize = CellFontSize;   // property — default 9f (same as before)
+                var table = new Table(UnitValue.CreatePercentArray(widthArray))
+                            .UseAllAvailableWidth()
+                            .SetMarginBottom(10);
 
-                switch (rowType)
-                {
-                    case "SecurityHeader":
-                        rowBg = SecurityHeaderBg;
-                        isBold = true;
-                        break;
+                PdfFont headerFont = PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD);
+                PdfFont cellFont = PdfFontFactory.CreateFont(StandardFonts.HELVETICA);
+                PdfFont boldFont = PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD);
 
-                    case "Total":
-                    case "SecurityTotal":
-                        rowBg = TotalRowBg;
-                        isBold = true;
-                        break;
-
-                    case "GrandTotal":
-                        rowBg = GrandTotalRowBg;
-                        isBold = true;
-                        fontSize = CellFontSize + 1f;
-                        break;
-
-                    case "SubTotal":
-                        rowBg = TotalRowBg;
-                        isBold = false;
-                        break;
-
-                    default:
-                        rowBg = isAlternateRow ? AltRowColor : ColorConstants.WHITE;
-                        isAlternateRow = !isAlternateRow;
-                        break;
-                }
-
-                PdfFont rowFont = isBold ? boldFont : cellFont;
-
+                // ── Header row ──────────────────────────────────────────────────
                 foreach (var col in displayColumns)
                 {
-                    string cellValue = row[col.ColumnName]?.ToString() ?? string.Empty;
                     TextAlignment align = ResolveAlignment(col, columnAlignments, autoFormat);
 
-                    table.AddCell(
-                        new Cell()
-                            .Add(new Paragraph(cellValue)
-                                .SetFont(rowFont)
-                                .SetFontSize(fontSize))
-                            .SetBackgroundColor(rowBg)
-                            .SetPadding(CellPadding)
-                            .SetTextAlignment(align)
-                            .SetBorder(Border.NO_BORDER)
-                            .SetBorderBottom(new SolidBorder(ColorConstants.BLACK, 0.5f))
-                            .SetBorderRight(ShowVerticalBorders ? new SolidBorder(ColorConstants.BLACK, 0.5f) : Border.NO_BORDER)
-                            .SetBorderLeft(ShowVerticalBorders ? new SolidBorder(ColorConstants.BLACK, 0.5f) : Border.NO_BORDER));
-                }
-            }
+                    Cell headerCell = new Cell()
+                        .Add(new Paragraph(col.ColumnName)
+                            .SetFont(headerFont)
+                            .SetFontSize(HeaderFontSize))
+                        .SetBackgroundColor(HeaderBgColor)
+                        .SetFontColor(HeaderForeColor)
+                        .SetPadding(HeaderPadding)
+                        .SetTextAlignment(align)
+                        .SetBorder(Border.NO_BORDER)
+                        .SetBorderBottom(ShowVerticalBorders ? new SolidBorder(ColorConstants.BLACK, 0.5f) : Border.NO_BORDER)
+                        .SetBorderRight(ShowVerticalBorders ? new SolidBorder(ColorConstants.BLACK, 0.5f) : Border.NO_BORDER)
+                        .SetBorderLeft(ShowVerticalBorders ? new SolidBorder(ColorConstants.BLACK, 0.5f) : Border.NO_BORDER);
 
-            return table;
+                    if (repeatHeader)
+                    {
+                        table.AddHeaderCell(headerCell);
+                    }
+                    else
+                    {
+                        table.AddCell(headerCell);
+                    }
+                }
+
+                // ── Data rows with RowType-based styling ────────────────────────
+                bool hasRowType = dt.Columns.Contains("RowType");
+                bool isAlternateRow = false;
+
+                foreach (DataRow row in dt.Rows)
+                {
+                    // [FIX 4] Determine row style
+                    string rowType = hasRowType ? row["RowType"]?.ToString() ?? "" : "";
+                    Color rowBg;
+                    bool isBold = false;
+                    float fontSize = CellFontSize;   // property — default 9f (same as before)
+
+                    switch (rowType)
+                    {
+                        case "SecurityHeader":
+                            rowBg = SecurityHeaderBg;
+                            isBold = true;
+                            break;
+
+                        case "Total":
+                        case "SecurityTotal":
+                            rowBg = TotalRowBg;
+                            isBold = true;
+                            break;
+
+                        case "GrandTotal":
+                            rowBg = GrandTotalRowBg;
+                            isBold = true;
+                            fontSize = CellFontSize + 1f;
+                            break;
+
+                        case "SubTotal":
+                            rowBg = TotalRowBg;
+                            isBold = false;
+                            break;
+
+                        default:
+                            rowBg = isAlternateRow ? AltRowColor : ColorConstants.WHITE;
+                            isAlternateRow = !isAlternateRow;
+                            break;
+                    }
+
+                    PdfFont rowFont = isBold ? boldFont : cellFont;
+
+                    foreach (var col in displayColumns)
+                    {
+                        string cellValue = row[col.ColumnName]?.ToString() ?? string.Empty;
+                        TextAlignment align = ResolveAlignment(col, columnAlignments, autoFormat);
+
+                        table.AddCell(
+                            new Cell()
+                                .Add(new Paragraph(cellValue)
+                                    .SetFont(rowFont)
+                                    .SetFontSize(fontSize))
+                                .SetBackgroundColor(rowBg)
+                                .SetPadding(CellPadding)
+                                .SetTextAlignment(align)
+                                .SetBorder(Border.NO_BORDER)
+                                .SetBorderBottom(new SolidBorder(ColorConstants.BLACK, 0.5f))
+                                .SetBorderRight(ShowVerticalBorders ? new SolidBorder(ColorConstants.BLACK, 0.5f) : Border.NO_BORDER)
+                                .SetBorderLeft(ShowVerticalBorders ? new SolidBorder(ColorConstants.BLACK, 0.5f) : Border.NO_BORDER));
+                    }
+                }
+
+                return table;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(BuildPdfTable), ex);
+                return new Table(1); // Return an empty table so the document doesn't crash completely
+            }
         }
 
         private static void RenderKeyValuePairs(
@@ -426,51 +538,58 @@ namespace ClientDesktop.Infrastructure.Helpers
             int pairColumns,
             float marginTop)
         {
-            int totalCols = pairColumns * 2;
-            float[] widths = Enumerable.Range(0, totalCols)
-                                       .Select(i => i % 2 == 0 ? 1f : 2f)
-                                       .ToArray();
-
-            var table = new Table(UnitValue.CreatePercentArray(widths))
-                        .UseAllAvailableWidth()
-                        .SetMarginTop(marginTop)
-                        .SetMarginBottom(8);
-
-            PdfFont labelFont = PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD);
-            PdfFont valueFont = PdfFontFactory.CreateFont(StandardFonts.HELVETICA);
-
-            int pairIndex = 0;
-            foreach (var kvp in data)
+            try
             {
-                table.AddCell(
-                    new Cell()
-                        .Add(new Paragraph(kvp.Key)
-                            .SetFont(labelFont)
-                            .SetFontSize(10))
-                        .SetBorder(Border.NO_BORDER)
-                        .SetPaddingRight(4));
+                int totalCols = pairColumns * 2;
+                float[] widths = Enumerable.Range(0, totalCols)
+                                           .Select(i => i % 2 == 0 ? 1f : 2f)
+                                           .ToArray();
 
-                table.AddCell(
-                    new Cell()
-                        .Add(new Paragraph(kvp.Value ?? "")
-                            .SetFont(valueFont)
-                            .SetFontSize(10))
-                        .SetBorder(Border.NO_BORDER)
-                        .SetPaddingRight(16));
+                var table = new Table(UnitValue.CreatePercentArray(widths))
+                            .UseAllAvailableWidth()
+                            .SetMarginTop(marginTop)
+                            .SetMarginBottom(8);
 
-                pairIndex++;
+                PdfFont labelFont = PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD);
+                PdfFont valueFont = PdfFontFactory.CreateFont(StandardFonts.HELVETICA);
 
-                if (pairIndex == data.Count)
+                int pairIndex = 0;
+                foreach (var kvp in data)
                 {
-                    int filled = (pairIndex % pairColumns) * 2;
-                    int empties = totalCols - filled;
-                    if (filled > 0 && empties > 0)
-                        for (int i = 0; i < empties; i++)
-                            table.AddCell(new Cell().SetBorder(Border.NO_BORDER));
-                }
-            }
+                    table.AddCell(
+                        new Cell()
+                            .Add(new Paragraph(kvp.Key)
+                                .SetFont(labelFont)
+                                .SetFontSize(10))
+                            .SetBorder(Border.NO_BORDER)
+                            .SetPaddingRight(4));
 
-            doc.Add(table);
+                    table.AddCell(
+                        new Cell()
+                            .Add(new Paragraph(kvp.Value ?? "")
+                                .SetFont(valueFont)
+                                .SetFontSize(10))
+                            .SetBorder(Border.NO_BORDER)
+                            .SetPaddingRight(16));
+
+                    pairIndex++;
+
+                    if (pairIndex == data.Count)
+                    {
+                        int filled = (pairIndex % pairColumns) * 2;
+                        int empties = totalCols - filled;
+                        if (filled > 0 && empties > 0)
+                            for (int i = 0; i < empties; i++)
+                                table.AddCell(new Cell().SetBorder(Border.NO_BORDER));
+                    }
+                }
+
+                doc.Add(table);
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(RenderKeyValuePairs), ex);
+            }
         }
 
         private static TextAlignment ResolveAlignment(
@@ -478,21 +597,29 @@ namespace ClientDesktop.Infrastructure.Helpers
             Dictionary<string, TextAlignment>? overrides,
             bool autoFormat)
         {
-            if (overrides != null && overrides.TryGetValue(col.ColumnName, out var forced))
-                return forced;
+            try
+            {
+                if (overrides != null && overrides.TryGetValue(col.ColumnName, out var forced))
+                    return forced;
 
-            if (!autoFormat) return TextAlignment.LEFT;
+                if (!autoFormat) return TextAlignment.LEFT;
 
-            Type t = col.DataType;
-            if (t == typeof(decimal) || t == typeof(double) ||
-                t == typeof(float) || t == typeof(int) ||
-                t == typeof(long) || t == typeof(short))
-                return TextAlignment.RIGHT;
+                Type t = col.DataType;
+                if (t == typeof(decimal) || t == typeof(double) ||
+                    t == typeof(float) || t == typeof(int) ||
+                    t == typeof(long) || t == typeof(short))
+                    return TextAlignment.RIGHT;
 
-            if (t == typeof(DateTime))
-                return TextAlignment.CENTER;
+                if (t == typeof(DateTime))
+                    return TextAlignment.CENTER;
 
-            return TextAlignment.LEFT;
+                return TextAlignment.LEFT;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(ResolveAlignment), ex);
+                return TextAlignment.LEFT;
+            }
         }
     }
 

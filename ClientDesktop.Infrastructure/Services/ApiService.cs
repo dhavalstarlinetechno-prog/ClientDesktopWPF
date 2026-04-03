@@ -28,9 +28,16 @@ namespace ClientDesktop.Infrastructure.Services
         /// </summary>
         public ApiService(SessionService sessionService)
         {
-            _http = new HttpClient();
-            _http.Timeout = TimeSpan.FromSeconds(30);
-            _sessionService = sessionService;
+            try
+            {
+                _http = new HttpClient();
+                _http.Timeout = TimeSpan.FromSeconds(30);
+                _sessionService = sessionService;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(ApiService), ex);
+            }
         }
 
         #endregion
@@ -218,68 +225,6 @@ namespace ClientDesktop.Infrastructure.Services
             }
         }
 
-        #endregion
-
-        #region Private Methods
-
-        /// <summary>
-        /// Checks network availability, user authentication, and token expiry before allowing an API call.
-        /// </summary>
-        private bool ValidateRequest(string url)
-        {
-            if (!NetworkInterface.GetIsNetworkAvailable())
-            {
-                FileLogger.Log("Network", "No internet connection.");
-                return false;
-            }
-
-            if (!_sessionService.IsLoggedIn)
-            {
-                string lowerUrl = url.ToLowerInvariant();
-
-                if (lowerUrl.Contains("login") ||
-                    lowerUrl.Contains("auth") ||
-                    lowerUrl.Contains("token") ||
-                    lowerUrl.Contains("server"))
-                {
-                    return true;
-                }
-
-                FileLogger.ApplicationLog(nameof(ValidateRequest), $"API call blocked: User is not logged in. URL: {url}");
-                return false;
-            }
-
-            if (_sessionService.Expiration.HasValue && DateTime.Now >= _sessionService.Expiration.Value)
-            {
-                FileLogger.ApplicationLog(nameof(ValidateRequest), $"API call blocked: Token Expired. URL: {url}");
-                WeakReferenceMessenger.Default.Send(new UserAuthEvent(false, string.Empty));
-                return false;
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// Triggers a global logout signal when the server returns a 401 Unauthorized status.
-        /// </summary>
-        private void HandleUnauthorizedAccess(string url)
-        {
-            FileLogger.ApplicationLog("API Security", $"401 Unauthorized received for URL: {url}. Triggering auto-logout.");
-            WeakReferenceMessenger.Default.Send(new UserAuthEvent(false, string.Empty));
-        }
-
-        /// <summary>
-        /// Adds the authorization bearer token to the HTTP request headers if the user is currently logged in.
-        /// </summary>
-        private void AddAuthHeader()
-        {
-            _http.DefaultRequestHeaders.Authorization = null;
-            if (_sessionService.IsLoggedIn)
-            {
-                _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _sessionService.Token);
-            }
-        }
-
         public async Task<T> DeleteAsync<T>(string url, object data)
         {
             if (!ValidateRequest(url)) return default;
@@ -316,6 +261,90 @@ namespace ClientDesktop.Infrastructure.Services
             {
                 FileLogger.ApplicationLog(nameof(DeleteAsync), ex);
                 return default;
+            }
+        }
+
+        #endregion
+
+        #region Private Methods
+
+        /// <summary>
+        /// Checks network availability, user authentication, and token expiry before allowing an API call.
+        /// </summary>
+        private bool ValidateRequest(string url)
+        {
+            try
+            {
+                if (!NetworkInterface.GetIsNetworkAvailable())
+                {
+                    FileLogger.Log("Network", "No internet connection.");
+                    return false;
+                }
+
+                if (!_sessionService.IsLoggedIn)
+                {
+                    string lowerUrl = url.ToLowerInvariant();
+
+                    if (lowerUrl.Contains("login") ||
+                        lowerUrl.Contains("auth") ||
+                        lowerUrl.Contains("token") ||
+                        lowerUrl.Contains("server"))
+                    {
+                        return true;
+                    }
+
+                    FileLogger.ApplicationLog(nameof(ValidateRequest), $"API call blocked: User is not logged in. URL: {url}");
+                    return false;
+                }
+
+                if (_sessionService.Expiration.HasValue && DateTime.Now >= _sessionService.Expiration.Value)
+                {
+                    FileLogger.ApplicationLog(nameof(ValidateRequest), $"API call blocked: Token Expired. URL: {url}");
+                    WeakReferenceMessenger.Default.Send(new UserAuthEvent(false, string.Empty));
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(ValidateRequest), ex);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Triggers a global logout signal when the server returns a 401 Unauthorized status.
+        /// </summary>
+        private void HandleUnauthorizedAccess(string url)
+        {
+            try
+            {
+                FileLogger.ApplicationLog(nameof(HandleUnauthorizedAccess), $"401 Unauthorized received for URL: {url}. Triggering auto-logout.");
+                WeakReferenceMessenger.Default.Send(new UserAuthEvent(false, string.Empty));
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(HandleUnauthorizedAccess), ex);
+            }
+        }
+
+        /// <summary>
+        /// Adds the authorization bearer token to the HTTP request headers if the user is currently logged in.
+        /// </summary>
+        private void AddAuthHeader()
+        {
+            try
+            {
+                _http.DefaultRequestHeaders.Authorization = null;
+                if (_sessionService.IsLoggedIn && !string.IsNullOrEmpty(_sessionService.Token))
+                {
+                    _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _sessionService.Token);
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(AddAuthHeader), ex);
             }
         }
 

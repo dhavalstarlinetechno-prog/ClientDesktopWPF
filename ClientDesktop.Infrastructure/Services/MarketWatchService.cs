@@ -35,9 +35,16 @@ namespace ClientDesktop.Infrastructure.Services
         /// </summary>
         public MarketWatchService(IApiService apiService, SessionService sessionService)
         {
-            _apiService = apiService;
-            _sessionService = sessionService;
-            _repo = new FileRepository<MarketWatchData>();
+            try
+            {
+                _apiService = apiService;
+                _sessionService = sessionService;
+                _repo = new FileRepository<MarketWatchData>();
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(MarketWatchService), ex);
+            }
         }
 
         #endregion
@@ -81,14 +88,14 @@ namespace ClientDesktop.Infrastructure.Services
                 }
                 else
                 {
-                    FileLogger.Log("Network", "No Internet Connection. Loading Local Data.");
+                    FileLogger.ApplicationLog(nameof(GetMarketWatchDataAsync), "No Internet Connection. Loading Local Data.");
                 }
 
                 return cachedData ?? new MarketWatchData();
             }
             catch (Exception ex)
             {
-                FileLogger.Log("MarketWatchService", $"Error: {ex.Message}");
+                FileLogger.ApplicationLog(nameof(GetMarketWatchDataAsync), ex);
                 return new MarketWatchData();
             }
         }
@@ -105,7 +112,7 @@ namespace ClientDesktop.Infrastructure.Services
             }
             catch (Exception ex)
             {
-                FileLogger.Log("MarketWatchService", $"SaveProfile Error: {ex.Message}");
+                FileLogger.ApplicationLog(nameof(SaveProfileAsync), ex);
                 return null;
             }
         }
@@ -123,7 +130,7 @@ namespace ClientDesktop.Infrastructure.Services
             }
             catch (Exception ex)
             {
-                FileLogger.Log("MarketWatchService", $"HideSymbol Error: {ex.Message}");
+                FileLogger.ApplicationLog(nameof(HideSymbolsAsync), ex);
                 return null;
             }
         }

@@ -96,51 +96,59 @@ namespace ClientDesktop.ViewModel
         /// </summary>
         public async Task InitializeHomeAsync()
         {
-            await _authService.GetServerListAsync();
-
-            var loginInfoList = _authService.GetLoginHistory();
-            var existingUser = loginInfoList?.FirstOrDefault(user => user.LastLogin == true);
-
-            if (existingUser != null)
+            try
             {
-                _sessionService.SetServerList(existingUser.ServerListData);
-                _sessionService.SetSession(null, existingUser.UserId, existingUser.Username, existingUser.LicenseId, null, existingUser.Password);
-                MarketWatchVM.LoadLocalData();
-            }
+                await _authService.GetServerListAsync();
 
-            SetRestrictedMode();
+                var loginInfoList = _authService.GetLoginHistory();
+                var existingUser = loginInfoList?.FirstOrDefault(user => user.LastLogin == true);
 
-            if (!_sessionService.IsInternetAvailable)
-            {
-                FileLogger.Log("Network", "No Internet Connection detected at startup.");
-                return;
-            }
-
-            if (loginInfoList == null || !loginInfoList.Any())
-            {
-                ShowLoginWindow();
-            }
-            else
-            {
-                if (existingUser != null && !string.IsNullOrEmpty(existingUser.Password))
+                if (existingUser != null)
                 {
-                    // Attempts to automatically log in using saved credentials.
-                    var result = await _authService.LoginAsync(existingUser.UserId, existingUser.Password, existingUser.LicenseId, true);
-
-                    if (!result.Success && !string.IsNullOrEmpty(result.Message))
-                    {
-                        FileLogger.Log("Network", result.Message);
-                        ShowLoginWindow();
-                    }
-                    else
-                    {
-                        await PerformPostLoginSetup();
-                    }
+                    _sessionService.SetServerList(existingUser.ServerListData);
+                    _sessionService.SetSession(null, existingUser.UserId, existingUser.Username, existingUser.LicenseId, null, existingUser.Password);
+                    MarketWatchVM.LoadLocalData();
                 }
-                else
+
+                SetRestrictedMode();
+
+                if (!_sessionService.IsInternetAvailable)
+                {
+                    FileLogger.Log("Network", "No Internet Connection detected at startup.");
+                    return;
+                }
+
+                if (loginInfoList == null || !loginInfoList.Any())
                 {
                     ShowLoginWindow();
                 }
+                else
+                {
+                    if (existingUser != null && !string.IsNullOrEmpty(existingUser.Password))
+                    {
+                        // Attempts to automatically log in using saved credentials.
+                        var result = await _authService.LoginAsync(existingUser.UserId, existingUser.Password, existingUser.LicenseId, true);
+
+                        if (!result.Success && !string.IsNullOrEmpty(result.Message))
+                        {
+                            FileLogger.Log("Auth", result.Message);
+                            ShowLoginWindow();
+                        }
+                        else
+                        {
+                            FileLogger.Log("Auth", $"Auto-login successful for user '{existingUser.UserId}'.");
+                            await PerformPostLoginSetup();
+                        }
+                    }
+                    else
+                    {
+                        ShowLoginWindow();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(InitializeHomeAsync), ex);
             }
         }
 
@@ -149,13 +157,20 @@ namespace ClientDesktop.ViewModel
         /// </summary>
         public void ShowLoginWindow()
         {
-            _dialogService.ShowDialog<LoginPageViewModel>("Login", (vm) =>
+            try
             {
-                if (_sessionService.IsLoggedIn)
+                _dialogService.ShowDialog<LoginPageViewModel>("Login", (vm) =>
                 {
-                    _ = PerformPostLoginSetup();
-                }
-            });
+                    if (_sessionService.IsLoggedIn)
+                    {
+                        _ = PerformPostLoginSetup();
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(ShowLoginWindow), ex);
+            }
         }
 
         #endregion
@@ -167,13 +182,20 @@ namespace ClientDesktop.ViewModel
         /// </summary>
         private void RegisterMessenger()
         {
-            WeakReferenceMessenger.Default.Register<UserAuthEvent>(this, (recipient, message) =>
+            try
             {
-                if (!message.IsLoggedIn)
+                WeakReferenceMessenger.Default.Register<UserAuthEvent>(this, (recipient, message) =>
                 {
-                    HandleLogout();
-                }
-            });
+                    if (!message.IsLoggedIn)
+                    {
+                        HandleLogout();
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(RegisterMessenger), ex);
+            }
         }
 
         /// <summary>
@@ -181,34 +203,42 @@ namespace ClientDesktop.ViewModel
         /// </summary>
         private async Task PerformPostLoginSetup()
         {
-            bool disclaimerAcknowledged = ShowDisclaimerAndCheck();
-
-            if (disclaimerAcknowledged)
+            try
             {
-                if (_sessionService.IsLoggedIn)
+                bool disclaimerAcknowledged = ShowDisclaimerAndCheck();
+
+                if (disclaimerAcknowledged)
                 {
-                    try
+                    if (_sessionService.IsLoggedIn)
                     {
-                        var specificData = await _clientService.GetSpecificClientListAsync();
-                        var result = await _clientService.GetClientListAsync(specificData.Clients);
-                        _sessionService.IsClientDataLoaded = true;
-                        isViewLocked = result.IsViewLocked;
-                        _sessionService.SetClientList(result.Clients);
+                        try
+                        {
+                            var specificData = await _clientService.GetSpecificClientListAsync();
+                            var result = await _clientService.GetClientListAsync(specificData.Clients);
+                            _sessionService.IsClientDataLoaded = true;
+                            isViewLocked = result.IsViewLocked;
+                            _sessionService.SetClientList(result.Clients);
+                        }
+                        catch (Exception innerEx)
+                        {
+                            FileLogger.ApplicationLog(nameof(PerformPostLoginSetup) + " - ClientDataLoad", innerEx);
+                        }
                     }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine("Client Data Load Error: " + ex.Message);
-                    }
-                }
 
-                InitializeAfterLogin();
-                WeakReferenceMessenger.Default.Send(new UserAuthEvent(true, _sessionService.UserId));   
-                _socketService.Start();
+                    InitializeAfterLogin();
+                    WeakReferenceMessenger.Default.Send(new UserAuthEvent(true, _sessionService.UserId));
+                    _socketService.Start();
+                }
+                else
+                {
+                    // Trigger logout signal if disclaimer is rejected
+                    FileLogger.Log("Auth", "Disclaimer rejected by user. Aborting login process.");
+                    WeakReferenceMessenger.Default.Send(new UserAuthEvent(false, string.Empty));
+                }
             }
-            else
+            catch (Exception ex)
             {
-                // Trigger logout signal if disclaimer is rejected
-                WeakReferenceMessenger.Default.Send(new UserAuthEvent(false, string.Empty));
+                FileLogger.ApplicationLog(nameof(PerformPostLoginSetup), ex);
             }
         }
 
@@ -219,20 +249,27 @@ namespace ClientDesktop.ViewModel
         {
             bool isAcknowledged = false;
 
-            Application.Current.Dispatcher.Invoke(() =>
+            try
             {
-                DisclaimerViewModel disclaimerVM = null;
-
-                _dialogService.ShowDialog<DisclaimerViewModel>(string.Empty, vm =>
+                Application.Current.Dispatcher.Invoke(() =>
                 {
-                    disclaimerVM = vm;
+                    DisclaimerViewModel disclaimerVM = null;
+
+                    _dialogService.ShowDialog<DisclaimerViewModel>(string.Empty, vm =>
+                    {
+                        disclaimerVM = vm;
+                    });
+
+                    if (disclaimerVM != null)
+                    {
+                        isAcknowledged = disclaimerVM.IsAcknowledged;
+                    }
                 });
-
-                if (disclaimerVM != null)
-                {
-                    isAcknowledged = disclaimerVM.IsAcknowledged;
-                }
-            });
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(ShowDisclaimerAndCheck), ex);
+            }
 
             return isAcknowledged;
         }
@@ -242,10 +279,17 @@ namespace ClientDesktop.ViewModel
         /// </summary>
         private void InitializeAfterLogin()
         {
-            UserId = _sessionService.UserId;
-            IsLoggedIn = true;
-            IsPasswordReadonly = _sessionService.IsPasswordReadOnly;
-            Title = _sessionService.ServerListData?.FirstOrDefault(q => q?.licenseId.ToString() == _sessionService.LicenseId)?.serverDisplayName ?? "";
+            try
+            {
+                UserId = _sessionService.UserId;
+                IsLoggedIn = true;
+                IsPasswordReadonly = _sessionService.IsPasswordReadOnly;
+                Title = _sessionService.ServerListData?.FirstOrDefault(q => q?.licenseId.ToString() == _sessionService.LicenseId)?.serverDisplayName ?? "";
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(InitializeAfterLogin), ex);
+            }
         }
 
         /// <summary>
@@ -253,10 +297,17 @@ namespace ClientDesktop.ViewModel
         /// </summary>
         private void SetRestrictedMode()
         {
-            Title = string.Empty;
-            IsLoggedIn = false;
-            IsPasswordReadonly = true;
-            UserId = string.Empty;
+            try
+            {
+                Title = string.Empty;
+                IsLoggedIn = false;
+                IsPasswordReadonly = true;
+                UserId = string.Empty;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(SetRestrictedMode), ex);
+            }
         }
 
         /// <summary>
@@ -264,17 +315,24 @@ namespace ClientDesktop.ViewModel
         /// </summary>
         private void OpenNewOrderWindow()
         {
-            _dialogService.ShowDialog<TradeViewModel>(
-                "New Trade Order",
-                configureViewModel: vm =>
-                {
-                    vm.CurrentOrderTypeEnum = EnumTradeOrderType.Market;
-                    vm.CurrentWindowModeEnum = EnumTradeWindowMode.FromTradeButton;
-                    vm.positionGridRow = null;
+            try
+            {
+                _dialogService.ShowDialog<TradeViewModel>(
+                    "New Trade Order",
+                    configureViewModel: vm =>
+                    {
+                        vm.CurrentOrderTypeEnum = EnumTradeOrderType.Market;
+                        vm.CurrentWindowModeEnum = EnumTradeWindowMode.FromTradeButton;
+                        vm.positionGridRow = null;
 
-                    _ = vm.LoadSymbolListAsync();
-                }
-            );
+                        _ = vm.LoadSymbolListAsync();
+                    }
+                );
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(OpenNewOrderWindow), ex);
+            }
         }
 
         /// <summary>
@@ -285,9 +343,16 @@ namespace ClientDesktop.ViewModel
         /// during an active session.</remarks> 
         private void OpenChangePasswordWindow()
         {
-            _dialogService.ShowDialog<ChangePasswordViewModel>(
-                "Change Password"
-            );
+            try
+            {
+                _dialogService.ShowDialog<ChangePasswordViewModel>(
+                    "Change Password"
+                );
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(OpenChangePasswordWindow), ex);
+            }
         }
 
         /// <summary>
@@ -295,8 +360,15 @@ namespace ClientDesktop.ViewModel
         /// </summary>
         private void Disconnect()
         {
-            _sessionService.LastSelectedLogin = (string.Empty, string.Empty, string.Empty);
-            WeakReferenceMessenger.Default.Send(new UserAuthEvent(false, string.Empty));
+            try
+            {
+                _sessionService.LastSelectedLogin = (string.Empty, string.Empty, string.Empty);
+                WeakReferenceMessenger.Default.Send(new UserAuthEvent(false, string.Empty));
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(Disconnect), ex);
+            }
         }
 
         /// <summary>
@@ -304,14 +376,21 @@ namespace ClientDesktop.ViewModel
         /// </summary>
         private async void HandleLogout()
         {
-            _sessionService.ClearSession();
-            SetRestrictedMode();
+            try
+            {
+                _sessionService.ClearSession();
+                SetRestrictedMode();
 
-            FileLogger.Log("Network", "Disconnected.");
+                FileLogger.Log("Auth", "User logged out and session disconnected.");
 
-            await Application.Current.Dispatcher.InvokeAsync(() => { });
+                await Application.Current.Dispatcher.InvokeAsync(() => { });
 
-            ShowLoginWindow();
+                ShowLoginWindow();
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(HandleLogout), ex);
+            }
         }
 
         #endregion

@@ -2,15 +2,11 @@
 using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Helpers;
+using ClientDesktop.Infrastructure.Logger;
 using ClientDesktop.Infrastructure.Services;
-using ClientDesktop.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System;
-using System.Linq;
 using System.Net.NetworkInformation;
-using System.Threading;
-using System.Threading.Tasks;
 using WebSocket4Net;
 
 namespace ClientDesktop.Services
@@ -50,8 +46,15 @@ namespace ClientDesktop.Services
 
         public SocketService(IApiService apiService, SessionService sessionService)
         {
-            _apiService = apiService;
-            _sessionService = sessionService;
+            try
+            {
+                _apiService = apiService;
+                _sessionService = sessionService;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(SocketService), ex);
+            }
         }
 
         public void Start()
@@ -68,8 +71,9 @@ namespace ClientDesktop.Services
 
                 InitializeConnection();
             }
-            catch
+            catch (Exception ex)
             {
+                FileLogger.ApplicationLog(nameof(Start), ex);
             }
         }
 
@@ -101,44 +105,61 @@ namespace ClientDesktop.Services
                 _ws = null;
                 _namespaceOpened = false;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(Stop), ex);
+            }
         }
         #endregion
 
         #region Network & Connection Management
         private void OnNetworkAvailabilityChanged(object sender, NetworkAvailabilityEventArgs e)
         {
-            if (e.IsAvailable)
+            try
             {
-                if (!_manualDisconnect && !IsConnected)
+                if (e.IsAvailable)
                 {
-                    Task.Delay(1000).ContinueWith(_ => InitializeConnection());
-                    Task.Run(async () =>
+                    if (!_manualDisconnect && !IsConnected)
                     {
-                        var formData = new Dictionary<string, string>
-            {
-                { "username", _sessionService.UserId },
-                { "password", _sessionService.Password },
-                { "licenseId", _sessionService.LicenseId }
-            };
+                        Task.Delay(1000).ContinueWith(_ => InitializeConnection());
+                        Task.Run(async () =>
+                        {
+                            try
+                            {
+                                var formData = new Dictionary<string, string>
+                                {
+                                    { "username", _sessionService.UserId },
+                                    { "password", _sessionService.Password },
+                                    { "licenseId", _sessionService.LicenseId }
+                                };
 
-                        string url = CommonHelper.ToReplaceUrl(AppConfig.AuthURL, _sessionService.PrimaryDomain);
+                                string url = CommonHelper.ToReplaceUrl(AppConfig.AuthURL, _sessionService.PrimaryDomain);
 
-                        var result = await _apiService.PostFormAsync<AuthResponse>(url, formData);
+                                var result = await _apiService.PostFormAsync<AuthResponse>(url, formData);
 
-                        if (result == null || !result.isSuccess)
-                            OnForceLogout?.Invoke(_sessionService.UserId);
-                        else
-                            OnSocketReconnected?.Invoke();
-                    });
+                                if (result == null || !result.isSuccess)
+                                    OnForceLogout?.Invoke(_sessionService.UserId);
+                                else
+                                    OnSocketReconnected?.Invoke();
+                            }
+                            catch (Exception innerEx)
+                            {
+                                FileLogger.ApplicationLog(nameof(OnNetworkAvailabilityChanged) + "_Task", innerEx);
+                            }
+                        });
+                    }
+                }
+                else
+                {
+                    if (_ws != null && _ws.State != WebSocketState.None)
+                    {
+                        _ws.Close();
+                    }
                 }
             }
-            else
+            catch (Exception ex)
             {
-                if (_ws != null && _ws.State != WebSocketState.None)
-                {
-                    _ws.Close();
-                }
+                FileLogger.ApplicationLog(nameof(OnNetworkAvailabilityChanged), ex);
             }
         }
 
@@ -176,8 +197,9 @@ namespace ClientDesktop.Services
 
                     _ws.Open();
                 }
-                catch
+                catch (Exception ex)
                 {
+                    FileLogger.ApplicationLog(nameof(InitializeConnection), ex);
                 }
             }
         }
@@ -186,19 +208,44 @@ namespace ClientDesktop.Services
         #region Base WebSocket Event Handlers
         private void Ws_Opened(object sender, EventArgs e)
         {
-            _namespaceOpened = false;
+            try
+            {
+                _namespaceOpened = false;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(Ws_Opened), ex);
+            }
         }
 
         private void Ws_Closed(object sender, EventArgs e)
         {
-            _namespaceOpened = false;
+            try
+            {
+                _namespaceOpened = false;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(Ws_Closed), ex);
+            }
         }
 
         private void Ws_Error(object sender, SuperSocket.ClientEngine.ErrorEventArgs e)
         {
-
+            try
+            {
+                if (e.Exception != null)
+                {
+                    FileLogger.ApplicationLog(nameof(Ws_Error), e.Exception);
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(Ws_Error), ex);
+            }
         }
         #endregion
+
         #region WebSocket Event Handlers (Continued)
         private void Ws_MessageReceived(object sender, MessageReceivedEventArgs e)
         {
@@ -238,9 +285,9 @@ namespace ClientDesktop.Services
                         break;
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Swallow exceptions; malformed messages should not crash the app.
+                FileLogger.ApplicationLog(nameof(Ws_MessageReceived), ex);
             }
         }
         #endregion
@@ -263,7 +310,10 @@ namespace ClientDesktop.Services
                     HandleSiteRoom(payload);
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(HandleEvent), ex);
+            }
         }
         #endregion
 
@@ -335,7 +385,10 @@ namespace ClientDesktop.Services
                         break;
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(HandleCommonRoom), ex);
+            }
         }
         #endregion
 
@@ -377,182 +430,234 @@ namespace ClientDesktop.Services
                         break;
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(HandleSiteRoom), ex);
+            }
         }
         #endregion
 
         #region Position & Order Handling
         private void HandlePosition(JObject play)
         {
-            decimal totalVolume = (decimal)(play["totalVolume"] ?? 0);
-            var position = new Position
+            try
             {
-                Id = play["id"]?.ToString(),
-                SymbolName = play["symbolName"]?.ToString(),
-                CreatedAt = play["createdAt"]?.ToObject<DateTime?>(),
-                LastInAt = play["lastInAt"]?.ToObject<DateTime?>(),
-                UpdatedAt = play["updatedAt"]?.ToObject<DateTime?>(),
-                Side = play["side"]?.ToString(),
-                Status = play["status"]?.ToString(),
-                TotalVolume = (double)(play["totalVolume"] ?? 0),
-                SpreadValue = (double)(play["spreadValue"] ?? 0),
-                SpreadBalance = (double)(play["spreadBalance"] ?? 0),
-                SymbolContractSize = (double)(play["symbolContractSize"] ?? 0),
-                SpreadType = play["spreadType"]?.ToString(),
-                AveragePrice = (double)(play["averagePrice"] ?? 0),
-                CurrentPrice = (double)(play["currentPrice"] ?? 0),
-                Pnl = (decimal?)(play["pnl"] ?? 0),
-                Comment = play["comment"]?.ToString(),
-                SymbolDigit = play["symbolDigit"] != null ? (int)play["symbolDigit"] : 0,
-            };
+                decimal totalVolume = (decimal)(play["totalVolume"] ?? 0);
+                var position = new Position
+                {
+                    Id = play["id"]?.ToString(),
+                    SymbolName = play["symbolName"]?.ToString(),
+                    CreatedAt = play["createdAt"]?.ToObject<DateTime?>(),
+                    LastInAt = play["lastInAt"]?.ToObject<DateTime?>(),
+                    UpdatedAt = play["updatedAt"]?.ToObject<DateTime?>(),
+                    Side = play["side"]?.ToString(),
+                    Status = play["status"]?.ToString(),
+                    TotalVolume = (double)(play["totalVolume"] ?? 0),
+                    SpreadValue = (double)(play["spreadValue"] ?? 0),
+                    SpreadBalance = (double)(play["spreadBalance"] ?? 0),
+                    SymbolContractSize = (double)(play["symbolContractSize"] ?? 0),
+                    SpreadType = play["spreadType"]?.ToString(),
+                    AveragePrice = (double)(play["averagePrice"] ?? 0),
+                    CurrentPrice = (double)(play["currentPrice"] ?? 0),
+                    Pnl = (decimal?)(play["pnl"] ?? 0),
+                    Comment = play["comment"]?.ToString(),
+                    SymbolDigit = play["symbolDigit"] != null ? (int)play["symbolDigit"] : 0,
+                };
 
-            OnPositionUpdated?.Invoke(position, totalVolume <= 0);
+                OnPositionUpdated?.Invoke(position, totalVolume <= 0);
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(HandlePosition), ex);
+            }
         }
 
         private void HandlePendingOrder(JObject play)
         {
-            string orderId = play["orderId"]?.ToString();
-            string status = play["orderFulfillment"]?.ToString();
-            double volume = (double)(play["volume"] ?? 0);
-
-            var order = new OrderModel
+            try
             {
-                OrderId = play["orderId"]?.ToString(),
-                Device = play["device"]?.ToString(),
+                string orderId = play["orderId"]?.ToString();
+                string status = play["orderFulfillment"]?.ToString();
+                double volume = (double)(play["volume"] ?? 0);
 
-                SymbolId = play["symbolId"] != null ? (int)play["symbolId"] : 0,
-                SymbolName = play["symbolName"]?.ToString(),
-                SecurityId = play["securityId"] != null ? (int)play["securityId"] : 0,
-                SymbolDigit = play["symbolDigit"] != null ? (int)play["symbolDigit"] : 0,
+                var order = new OrderModel
+                {
+                    OrderId = play["orderId"]?.ToString(),
+                    Device = play["device"]?.ToString(),
 
-                Side = play["side"]?.ToString(),
+                    SymbolId = play["symbolId"] != null ? (int)play["symbolId"] : 0,
+                    SymbolName = play["symbolName"]?.ToString(),
+                    SecurityId = play["securityId"] != null ? (int)play["securityId"] : 0,
+                    SymbolDigit = play["symbolDigit"] != null ? (int)play["symbolDigit"] : 0,
 
-                SymbolExpiry = play["symbolExpiry"]?.Type == JTokenType.Null ? null : (DateTime?)play["symbolExpiry"],
-                SymbolExpiryClose = play["symbolExpiryClose"]?.Type == JTokenType.Null ? null : (DateTime?)play["symbolExpiryClose"],
+                    Side = play["side"]?.ToString(),
 
-                SymbolContractSize = play["symbolContractSize"] != null ? (double)play["symbolContractSize"] : 0,
+                    SymbolExpiry = play["symbolExpiry"]?.Type == JTokenType.Null ? null : (DateTime?)play["symbolExpiry"],
+                    SymbolExpiryClose = play["symbolExpiryClose"]?.Type == JTokenType.Null ? null : (DateTime?)play["symbolExpiryClose"],
 
-                CurrentPrice = play["currentPrice"] != null ? (double)play["currentPrice"] : 0,
-                Reason = play["reason"]?.ToString(),
-                ClientIp = play["clientIp"]?.ToString(),
+                    SymbolContractSize = play["symbolContractSize"] != null ? (double)play["symbolContractSize"] : 0,
 
-                Margin = play["margin"] != null ? (decimal)play["margin"] : 0,
-                Price = play["price"] != null ? (double)play["price"] : 0,
-                Volume = play["volume"] != null ? (double)play["volume"] : 0,
+                    CurrentPrice = play["currentPrice"] != null ? (double)play["currentPrice"] : 0,
+                    Reason = play["reason"]?.ToString(),
+                    ClientIp = play["clientIp"]?.ToString(),
 
-                ParentSharing = play["parentSharing"] != null
-        ? play["parentSharing"].ToObject<List<OrderParentSharing>>()
-        : new List<OrderParentSharing>(),
+                    Margin = play["margin"] != null ? (decimal)play["margin"] : 0,
+                    Price = play["price"] != null ? (double)play["price"] : 0,
+                    Volume = play["volume"] != null ? (double)play["volume"] : 0,
 
-                // 🔥 IMPORTANT (UTC → IST)
-                CreatedAt = play["createdAt"] != null
-        ? CommonHelper.ConvertUtcToIst((DateTime)play["createdAt"])
-        : DateTime.MinValue,
+                    ParentSharing = play["parentSharing"] != null
+                        ? play["parentSharing"].ToObject<List<OrderParentSharing>>()
+                        : new List<OrderParentSharing>(),
 
-                UpdatedAt = play["updatedAt"] != null
-        ? CommonHelper.ConvertUtcToIst((DateTime)play["updatedAt"])
-        : DateTime.MinValue,
+                    // 🔥 IMPORTANT (UTC → IST)
+                    CreatedAt = play["createdAt"] != null
+                        ? CommonHelper.ConvertUtcToIst((DateTime)play["createdAt"])
+                        : DateTime.MinValue,
 
-                MasterSymbolName = play["masterSymbolName"]?.ToString(),
-                OrderType = play["orderType"]?.ToString(),
-                MarginType = play["marginType"]?.ToString(),
-                OrderFulfillment = play["orderFulfillment"]?.ToString(),
-                Comment = play["comment"]?.ToString(),
+                    UpdatedAt = play["updatedAt"] != null
+                        ? CommonHelper.ConvertUtcToIst((DateTime)play["updatedAt"])
+                        : DateTime.MinValue,
 
-                SecurityName = play["securityName"]?.ToString(),
-                SymbolDetail = play["symbolDetail"]?.ToString(),
+                    MasterSymbolName = play["masterSymbolName"]?.ToString(),
+                    OrderType = play["orderType"]?.ToString(),
+                    MarginType = play["marginType"]?.ToString(),
+                    OrderFulfillment = play["orderFulfillment"]?.ToString(),
+                    Comment = play["comment"]?.ToString(),
 
-                SpreadType = play["spreadType"]?.ToString(),
-                SpreadValue = play["spreadValue"] != null ? (double)play["spreadValue"] : 0,
-                SpreadBalance = play["spreadBalance"] != null ? (double)play["spreadBalance"] : 0,
+                    SecurityName = play["securityName"]?.ToString(),
+                    SymbolDetail = play["symbolDetail"]?.ToString(),
 
-                OperatorId = play["operatorId"]?.ToString(),
-                UserName = play["username"]?.ToString(), 
-                UserId = play["userId"]?.ToString()
-            };
+                    SpreadType = play["spreadType"]?.ToString(),
+                    SpreadValue = play["spreadValue"] != null ? (double)play["spreadValue"] : 0,
+                    SpreadBalance = play["spreadBalance"] != null ? (double)play["spreadBalance"] : 0,
 
-            if (status == "CANCELLED" || volume <= 0)
-            {
-                OnOrderUpdated?.Invoke(order, true, orderId);
+                    OperatorId = play["operatorId"]?.ToString(),
+                    UserName = play["username"]?.ToString(),
+                    UserId = play["userId"]?.ToString()
+                };
+
+                if (status == "CANCELLED" || volume <= 0)
+                {
+                    OnOrderUpdated?.Invoke(order, true, orderId);
+                }
+                else
+                {
+                    OnOrderUpdated?.Invoke(order, false, orderId);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                OnOrderUpdated?.Invoke(order, false, orderId);
+                FileLogger.ApplicationLog(nameof(HandlePendingOrder), ex);
             }
         }
 
         private void HandleLimitPassed(JObject play)
         {
-            string orderId = play["orderId"]?.ToString();
-            OnOrderUpdated?.Invoke(null, true, orderId);
+            try
+            {
+                string orderId = play["orderId"]?.ToString();
+                OnOrderUpdated?.Invoke(null, true, orderId);
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(HandleLimitPassed), ex);
+            }
         }
 
         private void HandleDeal(JObject play)
         {
-            var deal = new Skt_Deal
+            try
             {
-                orderId = play["orderId"]?.ToString(),
-                symbolName = play["symbolName"]?.ToString(),
-                volume = (decimal)(play["volume"] ?? 0),
-                pnl = (decimal)(play["pnl"] ?? 0),
-                closeTime = DateTime.Now,
-                type = play["orderType"]?.ToString()
-            };
-            _socketData.HistoryDeals.Add(deal);
+                var deal = new Skt_Deal
+                {
+                    orderId = play["orderId"]?.ToString(),
+                    symbolName = play["symbolName"]?.ToString(),
+                    volume = (decimal)(play["volume"] ?? 0),
+                    pnl = (decimal)(play["pnl"] ?? 0),
+                    closeTime = DateTime.Now,
+                    type = play["orderType"]?.ToString()
+                };
+                _socketData.HistoryDeals.Add(deal);
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(HandleDeal), ex);
+            }
         }
 
         private void HandleBalance(JObject play)
         {
-            var client = new ClientDetails
+            try
             {
-                CreditAmount = (double)(play["creditAmount"] ?? 0),
-                UplineAmount = (double)(play["uplineAmount"] ?? 0),
-                Balance = (double)(play["balance"] ?? 0),
-                OccupiedMarginAmount = (double)(play["occupiedMargin"] ?? 0),
-                UplineCommission = (double)(play["uplineCommission"] ?? 0)
-            };
-            OnUpdateUserBalance?.Invoke(client);
+                var client = new ClientDetails
+                {
+                    CreditAmount = (double)(play["creditAmount"] ?? 0),
+                    UplineAmount = (double)(play["uplineAmount"] ?? 0),
+                    Balance = (double)(play["balance"] ?? 0),
+                    OccupiedMarginAmount = (double)(play["occupiedMargin"] ?? 0),
+                    UplineCommission = (double)(play["uplineCommission"] ?? 0)
+                };
+                OnUpdateUserBalance?.Invoke(client);
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(HandleBalance), ex);
+            }
         }
         #endregion
 
         #region Emit Helpers
         private void SendInitialEmits()
         {
-            if (!_namespaceOpened) return;
-
-            Emit("disconnect_client", _socketIoSid);
-            Thread.Sleep(100);
-
-            Emit("Online_Dealers_Client", new
+            try
             {
-                userId = _sessionService.socketLoginInfos.UserSubId,
-                ip = _sessionService.socketLoginInfos.IpAddress,
-                device = _sessionService.socketLoginInfos.Device,
-                DealerId = _sessionService.socketLoginInfos.Intime,
-                role = _sessionService.socketLoginInfos.Role,
-                time = DateTime.UtcNow.ToString("o"),
-                isreadonlypassword = "false"
-            });
-            Thread.Sleep(100);
+                if (!_namespaceOpened) return;
 
-            Emit("user_room", $"{_sessionService.socketLoginInfos.UserIss}:{_sessionService.socketLoginInfos.UserSubId}");
-            Thread.Sleep(100);
-            Emit("site_room", _sessionService.socketLoginInfos.UserSubId);
-            Thread.Sleep(100);
-            Emit("Notification", "EMIT_COMMON_NOTIFICATION");
-            Thread.Sleep(100);
-            Emit("Notification", $"EMIT_OPERATOR_{_sessionService.socketLoginInfos.OperatorId}");
+                Emit("disconnect_client", _socketIoSid);
+                Thread.Sleep(100);
+
+                Emit("Online_Dealers_Client", new
+                {
+                    userId = _sessionService.socketLoginInfos.UserSubId,
+                    ip = _sessionService.socketLoginInfos.IpAddress,
+                    device = _sessionService.socketLoginInfos.Device,
+                    DealerId = _sessionService.socketLoginInfos.Intime,
+                    role = _sessionService.socketLoginInfos.Role,
+                    time = DateTime.UtcNow.ToString("o"),
+                    isreadonlypassword = "false"
+                });
+                Thread.Sleep(100);
+
+                Emit("user_room", $"{_sessionService.socketLoginInfos.UserIss}:{_sessionService.socketLoginInfos.UserSubId}");
+                Thread.Sleep(100);
+                Emit("site_room", _sessionService.socketLoginInfos.UserSubId);
+                Thread.Sleep(100);
+                Emit("Notification", "EMIT_COMMON_NOTIFICATION");
+                Thread.Sleep(100);
+                Emit("Notification", $"EMIT_OPERATOR_{_sessionService.socketLoginInfos.OperatorId}");
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(SendInitialEmits), ex);
+            }
         }
 
         private void Emit(string eventName, object payload)
         {
-            if (!_namespaceOpened || _ws == null || _ws.State != WebSocketState.Open) return;
+            try
+            {
+                if (!_namespaceOpened || _ws == null || _ws.State != WebSocketState.Open) return;
 
-            JArray arr = new JArray { eventName };
-            if (payload != null) arr.Add(JToken.FromObject(payload));
+                JArray arr = new JArray { eventName };
+                if (payload != null) arr.Add(JToken.FromObject(payload));
 
-            string frame = "42" + arr.ToString(Formatting.None);
-            _ws.Send(frame);
+                string frame = "42" + arr.ToString(Formatting.None);
+                _ws.Send(frame);
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(Emit), ex);
+            }
         }
         #endregion
     }

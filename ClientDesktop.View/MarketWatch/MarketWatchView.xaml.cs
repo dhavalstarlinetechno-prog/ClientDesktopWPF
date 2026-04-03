@@ -1,13 +1,12 @@
-﻿using System;
+﻿using ClientDesktop.Core.Models;
+using ClientDesktop.Infrastructure.Logger;
+using ClientDesktop.ViewModel;
 using System.ComponentModel;
-using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
-using ClientDesktop.Core.Models;
-using ClientDesktop.ViewModel;
 
 namespace ClientDesktop.View.MarketWatch
 {
@@ -31,7 +30,14 @@ namespace ClientDesktop.View.MarketWatch
         /// </summary>
         public MarketWatchView()
         {
-            InitializeComponent();
+            try
+            {
+                InitializeComponent();
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(MarketWatchView), ex);
+            }
         }
 
         #endregion
@@ -43,9 +49,16 @@ namespace ClientDesktop.View.MarketWatch
         /// </summary>
         private void MarketGrid_LoadingRow(object sender, DataGridRowEventArgs e)
         {
-            if (e.Row.DataContext is MarketWatchSymbols symbol)
+            try
             {
-                (this.DataContext as MarketWatchViewModel)?.SetSymbolVisibility(symbol.SymbolName, true);
+                if (e.Row.DataContext is MarketWatchSymbols symbol)
+                {
+                    (this.DataContext as MarketWatchViewModel)?.SetSymbolVisibility(symbol.SymbolName, true);
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(MarketGrid_LoadingRow), ex);
             }
         }
 
@@ -54,9 +67,16 @@ namespace ClientDesktop.View.MarketWatch
         /// </summary>
         private void MarketGrid_UnloadingRow(object sender, DataGridRowEventArgs e)
         {
-            if (e.Row.DataContext is MarketWatchSymbols symbol)
+            try
             {
-                (this.DataContext as MarketWatchViewModel)?.SetSymbolVisibility(symbol.SymbolName, false);
+                if (e.Row.DataContext is MarketWatchSymbols symbol)
+                {
+                    (this.DataContext as MarketWatchViewModel)?.SetSymbolVisibility(symbol.SymbolName, false);
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(MarketGrid_UnloadingRow), ex);
             }
         }
 
@@ -69,28 +89,35 @@ namespace ClientDesktop.View.MarketWatch
         /// </summary>
         private void DataGrid_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            _isDragging = false;
-            _draggedItem = null;
-            DependencyObject dep = (DependencyObject)e.OriginalSource;
-
-            while (dep != null && !(dep is DataGridCell) && !(dep is DataGridColumnHeadersPresenter))
+            try
             {
-                dep = VisualTreeHelper.GetParent(dep);
-            }
+                _isDragging = false;
+                _draggedItem = null;
+                DependencyObject dep = (DependencyObject)e.OriginalSource;
 
-            if (dep is DataGridCell cell)
-            {
-                if (cell.Column.DisplayIndex == 0)
+                while (dep != null && !(dep is DataGridCell) && !(dep is DataGridColumnHeadersPresenter))
                 {
-                    var item = cell.DataContext as MarketWatchSymbols;
-
-                    if (item != null && string.IsNullOrWhiteSpace(item.SymbolName))
-                        return;
-
-                    _startPoint = e.GetPosition(null);
-                    _draggedItem = cell.DataContext;
-                    _isDragging = true;
+                    dep = VisualTreeHelper.GetParent(dep);
                 }
+
+                if (dep is DataGridCell cell)
+                {
+                    if (cell.Column.DisplayIndex == 0)
+                    {
+                        var item = cell.DataContext as MarketWatchSymbols;
+
+                        if (item != null && string.IsNullOrWhiteSpace(item.SymbolName))
+                            return;
+
+                        _startPoint = e.GetPosition(null);
+                        _draggedItem = cell.DataContext;
+                        _isDragging = true;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(DataGrid_PreviewMouseLeftButtonDown), ex);
             }
         }
 
@@ -99,25 +126,32 @@ namespace ClientDesktop.View.MarketWatch
         /// </summary>
         private void DataGrid_MouseMove(object sender, MouseEventArgs e)
         {
-            if (!_isDragging || e.LeftButton == MouseButtonState.Released)
+            try
             {
-                _isDragging = false;
-                _draggedItem = null;
-                return;
-            }
-
-            Point mousePos = e.GetPosition(null);
-            Vector diff = _startPoint - mousePos;
-
-            if (Math.Abs(diff.X) > SystemParameters.MinimumHorizontalDragDistance ||
-                Math.Abs(diff.Y) > SystemParameters.MinimumVerticalDragDistance)
-            {
-                if (_draggedItem != null)
+                if (!_isDragging || e.LeftButton == MouseButtonState.Released)
                 {
-                    DataGrid grid = sender as DataGrid;
-                    DragDrop.DoDragDrop(grid, _draggedItem, DragDropEffects.Move);
                     _isDragging = false;
+                    _draggedItem = null;
+                    return;
                 }
+
+                Point mousePos = e.GetPosition(null);
+                Vector diff = _startPoint - mousePos;
+
+                if (Math.Abs(diff.X) > SystemParameters.MinimumHorizontalDragDistance ||
+                    Math.Abs(diff.Y) > SystemParameters.MinimumVerticalDragDistance)
+                {
+                    if (_draggedItem != null)
+                    {
+                        DataGrid grid = sender as DataGrid;
+                        DragDrop.DoDragDrop(grid, _draggedItem, DragDropEffects.Move);
+                        _isDragging = false;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(DataGrid_MouseMove), ex);
             }
         }
 
@@ -126,50 +160,59 @@ namespace ClientDesktop.View.MarketWatch
         /// </summary>
         private void DataGrid_Drop(object sender, DragEventArgs e)
         {
-            if (_draggedItem == null) return;
-
-            DependencyObject dep = (DependencyObject)e.OriginalSource;
-
-            while (dep != null && !(dep is DataGridRow))
+            try
             {
-                dep = VisualTreeHelper.GetParent(dep);
-            }
+                if (_draggedItem == null) return;
 
-            if (dep is DataGridRow targetRow)
-            {
-                var targetItem = targetRow.DataContext as MarketWatchSymbols;
-                var viewModel = this.DataContext as MarketWatchViewModel;
+                DependencyObject dep = (DependencyObject)e.OriginalSource;
 
-                if (viewModel != null && targetItem != null && _draggedItem is MarketWatchSymbols sourceItem)
+                while (dep != null && !(dep is DataGridRow))
                 {
-                    if (ReferenceEquals(sourceItem, targetItem)) return;
+                    dep = VisualTreeHelper.GetParent(dep);
+                }
 
-                    if (viewModel.MarketView is System.Windows.Data.ListCollectionView view)
+                if (dep is DataGridRow targetRow)
+                {
+                    var targetItem = targetRow.DataContext as MarketWatchSymbols;
+                    var viewModel = this.DataContext as MarketWatchViewModel;
+
+                    if (viewModel != null && targetItem != null && _draggedItem is MarketWatchSymbols sourceItem)
                     {
-                        if (view.SortDescriptions.Count > 0) view.SortDescriptions.Clear();
-                        if (view.CustomSort != null) view.CustomSort = null;
-                    }
+                        if (ReferenceEquals(sourceItem, targetItem)) return;
 
-                    if (string.IsNullOrWhiteSpace(sourceItem.SymbolName)) return;
+                        if (viewModel.MarketView is System.Windows.Data.ListCollectionView view)
+                        {
+                            if (view.SortDescriptions.Count > 0) view.SortDescriptions.Clear();
+                            if (view.CustomSort != null) view.CustomSort = null;
+                        }
 
-                    int oldIndex = viewModel.MarketWatchSymbolsCollection.IndexOf(sourceItem);
-                    int newIndex = viewModel.MarketWatchSymbolsCollection.IndexOf(targetItem);
+                        if (string.IsNullOrWhiteSpace(sourceItem.SymbolName)) return;
 
-                    if (string.IsNullOrWhiteSpace(targetItem.SymbolName))
-                    {
-                        newIndex = viewModel.MarketWatchSymbolsCollection.Count - 2;
-                        if (newIndex < 0) newIndex = 0;
-                    }
+                        int oldIndex = viewModel.MarketWatchSymbolsCollection.IndexOf(sourceItem);
+                        int newIndex = viewModel.MarketWatchSymbolsCollection.IndexOf(targetItem);
 
-                    if (oldIndex != -1 && newIndex != -1 && oldIndex != newIndex)
-                    {
-                        viewModel.MarketWatchSymbolsCollection.Move(oldIndex, newIndex);
+                        if (string.IsNullOrWhiteSpace(targetItem.SymbolName))
+                        {
+                            newIndex = viewModel.MarketWatchSymbolsCollection.Count - 2;
+                            if (newIndex < 0) newIndex = 0;
+                        }
+
+                        if (oldIndex != -1 && newIndex != -1 && oldIndex != newIndex)
+                        {
+                            viewModel.MarketWatchSymbolsCollection.Move(oldIndex, newIndex);
+                        }
                     }
                 }
             }
-
-            _draggedItem = null;
-            _isDragging = false;
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(DataGrid_Drop), ex);
+            }
+            finally
+            {
+                _draggedItem = null;
+                _isDragging = false;
+            }
         }
 
         #endregion
@@ -181,10 +224,17 @@ namespace ClientDesktop.View.MarketWatch
         /// </summary>
         private void AddBox_GotFocus(object sender, RoutedEventArgs e)
         {
-            var vm = this.DataContext as MarketWatchViewModel;
-            if (vm != null && !string.IsNullOrWhiteSpace(vm.NewSymbolSearchText) && vm.SuggestedSymbols.Count > 0)
+            try
             {
-                vm.IsSuggestionOpen = true;
+                var vm = this.DataContext as MarketWatchViewModel;
+                if (vm != null && !string.IsNullOrWhiteSpace(vm.NewSymbolSearchText) && vm.SuggestedSymbols.Count > 0)
+                {
+                    vm.IsSuggestionOpen = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(AddBox_GotFocus), ex);
             }
         }
 
@@ -193,41 +243,48 @@ namespace ClientDesktop.View.MarketWatch
         /// </summary>
         private void AddBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            var txt = sender as TextBox;
-            var vm = this.DataContext as MarketWatchViewModel;
-
-            if (txt == null || vm == null) return;
-
-            if (e.Key == Key.Tab || e.Key == Key.Enter)
+            try
             {
-                if (vm.IsSuggestionOpen && vm.SuggestedSymbols.Count > 0)
+                var txt = sender as TextBox;
+                var vm = this.DataContext as MarketWatchViewModel;
+
+                if (txt == null || vm == null) return;
+
+                if (e.Key == Key.Tab || e.Key == Key.Enter)
                 {
-                    var firstSymbol = vm.SuggestedSymbols[0];
-                    if (vm.AddSymbolCommand.CanExecute(firstSymbol))
+                    if (vm.IsSuggestionOpen && vm.SuggestedSymbols.Count > 0)
                     {
-                        vm.AddSymbolCommand.Execute(firstSymbol);
+                        var firstSymbol = vm.SuggestedSymbols[0];
+                        if (vm.AddSymbolCommand.CanExecute(firstSymbol))
+                        {
+                            vm.AddSymbolCommand.Execute(firstSymbol);
+                        }
+                        e.Handled = true;
                     }
-                    e.Handled = true;
+                }
+                else if (e.Key == Key.Down && vm.IsSuggestionOpen && vm.SuggestedSymbols.Count > 0)
+                {
+                    var grid = VisualTreeHelper.GetParent(txt) as Grid;
+                    var popup = grid?.Children.OfType<Popup>().FirstOrDefault();
+                    var border = popup?.Child as Border;
+                    var listBox = border?.Child as ListBox;
+
+                    if (listBox != null)
+                    {
+                        listBox.Focus();
+                        if (listBox.Items.Count > 0)
+                        {
+                            listBox.SelectedIndex = 0;
+                            var item = listBox.ItemContainerGenerator.ContainerFromIndex(0) as ListBoxItem;
+                            item?.Focus();
+                        }
+                        e.Handled = true;
+                    }
                 }
             }
-            else if (e.Key == Key.Down && vm.IsSuggestionOpen && vm.SuggestedSymbols.Count > 0)
+            catch (Exception ex)
             {
-                var grid = VisualTreeHelper.GetParent(txt) as Grid;
-                var popup = grid?.Children.OfType<Popup>().FirstOrDefault();
-                var border = popup?.Child as Border;
-                var listBox = border?.Child as ListBox;
-
-                if (listBox != null)
-                {
-                    listBox.Focus();
-                    if (listBox.Items.Count > 0)
-                    {
-                        listBox.SelectedIndex = 0;
-                        var item = listBox.ItemContainerGenerator.ContainerFromIndex(0) as ListBoxItem;
-                        item?.Focus();
-                    }
-                    e.Handled = true;
-                }
+                FileLogger.ApplicationLog(nameof(AddBox_PreviewKeyDown), ex);
             }
         }
 
@@ -236,20 +293,27 @@ namespace ClientDesktop.View.MarketWatch
         /// </summary>
         private void SuggestionListBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Tab || e.Key == Key.Enter)
+            try
             {
-                var listBox = sender as ListBox;
-                var vm = this.DataContext as MarketWatchViewModel;
-
-                if (listBox != null && listBox.SelectedItem != null && vm != null)
+                if (e.Key == Key.Tab || e.Key == Key.Enter)
                 {
-                    var symbol = listBox.SelectedItem as MarketWatchSymbols;
-                    if (vm.AddSymbolCommand.CanExecute(symbol))
+                    var listBox = sender as ListBox;
+                    var vm = this.DataContext as MarketWatchViewModel;
+
+                    if (listBox != null && listBox.SelectedItem != null && vm != null)
                     {
-                        vm.AddSymbolCommand.Execute(symbol);
+                        var symbol = listBox.SelectedItem as MarketWatchSymbols;
+                        if (vm.AddSymbolCommand.CanExecute(symbol))
+                        {
+                            vm.AddSymbolCommand.Execute(symbol);
+                        }
+                        e.Handled = true;
                     }
-                    e.Handled = true;
                 }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(SuggestionListBox_PreviewKeyDown), ex);
             }
         }
 
@@ -262,20 +326,27 @@ namespace ClientDesktop.View.MarketWatch
         /// </summary>
         private void MarketGrid_Sorting(object sender, DataGridSortingEventArgs e)
         {
-            var viewModel = this.DataContext as MarketWatchViewModel;
-            if (viewModel == null) return;
-
-            e.Handled = true;
-
-            var direction = (e.Column.SortDirection != ListSortDirection.Ascending)
-                            ? ListSortDirection.Ascending
-                            : ListSortDirection.Descending;
-
-            e.Column.SortDirection = direction;
-
-            if (viewModel.MarketView is System.Windows.Data.ListCollectionView view)
+            try
             {
-                view.CustomSort = new EmptyRowStickyComparer(e.Column.SortMemberPath, direction);
+                var viewModel = this.DataContext as MarketWatchViewModel;
+                if (viewModel == null) return;
+
+                e.Handled = true;
+
+                var direction = (e.Column.SortDirection != ListSortDirection.Ascending)
+                                ? ListSortDirection.Ascending
+                                : ListSortDirection.Descending;
+
+                e.Column.SortDirection = direction;
+
+                if (viewModel.MarketView is System.Windows.Data.ListCollectionView view)
+                {
+                    view.CustomSort = new EmptyRowStickyComparer(e.Column.SortMemberPath, direction);
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(MarketGrid_Sorting), ex);
             }
         }
 
@@ -300,29 +371,37 @@ namespace ClientDesktop.View.MarketWatch
 
         public int Compare(object x, object y)
         {
-            var itemX = x as MarketWatchSymbols;
-            var itemY = y as MarketWatchSymbols;
-
-            bool isXEmpty = string.IsNullOrWhiteSpace(itemX?.SymbolName);
-            bool isYEmpty = string.IsNullOrWhiteSpace(itemY?.SymbolName);
-
-            if (isXEmpty && isYEmpty) return 0;
-            if (isXEmpty) return 1;
-            if (isYEmpty) return -1;
-
-            var propX = itemX?.GetType().GetProperty(_propertyName)?.GetValue(itemX, null);
-            var propY = itemY?.GetType().GetProperty(_propertyName)?.GetValue(itemY, null);
-
-            int result = 0;
-
-            if (propX is IComparable compX && propY is IComparable compY)
+            try
             {
-                result = compX.CompareTo(compY);
-            }
-            else if (propX == null && propY != null) result = -1;
-            else if (propX != null && propY == null) result = 1;
+                var itemX = x as MarketWatchSymbols;
+                var itemY = y as MarketWatchSymbols;
 
-            return _direction == ListSortDirection.Ascending ? result : -result;
+                bool isXEmpty = string.IsNullOrWhiteSpace(itemX?.SymbolName);
+                bool isYEmpty = string.IsNullOrWhiteSpace(itemY?.SymbolName);
+
+                if (isXEmpty && isYEmpty) return 0;
+                if (isXEmpty) return 1;
+                if (isYEmpty) return -1;
+
+                var propX = itemX?.GetType().GetProperty(_propertyName)?.GetValue(itemX, null);
+                var propY = itemY?.GetType().GetProperty(_propertyName)?.GetValue(itemY, null);
+
+                int result = 0;
+
+                if (propX is IComparable compX && propY is IComparable compY)
+                {
+                    result = compX.CompareTo(compY);
+                }
+                else if (propX == null && propY != null) result = -1;
+                else if (propX != null && propY == null) result = 1;
+
+                return _direction == ListSortDirection.Ascending ? result : -result;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(Compare), ex);
+                return 0; // Return equal to maintain order if comparison fails
+            }
         }
     }
 

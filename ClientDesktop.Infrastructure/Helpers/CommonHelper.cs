@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using ClientDesktop.Infrastructure.Logger;
+using System.Globalization;
 
 namespace ClientDesktop.Infrastructure.Helpers
 {
@@ -8,22 +9,38 @@ namespace ClientDesktop.Infrastructure.Helpers
         // Helper Functions 
         public static string ToReplaceUrl(this string str, string domain, string replaceWith = "api")
         {
-            return string.IsNullOrEmpty(str) || string.IsNullOrEmpty(replaceWith) || domain == null
-                ? str
-                : str.Replace(replaceWith, replaceWith + "." + domain);
+            try
+            {
+                return string.IsNullOrEmpty(str) || string.IsNullOrEmpty(replaceWith) || domain == null
+                    ? str
+                    : str.Replace(replaceWith, replaceWith + "." + domain);
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(ToReplaceUrl), ex);
+                return str;
+            }
         }
 
         public static string ToWebSocketUrl(this string serverName, int port = 6011)
         {
-            if (string.IsNullOrWhiteSpace(serverName))
-                throw new ArgumentException("Server name cannot be empty", nameof(serverName));
+            try
+            {
+                if (string.IsNullOrWhiteSpace(serverName))
+                    throw new ArgumentException("Server name cannot be empty", nameof(serverName));
 
-            // Ensure serverName does not contain protocol
-            serverName = serverName.Replace("http://", "")
-                                   .Replace("https://", "")
-                                   .TrimEnd('/');
+                // Ensure serverName does not contain protocol
+                serverName = serverName.Replace("http://", "")
+                                       .Replace("https://", "")
+                                       .TrimEnd('/');
 
-            return $"wss://skt.{serverName}:{port}/socket.io/?EIO=4&transport=websocket";
+                return $"wss://skt.{serverName}:{port}/socket.io/?EIO=4&transport=websocket";
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(ToWebSocketUrl), ex);
+                return string.Empty;
+            }
         }
 
         #endregion
@@ -38,8 +55,9 @@ namespace ClientDesktop.Infrastructure.Helpers
                     .AddressList.FirstOrDefault(a => a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork);
                 return ip?.ToString() ?? "127.0.0.1";
             }
-            catch
+            catch (Exception ex)
             {
+                FileLogger.ApplicationLog(nameof(GetLocalIPAddress), ex);
                 return "127.0.0.1";
             }
         }
@@ -48,12 +66,28 @@ namespace ClientDesktop.Infrastructure.Helpers
         #region AmountFormatter
         public static string FormatAmount(decimal amount)
         {
-            return FormatAmountInternal(amount);
+            try
+            {
+                return FormatAmountInternal(amount);
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(FormatAmount), ex);
+                return amount.ToString();
+            }
         }
 
         public static string FormatAmount(double amount)
         {
-            return FormatAmountInternal((decimal)amount); // Convert double to decimal for precise formatting
+            try
+            {
+                return FormatAmountInternal((decimal)amount); // Convert double to decimal for precise formatting
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(FormatAmount), ex);
+                return amount.ToString();
+            }
         }
 
         /// <summary>
@@ -61,31 +95,45 @@ namespace ClientDesktop.Infrastructure.Helpers
         /// </summary>
         private static string FormatAmountInternal(decimal amount)
         {
-            NumberFormatInfo nfi = new NumberFormatInfo()
+            try
             {
-                NumberGroupSeparator = " ",
-                NumberDecimalDigits = 2,
-                NumberDecimalSeparator = "."
-            };
+                NumberFormatInfo nfi = new NumberFormatInfo()
+                {
+                    NumberGroupSeparator = " ",
+                    NumberDecimalDigits = 2,
+                    NumberDecimalSeparator = "."
+                };
 
-            // "#,0.00" pattern with comma replaced by space
-            //return amount.ToString("#,0.00", nfi).Replace(",", " ");
-
-            // Format with comma pattern but output uses space separator
-            return amount.ToString("#,0.00", nfi);
+                // Format with comma pattern but output uses space separator
+                return amount.ToString("#,0.00", nfi);
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(FormatAmountInternal), ex);
+                return amount.ToString();
+            }
         }
-        #endregion AmountFormatterm
+        #endregion AmountFormatter
 
         #region GMT Time
         public static DateTime ConvertUtcToIst(DateTime utcTime)
         {
-            DateTime utcDateTime = DateTime.SpecifyKind(utcTime, DateTimeKind.Utc);
+            try
+            {
+                DateTime utcDateTime = DateTime.SpecifyKind(utcTime, DateTimeKind.Utc);
 
-            DateTime istTime = TimeZoneInfo.ConvertTimeFromUtc(
-                utcDateTime,
-                TimeZoneInfo.FindSystemTimeZoneById("India Standard Time")
-            );
-            return istTime;
+                DateTime istTime = TimeZoneInfo.ConvertTimeFromUtc(
+                    utcDateTime,
+                    TimeZoneInfo.FindSystemTimeZoneById("India Standard Time")
+                );
+                return istTime;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(ConvertUtcToIst), ex);
+                // Fallback: Manually add 5 hours 30 mins if TimeZone is not found (often happens on non-Windows systems)
+                return utcTime.AddHours(5).AddMinutes(30);
+            }
         }
         #endregion
     }

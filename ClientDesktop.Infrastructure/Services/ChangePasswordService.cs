@@ -18,8 +18,15 @@ namespace ClientDesktop.Infrastructure.Services
 
         public ChangePasswordService(IApiService apiService, SessionService sessionService)
         {
-            _apiService = apiService;
-            _sessionService = sessionService;
+            try
+            {
+                _apiService = apiService;
+                _sessionService = sessionService;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(ChangePasswordService), ex);
+            }
         }
 
         /// <summary>
@@ -41,12 +48,19 @@ namespace ClientDesktop.Infrastructure.Services
                 var result = await _apiService.PutAsync<dynamic>(url, payload);
 
                 if (result == null)
+                {
+                    FileLogger.ApplicationLog(nameof(VerifyUserPasswordAsync), "Invalid Response from server (null).");
                     return (false, "Invalid Response");
+                }
 
                 bool isSuccess = result.isSuccess ?? false;
 
                 if (!isSuccess || result.data == null)
-                    return (false, result.successMessage?.ToString() ?? "Failed to verify user.");
+                {
+                    string errMsg = result.successMessage?.ToString() ?? "Failed to verify user.";
+                    FileLogger.ApplicationLog(nameof(VerifyUserPasswordAsync), $"Password update failed from API: {errMsg}");
+                    return (false, errMsg);
+                }
 
                 string message = string.Empty;
                 if (result.data.msg != null && result.data.msg.Count > 0)
@@ -55,17 +69,29 @@ namespace ClientDesktop.Infrastructure.Services
                 }
 
                 if (message.Equals("Wrong password", StringComparison.OrdinalIgnoreCase))
+                {
+                    FileLogger.ApplicationLog(nameof(VerifyUserPasswordAsync), "User entered wrong old password.");
                     return (false, "Wrong Password");
+                }
 
                 if (message.Contains("maximum"))
+                {
+                    FileLogger.ApplicationLog(nameof(VerifyUserPasswordAsync), "Maximum password attempts reached.");
                     return (false, "Maximum password attempts reached.");
+                }
 
                 if (message.Contains("not found"))
+                {
+                    FileLogger.ApplicationLog(nameof(VerifyUserPasswordAsync), "User not found.");
                     return (false, "User not found.");
+                }
 
                 if (message.Equals("OK !", StringComparison.OrdinalIgnoreCase) || isSuccess)
+                {
                     return (true, null);
+                }
 
+                FileLogger.ApplicationLog(nameof(VerifyUserPasswordAsync), $"Unexpected failure message: {message}");
                 return (false, message);
             }
             catch (Exception ex)

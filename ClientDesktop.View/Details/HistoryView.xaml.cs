@@ -1,4 +1,5 @@
 ﻿using ClientDesktop.Infrastructure.Helpers;
+using ClientDesktop.Infrastructure.Logger;
 using ClientDesktop.ViewModel;
 using System.ComponentModel;
 using System.Windows;
@@ -25,11 +26,18 @@ namespace ClientDesktop.View.Details
         /// </summary>
         public HistoryView()
         {
-            InitializeComponent();
-
-            if (!System.ComponentModel.DesignerProperties.GetIsInDesignMode(this))
+            try
             {
-                this.DataContext = AppServiceLocator.GetService<HistoryViewModel>();
+                InitializeComponent();
+
+                if (!System.ComponentModel.DesignerProperties.GetIsInDesignMode(this))
+                {
+                    this.DataContext = AppServiceLocator.GetService<HistoryViewModel>();
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(HistoryView), ex);
             }
         }
 
@@ -42,10 +50,17 @@ namespace ClientDesktop.View.Details
         /// </summary>
         private void CopyId_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button btn && btn.Tag != null)
+            try
             {
-                string fullId = btn.Tag.ToString();
-                Clipboard.SetText(fullId);
+                if (sender is Button btn && btn.Tag != null)
+                {
+                    string fullId = btn.Tag.ToString();
+                    Clipboard.SetText(fullId);
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(CopyId_Click), ex);
             }
         }
 
@@ -54,21 +69,28 @@ namespace ClientDesktop.View.Details
         /// </summary>
         private void GridDealsOrders_Sorting(object sender, DataGridSortingEventArgs e)
         {
-            e.Handled = true;
+            try
+            {
+                e.Handled = true;
 
-            var vm = DataContext as HistoryViewModel;
-            if (vm == null) return;
+                var vm = DataContext as HistoryViewModel;
+                if (vm == null) return;
 
-            string propName = e.Column.SortMemberPath ?? (e.Column.Header as string) ?? string.Empty;
+                string propName = e.Column.SortMemberPath ?? (e.Column.Header as string) ?? string.Empty;
 
-            _dealsSortState.TryGetValue(propName, out var currentDir);
-            var newDir = currentDir == ListSortDirection.Ascending ? ListSortDirection.Descending : ListSortDirection.Ascending;
-            _dealsSortState[propName] = newDir;
+                _dealsSortState.TryGetValue(propName, out var currentDir);
+                var newDir = currentDir == ListSortDirection.Ascending ? ListSortDirection.Descending : ListSortDirection.Ascending;
+                _dealsSortState[propName] = newDir;
 
-            foreach (var col in GridDealsOrders.Columns) col.SortDirection = null;
-            e.Column.SortDirection = newDir;
+                foreach (var col in GridDealsOrders.Columns) col.SortDirection = null;
+                e.Column.SortDirection = newDir;
 
-            vm.SortDeals(propName, newDir);
+                vm.SortDeals(propName, newDir);
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(GridDealsOrders_Sorting), ex);
+            }
         }
 
         /// <summary>
@@ -76,21 +98,28 @@ namespace ClientDesktop.View.Details
         /// </summary>
         private void GridPosition_Sorting(object sender, DataGridSortingEventArgs e)
         {
-            e.Handled = true;
+            try
+            {
+                e.Handled = true;
 
-            var vm = DataContext as HistoryViewModel;
-            if (vm == null) return;
+                var vm = DataContext as HistoryViewModel;
+                if (vm == null) return;
 
-            string propName = e.Column.SortMemberPath ?? (e.Column.Header as string) ?? string.Empty;
+                string propName = e.Column.SortMemberPath ?? (e.Column.Header as string) ?? string.Empty;
 
-            _positionSortState.TryGetValue(propName, out var currentDir);
-            var newDir = currentDir == ListSortDirection.Ascending ? ListSortDirection.Descending : ListSortDirection.Ascending;
-            _positionSortState[propName] = newDir;
+                _positionSortState.TryGetValue(propName, out var currentDir);
+                var newDir = currentDir == ListSortDirection.Ascending ? ListSortDirection.Descending : ListSortDirection.Ascending;
+                _positionSortState[propName] = newDir;
 
-            foreach (var col in GridPosition.Columns) col.SortDirection = null;
-            e.Column.SortDirection = newDir;
+                foreach (var col in GridPosition.Columns) col.SortDirection = null;
+                e.Column.SortDirection = newDir;
 
-            vm.SortPositions(propName, newDir);
+                vm.SortPositions(propName, newDir);
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(GridPosition_Sorting), ex);
+            }
         }
 
         #endregion

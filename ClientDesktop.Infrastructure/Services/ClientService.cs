@@ -2,6 +2,7 @@
 using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Helpers;
+using ClientDesktop.Infrastructure.Logger;
 
 namespace ClientDesktop.Infrastructure.Services
 {
@@ -25,9 +26,16 @@ namespace ClientDesktop.Infrastructure.Services
         /// </summary>
         public ClientService(IApiService apiService, SessionService sessionService)
         {
-            _apiService = apiService;
-            _sessionService = sessionService;
-            _clientRepo = new FileRepository<List<ClientDetails>>();
+            try
+            {
+                _apiService = apiService;
+                _sessionService = sessionService;
+                _clientRepo = new FileRepository<List<ClientDetails>>();
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(ClientService), ex);
+            }
         }
 
         #endregion
@@ -39,31 +47,33 @@ namespace ClientDesktop.Infrastructure.Services
         /// </summary>
         public async Task<(bool Success, string ErrorMessage, List<ClientDetails> Clients, bool IsViewLocked)> GetClientListAsync(ClientDetails clientDetails)
         {
-            string folderName = AESHelper.ToBase64UrlSafe(_sessionService.LicenseId);
-            string fileName = AESHelper.ToBase64UrlSafe(_sessionService.UserId);
-            string relativePath = System.IO.Path.Combine(folderName, fileName);
-
             var cachedData = new List<ClientDetails>();
             bool isViewLocked = false;
 
-            var loadedData = _clientRepo.Load(relativePath, "client");
-            if (loadedData != null)
-            {
-                cachedData = loadedData;
-            }
-
             try
             {
+                string folderName = AESHelper.ToBase64UrlSafe(_sessionService.LicenseId);
+                string fileName = AESHelper.ToBase64UrlSafe(_sessionService.UserId);
+                string relativePath = System.IO.Path.Combine(folderName, fileName);
+
+                var loadedData = _clientRepo.Load(relativePath, "client");
+                if (loadedData != null)
+                {
+                    cachedData = loadedData;
+                }
+
                 string url = CommonHelper.ToReplaceUrl(AppConfig.MasterClientListURL, _sessionService.PrimaryDomain);
                 var responseData = await _apiService.GetAsync<ClientDetailsRootModel>(url);
 
                 if (responseData == null || !responseData.isSuccess)
                 {
+                    FileLogger.ApplicationLog(nameof(GetClientListAsync), "Failed to get client details from API. Falling back to cached data.");
                     return (true, "Failed to get client details", cachedData, false);
                 }
 
                 if (responseData.data == null)
                 {
+                    FileLogger.ApplicationLog(nameof(GetClientListAsync), "Invalid or empty response from API. Falling back to cached data.");
                     return (true, "Invalid or empty response", cachedData, false);
                 }
 
@@ -88,6 +98,7 @@ namespace ClientDesktop.Infrastructure.Services
             }
             catch (Exception ex)
             {
+                FileLogger.ApplicationLog(nameof(GetClientListAsync), ex);
                 return (true, ex.Message, cachedData, false);
             }
         }
@@ -104,6 +115,7 @@ namespace ClientDesktop.Infrastructure.Services
 
                 if (responseData == null || responseData.data == null)
                 {
+                    FileLogger.ApplicationLog(nameof(GetSpecificClientListAsync), "Failed to get specific client details from API.");
                     return (true, "Failed to get specific client details", null);
                 }
 
@@ -111,6 +123,7 @@ namespace ClientDesktop.Infrastructure.Services
             }
             catch (Exception ex)
             {
+                FileLogger.ApplicationLog(nameof(GetSpecificClientListAsync), ex);
                 return (true, ex.Message, null);
             }
         }

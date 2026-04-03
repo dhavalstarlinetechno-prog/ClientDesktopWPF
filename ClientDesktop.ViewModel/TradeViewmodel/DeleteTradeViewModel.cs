@@ -1,10 +1,8 @@
 ﻿using ClientDesktop.Core.Base;
 using ClientDesktop.Core.Config;
 using ClientDesktop.Core.Interfaces;
-using System;
-using System.Linq;
+using ClientDesktop.Infrastructure.Logger;
 using System.Security.Cryptography;
-using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace ClientDesktop.ViewModel
@@ -53,8 +51,15 @@ namespace ClientDesktop.ViewModel
             get => _userInput;
             set
             {
-                if (SetProperty(ref _userInput, value))
-                    System.Windows.Input.CommandManager.InvalidateRequerySuggested();
+                try
+                {
+                    if (SetProperty(ref _userInput, value))
+                        System.Windows.Input.CommandManager.InvalidateRequerySuggested();
+                }
+                catch (Exception ex)
+                {
+                    FileLogger.ApplicationLog(nameof(UserInput), ex);
+                }
             }
         }
 
@@ -66,10 +71,17 @@ namespace ClientDesktop.ViewModel
             get => _isBusy;
             private set
             {
-                if (SetProperty(ref _isBusy, value))
+                try
                 {
-                    OnPropertyChanged(nameof(IsFormEnabled));
-                    System.Windows.Input.CommandManager.InvalidateRequerySuggested();
+                    if (SetProperty(ref _isBusy, value))
+                    {
+                        OnPropertyChanged(nameof(IsFormEnabled));
+                        System.Windows.Input.CommandManager.InvalidateRequerySuggested();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    FileLogger.ApplicationLog(nameof(IsBusy), ex);
                 }
             }
         }
@@ -97,15 +109,22 @@ namespace ClientDesktop.ViewModel
         /// <param name="tradeService">Trade operations — injected via <see cref="ITradeService"/>.</param>
         public DeleteTradeViewModel(ITradeService tradeService)
         {
-            _tradeService = tradeService;
+            try
+            {
+                _tradeService = tradeService;
 
-            GenerateConfirmationCode();
+                GenerateConfirmationCode();
 
-            SubmitCommand = new AsyncRelayCommand(
-                async _ => await ExecuteDeleteAsync(),
-                _ => CanSubmit());
+                SubmitCommand = new AsyncRelayCommand(
+                    async _ => await ExecuteDeleteAsync(),
+                    _ => CanSubmit());
 
-            CancelCommand = new RelayCommand(_ => CloseAction?.Invoke());
+                CancelCommand = new RelayCommand(_ => CloseAction?.Invoke());
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(DeleteTradeViewModel), ex);
+            }
         }
 
         #endregion
@@ -118,20 +137,38 @@ namespace ClientDesktop.ViewModel
         /// </summary>
         private void GenerateConfirmationCode()
         {
-            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-            var bytes = new byte[6];
-            RandomNumberGenerator.Fill(bytes);
+            try
+            {
+                const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                var bytes = new byte[6];
+                RandomNumberGenerator.Fill(bytes);
 
-            RandomString = new string(bytes
-                .Select(b => chars[b % chars.Length])
-                .ToArray());
+                RandomString = new string(bytes
+                    .Select(b => chars[b % chars.Length])
+                    .ToArray());
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(GenerateConfirmationCode), ex);
+            }
         }
 
         /// <summary>
         /// Submit is enabled only when the user has typed the exact confirmation code
         /// and no request is currently in-flight.
         /// </summary>
-        private bool CanSubmit() => !IsBusy && (UserInput == RandomString || UserInput == " ");
+        private bool CanSubmit()
+        {
+            try
+            {
+                return !IsBusy && (UserInput == RandomString || UserInput == " ");
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(CanSubmit), ex);
+                return false;
+            }
+        }
 
         private async Task ExecuteDeleteAsync()
         {
@@ -144,6 +181,10 @@ namespace ClientDesktop.ViewModel
                 deleteMessage = isDeleted.Value
                     ? CommonMessages.OrderDeleted
                     : CommonMessages.OrderFailedToDelete;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(ExecuteDeleteAsync), ex);
             }
             finally
             {

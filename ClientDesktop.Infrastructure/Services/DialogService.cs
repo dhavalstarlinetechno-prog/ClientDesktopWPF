@@ -1,5 +1,6 @@
 ﻿using ClientDesktop.Core.Base;
 using ClientDesktop.Core.Interfaces;
+using ClientDesktop.Infrastructure.Logger;
 using Microsoft.Extensions.DependencyInjection;
 using System.Windows;
 using System.Windows.Media;
@@ -24,7 +25,14 @@ namespace ClientDesktop.Infrastructure.Services
         /// </summary>
         public DialogService(IServiceProvider serviceProvider)
         {
-            _serviceProvider = serviceProvider;
+            try
+            {
+                _serviceProvider = serviceProvider;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(DialogService), ex);
+            }
         }
 
         #endregion
@@ -37,36 +45,43 @@ namespace ClientDesktop.Infrastructure.Services
         public void ShowDialog<TViewModel>(string title, Action<TViewModel> onDialogClose = null, Action<TViewModel> configureViewModel = null)
             where TViewModel : ViewModelBase
         {
-            var viewModel = _serviceProvider.GetRequiredService<TViewModel>();
-
-            configureViewModel?.Invoke(viewModel);
-
-            var window = new Window
+            try
             {
-                Title = title,
-                Content = viewModel,
-                SizeToContent = SizeToContent.WidthAndHeight,
-                ResizeMode = ResizeMode.NoResize,
-                WindowStartupLocation = WindowStartupLocation.CenterScreen,
-                ShowInTaskbar = false,
-                Owner = Application.Current.MainWindow
-            };
+                var viewModel = _serviceProvider.GetRequiredService<TViewModel>();
 
-            if (string.IsNullOrEmpty(title))
-            {
-                window.WindowStyle = WindowStyle.None;
-                window.AllowsTransparency = true;
-                window.Background = Brushes.Transparent;
+                configureViewModel?.Invoke(viewModel);
+
+                var window = new Window
+                {
+                    Title = title,
+                    Content = viewModel,
+                    SizeToContent = SizeToContent.WidthAndHeight,
+                    ResizeMode = ResizeMode.NoResize,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                    ShowInTaskbar = false,
+                    Owner = Application.Current.MainWindow
+                };
+
+                if (string.IsNullOrEmpty(title))
+                {
+                    window.WindowStyle = WindowStyle.None;
+                    window.AllowsTransparency = true;
+                    window.Background = Brushes.Transparent;
+                }
+
+                if (viewModel is ICloseable closeableVm)
+                {
+                    closeableVm.CloseAction = () => window.Close();
+                }
+
+                window.ShowDialog();
+
+                onDialogClose?.Invoke(viewModel);
             }
-
-            if (viewModel is ICloseable closeableVm)
+            catch (Exception ex)
             {
-                closeableVm.CloseAction = () => window.Close();
+                FileLogger.ApplicationLog(nameof(ShowDialog), ex);
             }
-
-            window.ShowDialog();
-
-            onDialogClose?.Invoke(viewModel);
         }
 
         #endregion

@@ -185,10 +185,7 @@ namespace ClientDesktop.ViewModel
             get => _selectedPeriod;
             set
             {
-                if (SetProperty(ref _selectedPeriod, value))
-                {
-                    UpdateDatesBasedOnPeriod();
-                }
+                if (SetProperty(ref _selectedPeriod, value)) UpdateDatesBasedOnPeriod();
             }
         }
 
@@ -273,16 +270,24 @@ namespace ClientDesktop.ViewModel
         /// </summary>
         public static double CalculateUplineBalance(double? uplineAmount, double? uplineCommission, bool realtimeCommission)
         {
-            double value = 0d;
+            try
+            {
+                double value = 0d;
 
-            if (uplineAmount != null && uplineCommission != null)
-                value = uplineAmount.Value + (realtimeCommission ? uplineCommission.Value : 0d);
-            else if (uplineAmount != null)
-                value = uplineAmount.Value;
-            else if (uplineCommission != null && realtimeCommission)
-                value = uplineCommission.Value;
+                if (uplineAmount != null && uplineCommission != null)
+                    value = uplineAmount.Value + (realtimeCommission ? uplineCommission.Value : 0d);
+                else if (uplineAmount != null)
+                    value = uplineAmount.Value;
+                else if (uplineCommission != null && realtimeCommission)
+                    value = uplineCommission.Value;
 
-            return value;
+                return value;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(CalculateUplineBalance), ex);
+                return 0d;
+            }
         }
 
         /// <summary>
@@ -290,19 +295,26 @@ namespace ClientDesktop.ViewModel
         /// </summary>
         public void SortDeals(string propertyName, ListSortDirection newDir)
         {
-            var dataRows = HistoryItems.Where(x => x.RefId != "FOOTER").ToList();
-            var footer = HistoryItems.FirstOrDefault(x => x.RefId == "FOOTER");
+            try
+            {
+                var dataRows = HistoryItems.Where(x => x.RefId != "FOOTER").ToList();
+                var footer = HistoryItems.FirstOrDefault(x => x.RefId == "FOOTER");
 
-            var prop = typeof(HistoryModel).GetProperty(propertyName);
-            if (prop == null) return;
+                var prop = typeof(HistoryModel).GetProperty(propertyName);
+                if (prop == null) return;
 
-            var sorted = newDir == ListSortDirection.Ascending
-                ? dataRows.OrderBy(r => prop.GetValue(r)).ToList()
-                : dataRows.OrderByDescending(r => prop.GetValue(r)).ToList();
+                var sorted = newDir == ListSortDirection.Ascending
+                    ? dataRows.OrderBy(r => prop.GetValue(r)).ToList()
+                    : dataRows.OrderByDescending(r => prop.GetValue(r)).ToList();
 
-            HistoryItems.Clear();
-            foreach (var item in sorted) HistoryItems.Add(item);
-            if (footer != null) HistoryItems.Add(footer);
+                HistoryItems.Clear();
+                foreach (var item in sorted) HistoryItems.Add(item);
+                if (footer != null) HistoryItems.Add(footer);
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(SortDeals), ex);
+            }
         }
 
         /// <summary>
@@ -310,19 +322,26 @@ namespace ClientDesktop.ViewModel
         /// </summary>
         public void SortPositions(string propertyName, ListSortDirection newDir)
         {
-            var dataRows = PositionHistoryItems.Where(x => x.RefId != "FOOTER").ToList();
-            var footer = PositionHistoryItems.FirstOrDefault(x => x.RefId == "FOOTER");
+            try
+            {
+                var dataRows = PositionHistoryItems.Where(x => x.RefId != "FOOTER").ToList();
+                var footer = PositionHistoryItems.FirstOrDefault(x => x.RefId == "FOOTER");
 
-            var prop = typeof(PositionHistoryModel).GetProperty(propertyName);
-            if (prop == null) return;
+                var prop = typeof(PositionHistoryModel).GetProperty(propertyName);
+                if (prop == null) return;
 
-            var sorted = newDir == ListSortDirection.Ascending
-                ? dataRows.OrderBy(r => prop.GetValue(r)).ToList()
-                : dataRows.OrderByDescending(r => prop.GetValue(r)).ToList();
+                var sorted = newDir == ListSortDirection.Ascending
+                    ? dataRows.OrderBy(r => prop.GetValue(r)).ToList()
+                    : dataRows.OrderByDescending(r => prop.GetValue(r)).ToList();
 
-            PositionHistoryItems.Clear();
-            foreach (var item in sorted) PositionHistoryItems.Add(item);
-            if (footer != null) PositionHistoryItems.Add(footer);
+                PositionHistoryItems.Clear();
+                foreach (var item in sorted) PositionHistoryItems.Add(item);
+                if (footer != null) PositionHistoryItems.Add(footer);
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(SortPositions), ex);
+            }
         }
 
         /// <summary>
@@ -334,7 +353,6 @@ namespace ClientDesktop.ViewModel
             {
                 if (data == null || data.Count <= 1)
                 {
-                    FileLogger.Log("Export", "No data to export");
                     return;
                 }
 
@@ -371,7 +389,7 @@ namespace ClientDesktop.ViewModel
                 if (saveDialog.ShowDialog() != true)
                     return;
 
-                string filePath = saveDialog.FileName; 
+                string filePath = saveDialog.FileName;
 
                 using (var workbook = new XLWorkbook())
                 {
@@ -404,7 +422,7 @@ namespace ClientDesktop.ViewModel
 
                         var dateCell = sheet.Cell(rowIndex, 2);
                         dateCell.Value = CommonHelper.ConvertUtcToIst(item.CreatedOn);
-                        dateCell.Style.DateFormat.Format = @"dd\/MM\/yy HH:mm"; 
+                        dateCell.Style.DateFormat.Format = @"dd\/MM\/yy HH:mm";
 
                         sheet.Cell(rowIndex, 3).Value = item.RefId;
                         sheet.Cell(rowIndex, 4).Value = item.PositionId ?? "--";
@@ -438,11 +456,11 @@ namespace ClientDesktop.ViewModel
                     workbook.SaveAs(filePath);
                 }
 
-                FileLogger.Log("Export", "Excel exported successfully!");
+                FileLogger.Log("Journal", $"{gridType} history exported to Excel successfully.");
             }
             catch (Exception ex)
             {
-                FileLogger.ApplicationLog(nameof(ExportToExcel), $"Excel export error: {ex}");
+                FileLogger.ApplicationLog(nameof(ExportToExcel), ex);
             }
         }
 
@@ -455,7 +473,6 @@ namespace ClientDesktop.ViewModel
             {
                 if (data == null || data.Count <= 1)
                 {
-                    FileLogger.Log("Export", "No data to export");
                     return;
                 }
 
@@ -524,12 +541,12 @@ namespace ClientDesktop.ViewModel
 
                         var updateCell = sheet.Cell(rowIndex, 2);
                         updateCell.Value = CommonHelper.ConvertUtcToIst(item.UpdatedAt);
-                        updateCell.Style.DateFormat.Format = @"dd\/MM\/yy HH:mm:ss"; 
+                        updateCell.Style.DateFormat.Format = @"dd\/MM\/yy HH:mm:ss";
                         var lastOutCell = sheet.Cell(rowIndex, 3);
                         if (item.LastOutAt.HasValue)
                         {
                             lastOutCell.Value = CommonHelper.ConvertUtcToIst(item.LastOutAt.Value);
-                            lastOutCell.Style.DateFormat.Format = @"dd\/MM\/yy HH:mm:ss"; 
+                            lastOutCell.Style.DateFormat.Format = @"dd\/MM\/yy HH:mm:ss";
                         }
                         else
                         {
@@ -565,11 +582,11 @@ namespace ClientDesktop.ViewModel
                     workbook.SaveAs(filePath);
                 }
 
-                FileLogger.Log("Export", "Excel exported successfully!");
+                FileLogger.Log("Journal", "Position history exported to Excel successfully.");
             }
             catch (Exception ex)
             {
-                FileLogger.ApplicationLog(nameof(ExportPositionToExcel), $"Excel export error: {ex}");
+                FileLogger.ApplicationLog(nameof(ExportPositionToExcel), ex);
             }
         }
 
@@ -582,7 +599,6 @@ namespace ClientDesktop.ViewModel
             {
                 if (data == null || data.Count <= 1)
                 {
-                    FileLogger.Log("Export", "No data to export");
                     return;
                 }
 
@@ -661,7 +677,7 @@ namespace ClientDesktop.ViewModel
                     CommonHelper.FormatAmount(totalProfit),
                     ""
                 );
-                    
+
                 var alignments = new Dictionary<string, EnumPdfColumnAlignment>
                 {
                     { "Volume", EnumPdfColumnAlignment.Right },
@@ -688,11 +704,11 @@ namespace ClientDesktop.ViewModel
                     .AddGrid(dt, null, null, alignments)
                     .BuildPDF($"{gridType}_History", landscape: true, autoFormat: true);
 
-                FileLogger.Log("Export", "PDF exported successfully!");
+                FileLogger.Log("Journal", $"{gridType} history exported to PDF successfully.");
             }
             catch (Exception ex)
             {
-                FileLogger.ApplicationLog(nameof(ExportToPdf), $"PDF export error: {ex}");
+                FileLogger.ApplicationLog(nameof(ExportToPdf), ex);
             }
         }
 
@@ -705,7 +721,6 @@ namespace ClientDesktop.ViewModel
             {
                 if (data == null || data.Count <= 1)
                 {
-                    FileLogger.Log("Export", "No data to export");
                     return;
                 }
 
@@ -805,11 +820,11 @@ namespace ClientDesktop.ViewModel
                     .AddGrid(dt, null, null, alignments)
                     .BuildPDF("Position_History", landscape: true, autoFormat: true);
 
-                FileLogger.Log("Export", "PDF exported successfully!");
+                FileLogger.Log("Journal", "Position history exported to PDF successfully.");
             }
             catch (Exception ex)
             {
-                FileLogger.ApplicationLog(nameof(ExportPositionToPdf), $"PDF export error: {ex}");
+                FileLogger.ApplicationLog(nameof(ExportPositionToPdf), ex);
             }
         }
 
@@ -824,9 +839,16 @@ namespace ClientDesktop.ViewModel
         {
             WeakReferenceMessenger.Default.Register<UserAuthEvent>(this, async (recipient, message) =>
             {
-                if (message.IsLoggedIn)
+                try
                 {
-                    await LoadFullDataAsync();
+                    if (message.IsLoggedIn)
+                    {
+                        await LoadFullDataAsync();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    FileLogger.ApplicationLog(nameof(RegisterMessenger), ex);
                 }
             });
         }
@@ -843,6 +865,8 @@ namespace ClientDesktop.ViewModel
             {
                 var apiToDate = DateTime.Now;
                 var apiFromDate = apiToDate.AddDays(-7);
+
+                FileLogger.Log("Network", $"{CurrentViewType} history request from {apiFromDate:dd/MM/yyyy} to {apiToDate:dd/MM/yyyy}");
 
                 if (CurrentViewType == EnumHistoryType.Position)
                 {
@@ -865,7 +889,7 @@ namespace ClientDesktop.ViewModel
             }
             catch (Exception ex)
             {
-                FileLogger.ApplicationLog("ExecuteRequestAsync", ex);
+                FileLogger.ApplicationLog(nameof(ExecuteRequestAsync), ex);
             }
             finally
             {
@@ -878,17 +902,24 @@ namespace ClientDesktop.ViewModel
         /// </summary>
         private void ExecuteChangeView(object? parameter)
         {
-            if (parameter is string modeStr && Enum.TryParse(modeStr, out EnumHistoryType mode))
+            try
             {
-                CurrentViewType = mode;
+                if (parameter is string modeStr && Enum.TryParse(modeStr, out EnumHistoryType mode))
+                {
+                    CurrentViewType = mode;
 
-                SelectedSymbol = "All";
-                SelectedExecution = "All";
-                SelectedType = "All";
-                SelectedEntry = "All";
-                SelectedPosSymbol = "All";
+                    SelectedSymbol = "All";
+                    SelectedExecution = "All";
+                    SelectedType = "All";
+                    SelectedEntry = "All";
+                    SelectedPosSymbol = "All";
 
-                ApplyFilters();
+                    ApplyFilters();
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(ExecuteChangeView), ex);
             }
         }
 
@@ -897,35 +928,42 @@ namespace ClientDesktop.ViewModel
         /// </summary>
         private void UpdateDatesBasedOnPeriod()
         {
-            DateTime toDate = DateTime.Today;
-            EndDate = toDate.AddDays(1);
-
-            switch (SelectedPeriod)
+            try
             {
-                case EnumPeriod.Today:
-                    StartDate = toDate;
-                    break;
-                case EnumPeriod.Last3Days:
-                    StartDate = toDate.AddDays(-2);
-                    break;
-                case EnumPeriod.LastWeek:
-                    int diff = (7 + (toDate.DayOfWeek - DayOfWeek.Sunday)) % 7;
-                    StartDate = toDate.AddDays(-diff);
-                    break;
-                case EnumPeriod.LastMonth:
-                    StartDate = new DateTime(toDate.Year, toDate.Month, 1);
-                    break;
-                case EnumPeriod.Last3Months:
-                    var m3 = toDate.AddMonths(-2);
-                    StartDate = new DateTime(m3.Year, m3.Month, 1);
-                    break;
-                case EnumPeriod.Last6Months:
-                    var m6 = toDate.AddMonths(-5);
-                    StartDate = new DateTime(m6.Year, m6.Month, 1);
-                    break;
-                case EnumPeriod.AllHistory:
-                    StartDate = new DateTime(1970, 1, 1);
-                    break;
+                DateTime toDate = DateTime.Today;
+                EndDate = toDate.AddDays(1);
+
+                switch (SelectedPeriod)
+                {
+                    case EnumPeriod.Today:
+                        StartDate = toDate;
+                        break;
+                    case EnumPeriod.Last3Days:
+                        StartDate = toDate.AddDays(-2);
+                        break;
+                    case EnumPeriod.LastWeek:
+                        int diff = (7 + (toDate.DayOfWeek - DayOfWeek.Sunday)) % 7;
+                        StartDate = toDate.AddDays(-diff);
+                        break;
+                    case EnumPeriod.LastMonth:
+                        StartDate = new DateTime(toDate.Year, toDate.Month, 1);
+                        break;
+                    case EnumPeriod.Last3Months:
+                        var m3 = toDate.AddMonths(-2);
+                        StartDate = new DateTime(m3.Year, m3.Month, 1);
+                        break;
+                    case EnumPeriod.Last6Months:
+                        var m6 = toDate.AddMonths(-5);
+                        StartDate = new DateTime(m6.Year, m6.Month, 1);
+                        break;
+                    case EnumPeriod.AllHistory:
+                        StartDate = new DateTime(1970, 1, 1);
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(UpdateDatesBasedOnPeriod), ex);
             }
         }
 
@@ -1041,6 +1079,10 @@ namespace ClientDesktop.ViewModel
                     HasData = HistoryItems.Any(x => x.RefId != "FOOTER");
                 }
             }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(ApplyFilters), ex);
+            }
             finally
             {
                 _isUpdatingFilters = false;
@@ -1052,15 +1094,22 @@ namespace ClientDesktop.ViewModel
         /// </summary>
         private void UpdatePositionDropdowns(List<PositionHistoryModel> baseData)
         {
-            var oldPos = SelectedPosSymbol;
-            AvailablePosSymbols.Clear();
-            AvailablePosSymbols.Add("All");
+            try
+            {
+                var oldPos = SelectedPosSymbol;
+                AvailablePosSymbols.Clear();
+                AvailablePosSymbols.Add("All");
 
-            var posSymbols = baseData.Where(x => !string.IsNullOrEmpty(x.SymbolName)).Select(x => x.SymbolName).Distinct().OrderBy(x => x);
-            foreach (var s in posSymbols) AvailablePosSymbols.Add(s);
+                var posSymbols = baseData.Where(x => !string.IsNullOrEmpty(x.SymbolName)).Select(x => x.SymbolName).Distinct().OrderBy(x => x);
+                foreach (var s in posSymbols) AvailablePosSymbols.Add(s);
 
-            _selectedPosSymbol = AvailablePosSymbols.Contains(oldPos) ? oldPos : "All";
-            OnPropertyChanged(nameof(SelectedPosSymbol));
+                _selectedPosSymbol = AvailablePosSymbols.Contains(oldPos) ? oldPos : "All";
+                OnPropertyChanged(nameof(SelectedPosSymbol));
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(UpdatePositionDropdowns), ex);
+            }
         }
 
         /// <summary>
@@ -1068,37 +1117,44 @@ namespace ClientDesktop.ViewModel
         /// </summary>
         private void UpdateHistoryDropdowns(List<HistoryModel> baseData)
         {
-            var oldSym = SelectedSymbol;
-            var oldExec = SelectedExecution;
-            var oldType = SelectedType;
-            var oldEntry = SelectedEntry;
+            try
+            {
+                var oldSym = SelectedSymbol;
+                var oldExec = SelectedExecution;
+                var oldType = SelectedType;
+                var oldEntry = SelectedEntry;
 
-            AvailableSymbols.Clear(); AvailableSymbols.Add("All");
-            AvailableExecutions.Clear(); AvailableExecutions.Add("All");
-            AvailableTypes.Clear(); AvailableTypes.Add("All");
-            AvailableEntries.Clear(); AvailableEntries.Add("All");
+                AvailableSymbols.Clear(); AvailableSymbols.Add("All");
+                AvailableExecutions.Clear(); AvailableExecutions.Add("All");
+                AvailableTypes.Clear(); AvailableTypes.Add("All");
+                AvailableEntries.Clear(); AvailableEntries.Add("All");
 
-            var symbols = baseData.Where(x => !string.IsNullOrEmpty(x.SymbolName)).Select(x => x.SymbolName).Distinct().OrderBy(x => x);
-            foreach (var s in symbols) AvailableSymbols.Add(s);
+                var symbols = baseData.Where(x => !string.IsNullOrEmpty(x.SymbolName)).Select(x => x.SymbolName).Distinct().OrderBy(x => x);
+                foreach (var s in symbols) AvailableSymbols.Add(s);
 
-            var executions = baseData.Where(x => !string.IsNullOrEmpty(x.OrderType)).Select(x => x.OrderType).Distinct().OrderBy(x => x);
-            foreach (var e in executions) AvailableExecutions.Add(e);
+                var executions = baseData.Where(x => !string.IsNullOrEmpty(x.OrderType)).Select(x => x.OrderType).Distinct().OrderBy(x => x);
+                foreach (var e in executions) AvailableExecutions.Add(e);
 
-            var types = baseData.Where(x => !string.IsNullOrEmpty(x.Side)).Select(x => x.Side).Distinct().OrderBy(x => x);
-            foreach (var t in types) AvailableTypes.Add(t);
+                var types = baseData.Where(x => !string.IsNullOrEmpty(x.Side)).Select(x => x.Side).Distinct().OrderBy(x => x);
+                foreach (var t in types) AvailableTypes.Add(t);
 
-            var entries = baseData.Where(x => !string.IsNullOrEmpty(x.DealType)).Select(x => x.DealType).Distinct().OrderBy(x => x);
-            foreach (var e in entries) AvailableEntries.Add(e);
+                var entries = baseData.Where(x => !string.IsNullOrEmpty(x.DealType)).Select(x => x.DealType).Distinct().OrderBy(x => x);
+                foreach (var e in entries) AvailableEntries.Add(e);
 
-            _selectedSymbol = AvailableSymbols.Contains(oldSym) ? oldSym : "All";
-            _selectedExecution = AvailableExecutions.Contains(oldExec) ? oldExec : "All";
-            _selectedType = AvailableTypes.Contains(oldType) ? oldType : "All";
-            _selectedEntry = AvailableEntries.Contains(oldEntry) ? oldEntry : "All";
+                _selectedSymbol = AvailableSymbols.Contains(oldSym) ? oldSym : "All";
+                _selectedExecution = AvailableExecutions.Contains(oldExec) ? oldExec : "All";
+                _selectedType = AvailableTypes.Contains(oldType) ? oldType : "All";
+                _selectedEntry = AvailableEntries.Contains(oldEntry) ? oldEntry : "All";
 
-            OnPropertyChanged(nameof(SelectedSymbol));
-            OnPropertyChanged(nameof(SelectedExecution));
-            OnPropertyChanged(nameof(SelectedType));
-            OnPropertyChanged(nameof(SelectedEntry));
+                OnPropertyChanged(nameof(SelectedSymbol));
+                OnPropertyChanged(nameof(SelectedExecution));
+                OnPropertyChanged(nameof(SelectedType));
+                OnPropertyChanged(nameof(SelectedEntry));
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(UpdateHistoryDropdowns), ex);
+            }
         }
 
         /// <summary>
@@ -1106,17 +1162,24 @@ namespace ClientDesktop.ViewModel
         /// </summary>
         private void ExportData(bool isExcel)
         {
-            if (CurrentViewType == EnumHistoryType.Position)
+            try
             {
-                var data = PositionHistoryItems.ToList();
-                if (isExcel) ExportPositionToExcel(data);
-                else ExportPositionToPdf(data);
+                if (CurrentViewType == EnumHistoryType.Position)
+                {
+                    var data = PositionHistoryItems.ToList();
+                    if (isExcel) ExportPositionToExcel(data);
+                    else ExportPositionToPdf(data);
+                }
+                else
+                {
+                    var data = HistoryItems.ToList();
+                    if (isExcel) ExportToExcel(data, CurrentViewType);
+                    else ExportToPdf(data, CurrentViewType);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                var data = HistoryItems.ToList();
-                if (isExcel) ExportToExcel(data, CurrentViewType);
-                else ExportToPdf(data, CurrentViewType);
+                FileLogger.ApplicationLog(nameof(ExportData), ex);
             }
         }
 

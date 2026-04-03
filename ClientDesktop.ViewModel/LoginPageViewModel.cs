@@ -146,7 +146,7 @@ namespace ClientDesktop.ViewModel
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                FileLogger.ApplicationLog(nameof(LoadServerListAsync), ex);
             }
         }
 
@@ -159,20 +159,27 @@ namespace ClientDesktop.ViewModel
         /// </summary>
         private void LoadLoginHistoryForServer()
         {
-            LoginHistory.Clear();
-            Password = string.Empty;
-            IsRememberMe = false;
-
-            var history = _authService.GetLoginHistory();
-            if (history != null && SelectedServer != null)
+            try
             {
-                foreach (var item in history)
+                LoginHistory.Clear();
+                Password = string.Empty;
+                IsRememberMe = false;
+
+                var history = _authService.GetLoginHistory();
+                if (history != null && SelectedServer != null)
                 {
-                    if (item.LicenseId == SelectedServer.licenseId.ToString())
+                    foreach (var item in history)
                     {
-                        LoginHistory.Add(item.UserId);
+                        if (item.LicenseId == SelectedServer.licenseId.ToString())
+                        {
+                            LoginHistory.Add(item.UserId);
+                        }
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(LoadLoginHistoryForServer), ex);
             }
         }
 
@@ -181,29 +188,36 @@ namespace ClientDesktop.ViewModel
         /// </summary>
         private void CheckLoginHistory()
         {
-            if (string.IsNullOrEmpty(Username) || SelectedServer == null)
+            try
             {
-                Password = string.Empty;
-                IsRememberMe = false;
-                return;
-            }
+                if (string.IsNullOrEmpty(Username) || SelectedServer == null)
+                {
+                    Password = string.Empty;
+                    IsRememberMe = false;
+                    return;
+                }
 
-            var history = _authService.GetLoginHistory();
-            var loginInfo = history?.FirstOrDefault(s =>
-                s != null &&
-                string.Equals(s.UserId, Username, StringComparison.OrdinalIgnoreCase) &&
-                s.LicenseId == SelectedServer.licenseId.ToString()
-            );
+                var history = _authService.GetLoginHistory();
+                var loginInfo = history?.FirstOrDefault(s =>
+                    s != null &&
+                    string.Equals(s.UserId, Username, StringComparison.OrdinalIgnoreCase) &&
+                    s.LicenseId == SelectedServer.licenseId.ToString()
+                );
 
-            if (loginInfo != null && !string.IsNullOrEmpty(loginInfo.Password))
-            {
-                Password = loginInfo.Password;
-                IsRememberMe = true;
+                if (loginInfo != null && !string.IsNullOrEmpty(loginInfo.Password))
+                {
+                    Password = loginInfo.Password;
+                    IsRememberMe = true;
+                }
+                else
+                {
+                    Password = string.Empty;
+                    IsRememberMe = false;
+                }
             }
-            else
+            catch (Exception ex)
             {
-                Password = string.Empty;
-                IsRememberMe = false;
+                FileLogger.ApplicationLog(nameof(CheckLoginHistory), ex);
             }
         }
 
@@ -221,22 +235,30 @@ namespace ClientDesktop.ViewModel
                 }
 
                 string licenseId = SelectedServer?.licenseId.ToString() ?? "";
+                string compName = SelectedServer?.companyName ?? "Server";
+
+                FileLogger.Log("Auth", $"Attempting to log in as '{Username}' to {compName}...");
 
                 _sessionService.SetSession(string.Empty, Username, Username, licenseId, null, Password);
 
                 var result = await _authService.LoginAsync(Username, Password, licenseId, IsRememberMe);
 
-                if (!result.Success && !string.IsNullOrEmpty(result.Message))
+                if (result.Success)
                 {
-                    FileLogger.Log("Network", result.Message);
+                    FileLogger.Log("Auth", $"Successfully logged into {compName} as '{Username}'.");
                 }
-                else if (!result.Success)
+                else if (!string.IsNullOrEmpty(result.Message))
+                {
+                    FileLogger.Log("Auth", $"{result.Message}");
+                }
+                else
                 {
                     LogDisconnect();
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                FileLogger.ApplicationLog(nameof(LoginAsync), ex);
                 LogDisconnect();
             }
             finally
@@ -250,15 +272,22 @@ namespace ClientDesktop.ViewModel
         /// </summary>
         private void LogDisconnect()
         {
-            string compName = SelectedServer?.companyName;
+            try
+            {
+                string compName = SelectedServer?.companyName;
 
-            if (!string.IsNullOrEmpty(Username) && !string.IsNullOrEmpty(compName))
-            {
-                FileLogger.Log("Network", $"User '{Username}' Disconnected from {compName}");
+                if (!string.IsNullOrEmpty(Username) && !string.IsNullOrEmpty(compName))
+                {
+                    FileLogger.Log("Auth", $"Connection closed for user '{Username}' from {compName}.");
+                }
+                else
+                {
+                    FileLogger.Log("Auth", "Connection closed or login attempt aborted.");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                FileLogger.Log("Network", "Disconnected");
+                FileLogger.ApplicationLog(nameof(LogDisconnect), ex);
             }
         }
 
@@ -267,7 +296,14 @@ namespace ClientDesktop.ViewModel
         /// </summary>
         private void OpenDisclaimer(object parameter)
         {
-            _dialogService.ShowDialog<DisclaimerViewModel>(string.Empty);
+            try
+            {
+                _dialogService.ShowDialog<DisclaimerViewModel>(string.Empty);
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(OpenDisclaimer), ex);
+            }
         }
 
         #endregion

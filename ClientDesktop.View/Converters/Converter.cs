@@ -1,11 +1,12 @@
 ﻿using ClientDesktop.Infrastructure.Helpers;
+using ClientDesktop.Infrastructure.Logger;
 using System.ComponentModel;
 using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Media;
 
 namespace ClientDesktop.View.Converters
-{   
+{
     #region ProfitToColorConverter
 
     /// <summary>
@@ -20,22 +21,30 @@ namespace ClientDesktop.View.Converters
         /// </summary>
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            SolidColorBrush greenBrush = new SolidColorBrush(Color.FromRgb(0, 153, 0));
-            SolidColorBrush redBrush = new SolidColorBrush(Color.FromRgb(255, 59, 48));
-
-            if (value is double profit)
+            try
             {
-                if (profit > 0) return greenBrush;
-                if (profit < 0) return redBrush;
-            }
+                SolidColorBrush greenBrush = new SolidColorBrush(Color.FromRgb(0, 153, 0));
+                SolidColorBrush redBrush = new SolidColorBrush(Color.FromRgb(255, 59, 48));
 
-            if (value is decimal profitDec)
+                if (value is double profit)
+                {
+                    if (profit > 0) return greenBrush;
+                    if (profit < 0) return redBrush;
+                }
+
+                if (value is decimal profitDec)
+                {
+                    if (profitDec > 0) return greenBrush;
+                    if (profitDec < 0) return redBrush;
+                }
+
+                return Brushes.Black;
+            }
+            catch (Exception ex)
             {
-                if (profitDec > 0) return greenBrush;
-                if (profitDec < 0) return redBrush;
+                FileLogger.ApplicationLog(nameof(ProfitToColorConverter), ex);
+                return Brushes.Black;
             }
-
-            return Brushes.Black;
         }
 
         /// <summary>
@@ -65,22 +74,30 @@ namespace ClientDesktop.View.Converters
         /// </summary>
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is string side)
+            try
             {
-                string lowerSide = side.ToLower();
-
-                if (lowerSide.Contains("buy"))
+                if (value is string side)
                 {
-                    return new SolidColorBrush(Color.FromRgb(0, 119, 254));
+                    string lowerSide = side.ToLower();
+
+                    if (lowerSide.Contains("buy"))
+                    {
+                        return new SolidColorBrush(Color.FromRgb(0, 119, 254));
+                    }
+
+                    if (lowerSide.Contains("sell"))
+                    {
+                        return new SolidColorBrush(Color.FromRgb(255, 59, 48));
+                    }
                 }
 
-                if (lowerSide.Contains("sell"))
-                {
-                    return new SolidColorBrush(Color.FromRgb(255, 59, 48));
-                }
+                return Brushes.Gray;
             }
-
-            return Brushes.Gray;
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(OrderTypeToColorConverter), ex);
+                return Brushes.Gray;
+            }
         }
 
         /// <summary>
@@ -110,22 +127,30 @@ namespace ClientDesktop.View.Converters
         /// </summary>
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            SolidColorBrush greenBrush = new SolidColorBrush(Color.FromRgb(0, 153, 0));
-            SolidColorBrush redBrush = new SolidColorBrush(Color.FromRgb(255, 59, 48));
-
-            if (value is double priceChange)
+            try
             {
-                if (priceChange > 0) return greenBrush;
-                if (priceChange < 0) return redBrush;
-            }
+                SolidColorBrush greenBrush = new SolidColorBrush(Color.FromRgb(0, 153, 0));
+                SolidColorBrush redBrush = new SolidColorBrush(Color.FromRgb(255, 59, 48));
 
-            if (value is string strVal && double.TryParse(strVal.Replace("%", ""), out double parsed))
+                if (value is double priceChange)
+                {
+                    if (priceChange > 0) return greenBrush;
+                    if (priceChange < 0) return redBrush;
+                }
+
+                if (value is string strVal && double.TryParse(strVal.Replace("%", ""), out double parsed))
+                {
+                    if (parsed > 0) return greenBrush;
+                    if (parsed < 0) return redBrush;
+                }
+
+                return Brushes.Black;
+            }
+            catch (Exception ex)
             {
-                if (parsed > 0) return greenBrush;
-                if (parsed < 0) return redBrush;
+                FileLogger.ApplicationLog(nameof(PriceChangeColorConverter), ex);
+                return Brushes.Black;
             }
-
-            return Brushes.Black;
         }
 
         /// <summary>
@@ -155,12 +180,20 @@ namespace ClientDesktop.View.Converters
         /// </summary>
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is string side)
+            try
             {
-                return side.ToLower() == "bid" ? "Sell" : "Buy";
-            }
+                if (value is string side)
+                {
+                    return side.ToLower() == "bid" ? "Sell" : "Buy";
+                }
 
-            return value;
+                return value;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(SideConverter), ex);
+                return value;
+            }
         }
 
         /// <summary>
@@ -190,12 +223,20 @@ namespace ClientDesktop.View.Converters
         /// </summary>
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is string text && !string.IsNullOrEmpty(text) && text.Length > 8)
+            try
             {
-                return text.Substring(0, 8) + "...";
-            }
+                if (value is string text && !string.IsNullOrEmpty(text) && text.Length > 8)
+                {
+                    return text.Substring(0, 8) + "...";
+                }
 
-            return value;
+                return value;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(StringTruncateConverter), ex);
+                return value;
+            }
         }
 
         /// <summary>
@@ -225,15 +266,23 @@ namespace ClientDesktop.View.Converters
         /// </summary>
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is DateTime utcDate)
+            try
             {
-                DateTime istTime = CommonHelper.ConvertUtcToIst(utcDate);
-                string format = parameter as string ?? "dd/MM/yy HH:mm:ss";
+                if (value is DateTime utcDate)
+                {
+                    DateTime istTime = CommonHelper.ConvertUtcToIst(utcDate);
+                    string format = parameter as string ?? "dd/MM/yy HH:mm:ss";
 
-                return istTime.ToString(format, CultureInfo.InvariantCulture);
+                    return istTime.ToString(format, CultureInfo.InvariantCulture);
+                }
+
+                return value;
             }
-
-            return value;
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(UtcToIstConverter), ex);
+                return value;
+            }
         }
 
         /// <summary>
@@ -262,18 +311,26 @@ namespace ClientDesktop.View.Converters
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value == null) return "0.00";
-
-            if (value is decimal decValue)
+            try
             {
-                return CommonHelper.FormatAmount(decValue);
-            }
-            else if (value is double doubleValue)
-            {
-                return CommonHelper.FormatAmount(doubleValue);
-            }
+                if (value == null) return "0.00";
 
-            return value.ToString();
+                if (value is decimal decValue)
+                {
+                    return CommonHelper.FormatAmount(decValue);
+                }
+                else if (value is double doubleValue)
+                {
+                    return CommonHelper.FormatAmount(doubleValue);
+                }
+
+                return value.ToString();
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(AmountFormatConverter), ex);
+                return value?.ToString() ?? "0.00";
+            }
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
@@ -299,17 +356,31 @@ namespace ClientDesktop.View.Converters
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value == null) return string.Empty;
+            try
+            {
+                if (value == null) return string.Empty;
 
-            var enumType = value.GetType();
-            var enumValue = Enum.GetName(enumType, value);
+                var enumType = value.GetType();
+                var enumValue = Enum.GetName(enumType, value);
 
-            // Find the DescriptionAttribute if available
-            var field = enumType.GetField(enumValue);
-            var attribute = (DescriptionAttribute)Attribute.GetCustomAttribute(field, typeof(DescriptionAttribute));
+                if (enumValue == null) return string.Empty;
 
-            // Return the description if found, otherwise return the enum name
-            return attribute != null ? attribute.Description : enumValue;
+                // Find the DescriptionAttribute if available
+                var field = enumType.GetField(enumValue);
+                if (field != null)
+                {
+                    var attribute = (DescriptionAttribute)Attribute.GetCustomAttribute(field, typeof(DescriptionAttribute));
+                    // Return the description if found, otherwise return the enum name
+                    return attribute != null ? attribute.Description : enumValue;
+                }
+
+                return enumValue;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(EnumToDescriptionConverter), ex);
+                return value?.ToString() ?? string.Empty;
+            }
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
@@ -325,12 +396,20 @@ namespace ClientDesktop.View.Converters
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value == null) return string.Empty;
+            try
+            {
+                if (value == null) return string.Empty;
 
-            double d;
-            if (!double.TryParse(value.ToString(), out d)) return value.ToString();
+                double d;
+                if (!double.TryParse(value.ToString(), out d)) return value.ToString();
 
-            return d == Math.Floor(d) ? d.ToString("F0") : d.ToString("F2");
+                return d == Math.Floor(d) ? d.ToString("F0") : d.ToString("F2");
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(VolumeFormatConverter), ex);
+                return value?.ToString() ?? string.Empty;
+            }
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

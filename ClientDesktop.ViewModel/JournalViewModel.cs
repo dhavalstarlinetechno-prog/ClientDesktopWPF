@@ -1,9 +1,8 @@
-﻿using System.Collections.ObjectModel;
-using System.IO;
+﻿using ClientDesktop.Core.Config; // Assuming AppConfig is here
+using ClientDesktop.Infrastructure.Logger; // Your Logger Namespace
+using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Data;
-using ClientDesktop.Infrastructure.Logger; // Your Logger Namespace
-using ClientDesktop.Core.Config; // Assuming AppConfig is here
 
 namespace ClientDesktop.ViewModel
 {
@@ -17,16 +16,23 @@ namespace ClientDesktop.ViewModel
 
         public JournalViewModel()
         {
-            Journals = new ObservableCollection<JournalLogModel>();
+            try
+            {
+                Journals = new ObservableCollection<JournalLogModel>();
 
-            // Thread safety for cross-thread collection updates
-            BindingOperations.EnableCollectionSynchronization(Journals, _lock);
+                // Thread safety for cross-thread collection updates
+                BindingOperations.EnableCollectionSynchronization(Journals, _lock);
 
-            // 1. Load logs completely in the BACKGROUND without freezing the UI!
-            Task.Run(() => LoadExistingLogsAsync());
+                // 1. Load logs completely in the BACKGROUND without freezing the UI!
+                Task.Run(() => LoadExistingLogsAsync());
 
-            // 2. Listen for new logs
-            FileLogger.OnLogReceived += HandleNewLog;
+                // 2. Listen for new logs
+                FileLogger.OnLogReceived += HandleNewLog;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(JournalViewModel), ex);
+            }
         }
 
         private void LoadExistingLogsAsync()
@@ -76,40 +82,54 @@ namespace ClientDesktop.ViewModel
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error loading logs: {ex.Message}");
+                FileLogger.ApplicationLog(nameof(LoadExistingLogsAsync), ex);
             }
         }
 
         private void HandleNewLog(string time, string source, string message)
         {
-            // UI must be updated on the Main Thread
-            Application.Current.Dispatcher.Invoke(() =>
+            try
             {
-                Journals.Insert(0, new JournalLogModel
+                // UI must be updated on the Main Thread
+                Application.Current.Dispatcher.Invoke(() =>
                 {
-                    Time = time,
-                    Source = source,
-                    Message = message
+                    Journals.Insert(0, new JournalLogModel
+                    {
+                        Time = time,
+                        Source = source,
+                        Message = message
+                    });
                 });
-            });
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(HandleNewLog), ex);
+            }
         }
 
         private void ParseAndAddLine(string line)
         {
-            if (string.IsNullOrWhiteSpace(line)) return;
-
-            // Your FileLogger uses '\t' (Tab) to separate items
-            var parts = line.Split('\t');
-
-            if (parts.Length >= 3)
+            try
             {
-                // Add to the START of the list (Insert 0) so newest is top
-                Journals.Insert(0, new JournalLogModel
+                if (string.IsNullOrWhiteSpace(line)) return;
+
+                // Your FileLogger uses '\t' (Tab) to separate items
+                var parts = line.Split('\t');
+
+                if (parts.Length >= 3)
                 {
-                    Time = parts[0],
-                    Source = parts[1],
-                    Message = parts[2]
-                });
+                    // Add to the START of the list (Insert 0) so newest is top
+                    Journals.Insert(0, new JournalLogModel
+                    {
+                        Time = parts[0],
+                        Source = parts[1],
+                        Message = parts[2]
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(ParseAndAddLine), ex);
             }
         }
     }
@@ -117,7 +137,7 @@ namespace ClientDesktop.ViewModel
     public class JournalLogModel
     {
         public string Time { get; set; }
-        public string Source { get; set; } 
-        public string Message { get; set; } 
+        public string Source { get; set; }
+        public string Message { get; set; }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using ClientDesktop.Core.Events;
 using ClientDesktop.Core.Models;
+using ClientDesktop.Infrastructure.Logger;
 using CommunityToolkit.Mvvm.Messaging;
 using System.Net.NetworkInformation;
 
@@ -40,12 +41,26 @@ namespace ClientDesktop.Infrastructure.Services
         /// </summary>
         public SessionService()
         {
-            IsInternetAvailable = NetworkInterface.GetIsNetworkAvailable();
-
-            WeakReferenceMessenger.Default.Register<NetworkStateEvent>(this, (recipient, message) =>
+            try
             {
-                IsInternetAvailable = message.IsConnected;
-            });
+                IsInternetAvailable = NetworkInterface.GetIsNetworkAvailable();
+
+                WeakReferenceMessenger.Default.Register<NetworkStateEvent>(this, (recipient, message) =>
+                {
+                    try
+                    {
+                        IsInternetAvailable = message.IsConnected;
+                    }
+                    catch (Exception ex)
+                    {
+                        FileLogger.ApplicationLog("NetworkStateEvent_Callback", ex);
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(SessionService), ex);
+            }
         }
 
         #endregion
@@ -57,13 +72,20 @@ namespace ClientDesktop.Infrastructure.Services
         /// </summary>
         public void SetSession(string token, string userId, string username, string licenseId, DateTime? expiration, string password)
         {
-            Token = token;
-            UserId = userId;
-            Username = username;
-            LicenseId = licenseId;
-            Expiration = expiration;
-            Password = password;
-            PrimaryDomain = ServerListData?.FirstOrDefault(w => w.licenseId.ToString() == licenseId)?.primaryDomain ?? string.Empty;
+            try
+            {
+                Token = token;
+                UserId = userId;
+                Username = username;
+                LicenseId = licenseId;
+                Expiration = expiration;
+                Password = password;
+                PrimaryDomain = ServerListData?.FirstOrDefault(w => w.licenseId.ToString() == licenseId)?.primaryDomain ?? string.Empty;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(SetSession), ex);
+            }
         }
 
         /// <summary>
@@ -71,7 +93,14 @@ namespace ClientDesktop.Infrastructure.Services
         /// </summary>
         public void SetServerList(List<ServerList> list)
         {
-            ServerListData = list;
+            try
+            {
+                ServerListData = list;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(SetServerList), ex);
+            }
         }
 
         /// <summary>
@@ -79,10 +108,16 @@ namespace ClientDesktop.Infrastructure.Services
         /// </summary>
         public void SetClientList(List<ClientDetails> clients)
         {
-            ClientListData = clients;
+            try
+            {
+                ClientListData = clients;
 
-            CurrentClient = ClientListData?
-        .FirstOrDefault(x => x.ClientId == UserId);
+                CurrentClient = ClientListData?.FirstOrDefault(x => x.ClientId == UserId);
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(SetClientList), ex);
+            }
         }
 
         /// <summary>
@@ -90,10 +125,17 @@ namespace ClientDesktop.Infrastructure.Services
         /// </summary>
         public void ClearSession()
         {
-            Token = null;
-            Username = null;
-            Expiration = null;
-            PrimaryDomain = null;
+            try
+            {
+                Token = null;
+                Username = null;
+                Expiration = null;
+                PrimaryDomain = null;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(ClearSession), ex);
+            }
         }
 
         #endregion

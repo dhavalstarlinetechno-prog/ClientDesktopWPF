@@ -1,5 +1,5 @@
 ﻿using ClientDesktop.Core.Models;
-using ClientDesktop.View.Disclaimer;
+using ClientDesktop.Infrastructure.Logger;
 using ClientDesktop.ViewModel;
 using System.Windows;
 using System.Windows.Controls;
@@ -28,7 +28,14 @@ namespace ClientDesktop.Main.Login
         /// </summary>
         public LoginPage()
         {
-            InitializeComponent();
+            try
+            {
+                InitializeComponent();
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(LoginPage), ex);
+            }
         }
 
         #endregion
@@ -40,26 +47,33 @@ namespace ClientDesktop.Main.Login
         /// </summary>
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
-            if (DataContext is LoginPageViewModel vm)
+            try
             {
-                if (!string.IsNullOrEmpty(vm.Password) && txtPassword.Password != vm.Password)
+                if (DataContext is LoginPageViewModel vm)
                 {
-                    txtPassword.Password = vm.Password;
+                    if (!string.IsNullOrEmpty(vm.Password) && txtPassword.Password != vm.Password)
+                    {
+                        txtPassword.Password = vm.Password;
+                    }
+
+                    vm.PropertyChanged += (s, args) =>
+                    {
+                        if (args.PropertyName == nameof(LoginPageViewModel.Password))
+                        {
+                            if (txtPassword.Password != vm.Password)
+                            {
+                                txtPassword.Password = vm.Password;
+                            }
+                        }
+                    };
                 }
 
-                vm.PropertyChanged += (s, args) =>
-                {
-                    if (args.PropertyName == nameof(LoginPageViewModel.Password))
-                    {
-                        if (txtPassword.Password != vm.Password)
-                        {
-                            txtPassword.Password = vm.Password;
-                        }
-                    }
-                };
+                cmbServerName.Focus();
             }
-
-            cmbServerName.Focus();
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(UserControl_Loaded), ex);
+            }
         }
 
         /// <summary>
@@ -67,12 +81,19 @@ namespace ClientDesktop.Main.Login
         /// </summary>
         private void TxtPassword_PasswordChanged(object sender, RoutedEventArgs e)
         {
-            if (DataContext is LoginPageViewModel vm)
+            try
             {
-                if (vm.Password != txtPassword.Password)
+                if (DataContext is LoginPageViewModel vm)
                 {
-                    vm.Password = txtPassword.Password;
+                    if (vm.Password != txtPassword.Password)
+                    {
+                        vm.Password = txtPassword.Password;
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(TxtPassword_PasswordChanged), ex);
             }
         }
 
@@ -81,23 +102,30 @@ namespace ClientDesktop.Main.Login
         /// </summary>
         private void BtnEye_Click(object sender, RoutedEventArgs e)
         {
-            _isPasswordVisible = !_isPasswordVisible;
+            try
+            {
+                _isPasswordVisible = !_isPasswordVisible;
 
-            if (_isPasswordVisible)
-            {
-                txtPasswordVisible.Text = txtPassword.Password;
-                txtPasswordVisible.Visibility = Visibility.Visible;
-                txtPassword.Visibility = Visibility.Collapsed;
-                pathEyeClosed.Visibility = Visibility.Collapsed;
-                pathEyeOpen.Visibility = Visibility.Visible;
+                if (_isPasswordVisible)
+                {
+                    txtPasswordVisible.Text = txtPassword.Password;
+                    txtPasswordVisible.Visibility = Visibility.Visible;
+                    txtPassword.Visibility = Visibility.Collapsed;
+                    pathEyeClosed.Visibility = Visibility.Collapsed;
+                    pathEyeOpen.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    txtPassword.Password = txtPasswordVisible.Text;
+                    txtPassword.Visibility = Visibility.Visible;
+                    txtPasswordVisible.Visibility = Visibility.Collapsed;
+                    pathEyeClosed.Visibility = Visibility.Visible;
+                    pathEyeOpen.Visibility = Visibility.Collapsed;
+                }
             }
-            else
+            catch (Exception ex)
             {
-                txtPassword.Password = txtPasswordVisible.Text;
-                txtPassword.Visibility = Visibility.Visible;
-                txtPasswordVisible.Visibility = Visibility.Collapsed;
-                pathEyeClosed.Visibility = Visibility.Visible;
-                pathEyeOpen.Visibility = Visibility.Collapsed;
+                FileLogger.ApplicationLog(nameof(BtnEye_Click), ex);
             }
         }
 
@@ -200,6 +228,10 @@ namespace ClientDesktop.Main.Login
                     _isInternalChange = false;
                 }
             }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(CmbServerName_TextChanged), ex);
+            }
             finally
             {
                 _isUpdating = false;
@@ -211,10 +243,17 @@ namespace ClientDesktop.Main.Login
         /// </summary>
         private void CmbServerName_DropDownOpened(object sender, EventArgs e)
         {
-            var txt = cmbServerName.Text.Trim();
-            if (txt.Length < Threshold)
+            try
             {
-                cmbServerName.IsDropDownOpen = false;
+                var txt = cmbServerName.Text.Trim();
+                if (txt.Length < Threshold)
+                {
+                    cmbServerName.IsDropDownOpen = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(CmbServerName_DropDownOpened), ex);
             }
         }
 
@@ -225,21 +264,28 @@ namespace ClientDesktop.Main.Login
         {
             if (_isUpdating || _isInternalChange) return;
 
-            if (cmbServerName.SelectedItem is ServerList sel)
+            try
             {
-                _isInternalChange = true;
-
-                cmbServerName.Text = sel.companyName ?? string.Empty;
-                var textBox = cmbServerName.Template.FindName("PART_EditableTextBox", cmbServerName) as TextBox;
-
-                if (textBox != null)
+                if (cmbServerName.SelectedItem is ServerList sel)
                 {
-                    textBox.Select(cmbServerName.Text.Length, 0);
+                    _isInternalChange = true;
+
+                    cmbServerName.Text = sel.companyName ?? string.Empty;
+                    var textBox = cmbServerName.Template.FindName("PART_EditableTextBox", cmbServerName) as TextBox;
+
+                    if (textBox != null)
+                    {
+                        textBox.Select(cmbServerName.Text.Length, 0);
+                    }
+
+                    cmbServerName.IsDropDownOpen = false;
+
+                    _isInternalChange = false;
                 }
-
-                cmbServerName.IsDropDownOpen = false;
-
-                _isInternalChange = false;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(CmbServerName_SelectionChanged), ex);
             }
         }
 
@@ -248,17 +294,24 @@ namespace ClientDesktop.Main.Login
         /// </summary>
         private void CmbServerName_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Escape)
+            try
             {
-                var vm = this.DataContext as LoginPageViewModel;
-                if (vm != null)
+                if (e.Key == Key.Escape)
                 {
-                    vm.FilteredServers.Clear();
-                    cmbServerName.Text = string.Empty;
-                    cmbServerName.IsDropDownOpen = false;
-                    cmbServerName.SelectedIndex = -1;
+                    var vm = this.DataContext as LoginPageViewModel;
+                    if (vm != null)
+                    {
+                        vm.FilteredServers.Clear();
+                        cmbServerName.Text = string.Empty;
+                        cmbServerName.IsDropDownOpen = false;
+                        cmbServerName.SelectedIndex = -1;
+                    }
+                    e.Handled = true;
                 }
-                e.Handled = true;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(CmbServerName_KeyDown), ex);
             }
         }
 
@@ -271,20 +324,28 @@ namespace ClientDesktop.Main.Login
         /// </summary>
         private List<ServerList> Filter(string input)
         {
-            var vm = this.DataContext as LoginPageViewModel;
-            if (vm == null || vm.AllServers == null) return new List<ServerList>();
+            try
+            {
+                var vm = this.DataContext as LoginPageViewModel;
+                if (vm == null || vm.AllServers == null) return new List<ServerList>();
 
-            if (string.IsNullOrWhiteSpace(input)) return new List<ServerList>();
+                if (string.IsNullOrWhiteSpace(input)) return new List<ServerList>();
 
-            input = input.Trim();
+                input = input.Trim();
 
-            if (input.Length < Threshold) return new List<ServerList>();
+                if (input.Length < Threshold) return new List<ServerList>();
 
-            return vm.AllServers
-                .Where(s => (s.companyName ?? string.Empty)
-                    .IndexOf(input, StringComparison.OrdinalIgnoreCase) >= 0)
-                .Take(20)
-                .ToList();
+                return vm.AllServers
+                    .Where(s => (s.companyName ?? string.Empty)
+                        .IndexOf(input, StringComparison.OrdinalIgnoreCase) >= 0)
+                    .Take(20)
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(Filter), ex);
+                return new List<ServerList>();
+            }
         }
 
         #endregion

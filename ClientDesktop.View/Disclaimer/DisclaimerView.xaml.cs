@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using ClientDesktop.Infrastructure.Logger;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
@@ -11,7 +12,14 @@ namespace ClientDesktop.View.Disclaimer
     {
         public DisclaimerView()
         {
-            InitializeComponent();
+            try
+            {
+                InitializeComponent();
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(DisclaimerView), ex);
+            }
         }
 
         /// <summary>
@@ -24,14 +32,20 @@ namespace ClientDesktop.View.Disclaimer
         /// <param name="e">The event data containing information about the mouse button state and position.</param>
         private void Header_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            // Jab left mouse button daba ho, tab drag logic execute karo
-            if (e.LeftButton == MouseButtonState.Pressed)
+            try
             {
-                var window = Window.GetWindow(this);
-                if (window != null)
+                if (e.LeftButton == MouseButtonState.Pressed)
                 {
-                    window.DragMove();
+                    var window = Window.GetWindow(this);
+                    if (window != null)
+                    {
+                        window.DragMove();
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(Header_MouseLeftButtonDown), ex);
             }
         }
     }

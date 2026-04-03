@@ -27,10 +27,17 @@ namespace ClientDesktop.Infrastructure.Services
         /// </summary>
         public AuthService(IApiService apiService, SessionService sessionService)
         {
-            _loginRepo = new FileRepository<List<LoginInfo>>();
-            _serverRepo = new FileRepository<List<ServerList>>();
-            _apiService = apiService;
-            _sessionService = sessionService;
+            try
+            {
+                _loginRepo = new FileRepository<List<LoginInfo>>();
+                _serverRepo = new FileRepository<List<ServerList>>();
+                _apiService = apiService;
+                _sessionService = sessionService;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(AuthService), ex);
+            }
         }
 
         #endregion
@@ -42,19 +49,19 @@ namespace ClientDesktop.Infrastructure.Services
         /// </summary>
         public async Task<List<ServerList>> GetServerListAsync()
         {
-            string folderName = AESHelper.ToBase64UrlSafe("Servers");
-            string fileName = AESHelper.ToBase64UrlSafe("ServerList");
-
-            string relativePath = Path.Combine(folderName, fileName);
-
-            var cachedList = _serverRepo.Load(relativePath);
-            if (cachedList != null && cachedList.Count > 0)
-            {
-                return cachedList;
-            }
-
             try
             {
+                string folderName = AESHelper.ToBase64UrlSafe("Servers");
+                string fileName = AESHelper.ToBase64UrlSafe("ServerList");
+
+                string relativePath = Path.Combine(folderName, fileName);
+
+                var cachedList = _serverRepo.Load(relativePath);
+                if (cachedList != null && cachedList.Count > 0)
+                {
+                    return cachedList;
+                }
+
                 var response = await _apiService.GetAsync<ServerListResponse>(AppConfig.ServerListURL);
                 if (response?.data?.licenseDetail != null)
                 {
@@ -62,9 +69,10 @@ namespace ClientDesktop.Infrastructure.Services
                     return response.data.licenseDetail;
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Ignore API exceptions to safely return an empty list below.
+                // Safely log API or IO exceptions instead of ignoring them
+                FileLogger.ApplicationLog(nameof(GetServerListAsync), ex);
             }
 
             return new List<ServerList>();
@@ -78,11 +86,11 @@ namespace ClientDesktop.Infrastructure.Services
             try
             {
                 var formData = new Dictionary<string, string>
-            {
-                { "username", user },
-                { "password", pass },
-                { "licenseId", licenseId }
-            };
+                {
+                    { "username", user },
+                    { "password", pass },
+                    { "licenseId", licenseId }
+                };
 
                 string url = CommonHelper.ToReplaceUrl(AppConfig.AuthURL, _sessionService.PrimaryDomain);
 
@@ -113,12 +121,12 @@ namespace ClientDesktop.Infrastructure.Services
                         _sessionService.IsPasswordReadOnly = profileResult.data.isreadonlypassword;
                     }
 
-                    FileLogger.Log("Network", $"User '{user}' Authorized Successfully.");
                     return (true, "Success");
                 }
 
                 string errorMessage = result?.successMessage ?? ((result?.exception as Newtonsoft.Json.Linq.JContainer)?.Last as Newtonsoft.Json.Linq.JProperty)?.Value?.ToString() ?? "Login Failed";
 
+                FileLogger.ApplicationLog(nameof(LoginAsync), $"Login failed for user '{user}': {errorMessage}");
                 return (false, errorMessage);
             }
             catch (Exception ex)
@@ -138,8 +146,9 @@ namespace ClientDesktop.Infrastructure.Services
                 string url = CommonHelper.ToReplaceUrl(AppConfig.AuthURL, _sessionService.PrimaryDomain);
                 return await _apiService.GetAsync<AuthResponseObj>(url);
             }
-            catch
+            catch (Exception ex)
             {
+                FileLogger.ApplicationLog(nameof(GetUserProfileAsync), ex);
                 return null;
             }
         }
@@ -149,43 +158,50 @@ namespace ClientDesktop.Infrastructure.Services
         /// </summary>
         public void SaveLoginHistory(string user, string pass, string licenseId, bool isRemember)
         {
-            string fileName = AESHelper.ToBase64UrlSafe("LoginData");
-
-            var list = _loginRepo.Load(fileName) ?? new List<LoginInfo>();
-
-            var existingUser = list.FirstOrDefault(u => u.UserId == user && u.LicenseId == licenseId);
-
-            if (existingUser != null)
+            try
             {
-                existingUser.Username = _sessionService.Username;
-                existingUser.Expiration = _sessionService.Expiration;
-                existingUser.ServerListData = _sessionService.ServerListData;
-                existingUser.Password = isRemember ? pass : string.Empty;
-                existingUser.LastLogin = true;
-            }
-            else
-            {
-                list.Add(new LoginInfo
+                string fileName = AESHelper.ToBase64UrlSafe("LoginData");
+
+                var list = _loginRepo.Load(fileName) ?? new List<LoginInfo>();
+
+                var existingUser = list.FirstOrDefault(u => u.UserId == user && u.LicenseId == licenseId);
+
+                if (existingUser != null)
                 {
-                    UserId = user,
-                    Username = _sessionService.Username,
-                    LicenseId = licenseId,
-                    Expiration = _sessionService.Expiration,
-                    ServerListData = _sessionService.ServerListData,
-                    Password = isRemember ? pass : string.Empty,
-                    LastLogin = true
-                });
-            }
-
-            foreach (var u in list)
-            {
-                if (u.UserId != user || u.LicenseId != licenseId)
-                {
-                    u.LastLogin = false;
+                    existingUser.Username = _sessionService.Username;
+                    existingUser.Expiration = _sessionService.Expiration;
+                    existingUser.ServerListData = _sessionService.ServerListData;
+                    existingUser.Password = isRemember ? pass : string.Empty;
+                    existingUser.LastLogin = true;
                 }
-            }
+                else
+                {
+                    list.Add(new LoginInfo
+                    {
+                        UserId = user,
+                        Username = _sessionService.Username,
+                        LicenseId = licenseId,
+                        Expiration = _sessionService.Expiration,
+                        ServerListData = _sessionService.ServerListData,
+                        Password = isRemember ? pass : string.Empty,
+                        LastLogin = true
+                    });
+                }
 
-            _loginRepo.Save(fileName, list);
+                foreach (var u in list)
+                {
+                    if (u.UserId != user || u.LicenseId != licenseId)
+                    {
+                        u.LastLogin = false;
+                    }
+                }
+
+                _loginRepo.Save(fileName, list);
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(SaveLoginHistory), ex);
+            }
         }
 
         /// <summary>
@@ -193,8 +209,16 @@ namespace ClientDesktop.Infrastructure.Services
         /// </summary>
         public List<LoginInfo> GetLoginHistory()
         {
-            string fileName = AESHelper.ToBase64UrlSafe("LoginData");
-            return _loginRepo.Load(fileName) ?? new List<LoginInfo>();
+            try
+            {
+                string fileName = AESHelper.ToBase64UrlSafe("LoginData");
+                return _loginRepo.Load(fileName) ?? new List<LoginInfo>();
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(GetLoginHistory), ex);
+                return new List<LoginInfo>();
+            }
         }
 
         #endregion

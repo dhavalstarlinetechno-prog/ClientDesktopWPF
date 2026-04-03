@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using ClientDesktop.Core.Config;
+﻿using ClientDesktop.Core.Config;
 using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Infrastructure.Helpers;
+using ClientDesktop.Infrastructure.Logger;
 using Newtonsoft.Json;
 
 namespace ClientDesktop.Infrastructure.Services
@@ -26,10 +24,17 @@ namespace ClientDesktop.Infrastructure.Services
         /// </summary>
         public FileRepository()
         {
-            _baseFolder = AppConfig.AppDataPath;
-            if (!Directory.Exists(_baseFolder))
+            try
             {
-                Directory.CreateDirectory(_baseFolder);
+                _baseFolder = AppConfig.AppDataPath;
+                if (!Directory.Exists(_baseFolder))
+                {
+                    Directory.CreateDirectory(_baseFolder);
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(FileRepository<T>), ex);
             }
         }
 
@@ -75,8 +80,9 @@ namespace ClientDesktop.Infrastructure.Services
                                 dataDictionary = existingDict;
                             }
                         }
-                        catch
+                        catch (Exception ex)
                         {
+                            FileLogger.ApplicationLog($"{nameof(Save)}_Deserialization", ex);
                             // Ignore deserialization errors to start fresh
                         }
                     }
@@ -90,7 +96,7 @@ namespace ClientDesktop.Infrastructure.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Save Error: " + ex.Message);
+                FileLogger.ApplicationLog(nameof(Save), ex);
             }
         }
 
@@ -123,8 +129,9 @@ namespace ClientDesktop.Infrastructure.Services
 
                 return default;
             }
-            catch
+            catch (Exception ex)
             {
+                FileLogger.ApplicationLog(nameof(Load), ex);
                 return default;
             }
         }

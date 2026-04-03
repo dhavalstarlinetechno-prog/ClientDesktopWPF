@@ -3,12 +3,7 @@ using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Helpers;
 using ClientDesktop.Infrastructure.Logger;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace ClientDesktop.Infrastructure.Services
 {
@@ -25,9 +20,16 @@ namespace ClientDesktop.Infrastructure.Services
         /// <param name="sessionService">Provides session context (userId, domain, licenseId).</param>
         public TradeService(IApiService apiService, SessionService sessionService)
         {
-            _apiService = apiService;
-            _sessionService = sessionService;
-            _marketWatchRepo = new FileRepository<MarketWatchData>();
+            try
+            {
+                _apiService = apiService;
+                _sessionService = sessionService;
+                _marketWatchRepo = new FileRepository<MarketWatchData>();
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(TradeService), ex);
+            }
         }
 
         /// <inheritdoc/>
@@ -44,7 +46,7 @@ namespace ClientDesktop.Infrastructure.Services
             }
             catch (Exception ex)
             {
-                FileLogger.Log(nameof(TradeService), $"GetMarketWatchDataAsync error: {ex.Message}");
+                FileLogger.ApplicationLog(nameof(GetMarketWatchDataAsync), ex);
                 return new MarketWatchData();
             }
         }
@@ -68,6 +70,7 @@ namespace ClientDesktop.Infrastructure.Services
             }
             catch (Exception ex)
             {
+                FileLogger.ApplicationLog(nameof(GetSymbolDataAsync), ex);
                 return (false, ex.Message, null);
             }
         }
@@ -121,7 +124,7 @@ namespace ClientDesktop.Infrastructure.Services
             }
             catch (Exception ex)
             {
-                FileLogger.Log(nameof(TradeService), $"PlaceOrModifyOrderAsync error: {ex.Message}");
+                FileLogger.ApplicationLog(nameof(PlaceOrModifyOrderAsync), ex);
                 return (false, ex.Message, null);
             }
         }

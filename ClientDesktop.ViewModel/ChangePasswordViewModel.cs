@@ -100,7 +100,7 @@ namespace ClientDesktop.ViewModel
 
             UserName = _sessionService.UserId;
 
-            UpdateCommand = new AsyncRelayCommand(async => ExecuteUpdateAsync());
+            UpdateCommand = new AsyncRelayCommand(async _ => await ExecuteUpdateAsync());
         }
 
         #endregion
@@ -112,33 +112,40 @@ namespace ClientDesktop.ViewModel
         /// </summary>
         private void ValidateAll()
         {
-            // 1. Current Password Validation
-            IsCurrentValidationVisible = !string.IsNullOrEmpty(CurrentPassword);
-            IsCurrentPasswordValid = string.Equals(CurrentPassword, _sessionService.Password);
-
-            // New password box typing is enabled immediately as soon as current password has some chars
-            IsNewPasswordEnabled = !string.IsNullOrEmpty(CurrentPassword);
-
-            // 2. New Password Validation
-            IsValidationVisible = !string.IsNullOrEmpty(NewPassword);
-            HasDigit = !string.IsNullOrEmpty(NewPassword) && NewPassword.Any(char.IsDigit);
-            HasAlphabet = !string.IsNullOrEmpty(NewPassword) && NewPassword.Any(char.IsLetter);
-            HasMinLength = !string.IsNullOrEmpty(NewPassword) && NewPassword.Length >= 6;
-            IsNotOldPassword = !string.IsNullOrEmpty(NewPassword) && NewPassword != CurrentPassword;
-
-            // Confirm password block opens only if ALL new password rules are green
-            IsConfirmPasswordEnabled = HasDigit && HasAlphabet && HasMinLength && IsNotOldPassword;
-
-            if (!IsConfirmPasswordEnabled)
+            try
             {
-                ConfirmPassword = string.Empty; // Reset confirm field if new password becomes invalid
+                // 1. Current Password Validation
+                IsCurrentValidationVisible = !string.IsNullOrEmpty(CurrentPassword);
+                IsCurrentPasswordValid = string.Equals(CurrentPassword, _sessionService.Password);
+
+                // New password box typing is enabled immediately as soon as current password has some chars
+                IsNewPasswordEnabled = !string.IsNullOrEmpty(CurrentPassword);
+
+                // 2. New Password Validation
+                IsValidationVisible = !string.IsNullOrEmpty(NewPassword);
+                HasDigit = !string.IsNullOrEmpty(NewPassword) && NewPassword.Any(char.IsDigit);
+                HasAlphabet = !string.IsNullOrEmpty(NewPassword) && NewPassword.Any(char.IsLetter);
+                HasMinLength = !string.IsNullOrEmpty(NewPassword) && NewPassword.Length >= 6;
+                IsNotOldPassword = !string.IsNullOrEmpty(NewPassword) && NewPassword != CurrentPassword;
+
+                // Confirm password block opens only if ALL new password rules are green
+                IsConfirmPasswordEnabled = HasDigit && HasAlphabet && HasMinLength && IsNotOldPassword;
+
+                if (!IsConfirmPasswordEnabled)
+                {
+                    ConfirmPassword = string.Empty; // Reset confirm field if new password becomes invalid
+                }
+
+                // 3. Confirm Password Validation
+                IsConfirmValidationVisible = !string.IsNullOrEmpty(ConfirmPassword);
+                PasswordsMatch = !string.IsNullOrEmpty(ConfirmPassword) && (NewPassword == ConfirmPassword);
+
+                IsUpdateEnabled = IsCurrentPasswordValid && IsConfirmPasswordEnabled && PasswordsMatch;
             }
-
-            // 3. Confirm Password Validation
-            IsConfirmValidationVisible = !string.IsNullOrEmpty(ConfirmPassword);
-            PasswordsMatch = !string.IsNullOrEmpty(ConfirmPassword) && (NewPassword == ConfirmPassword);
-
-            IsUpdateEnabled = IsCurrentPasswordValid && IsConfirmPasswordEnabled && PasswordsMatch;
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(ValidateAll), ex);
+            }
         }
 
         /// <summary>
@@ -155,12 +162,12 @@ namespace ClientDesktop.ViewModel
 
                 if (success)
                 {
-                    FileLogger.Log("Network", $"User '{UserName}' password changed successfully.");
-                    CloseAction?.Invoke(); 
+                    FileLogger.Log("Auth", $"Password updated successfully for user '{UserName}'.");
+                    CloseAction?.Invoke();
                 }
                 else
                 {
-                    FileLogger.Log("Network", errorMsg);
+                    FileLogger.Log("Auth", $"Password update failed: {errorMsg}");
                 }
             }
             catch (Exception ex)

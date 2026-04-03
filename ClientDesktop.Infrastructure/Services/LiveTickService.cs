@@ -1,4 +1,5 @@
 ﻿using ClientDesktop.Core.Models;
+using ClientDesktop.Infrastructure.Logger;
 using ClientDesktop.Infrastructure.Realtime;
 using Microsoft.AspNetCore.SignalR.Client;
 using System.Collections.Concurrent;
@@ -30,23 +31,30 @@ namespace ClientDesktop.Infrastructure.Services
         /// </summary>
         public async Task InitializeAndStartAsync(string signalRUrl)
         {
-            if (_signalR != null)
+            try
             {
-                await _signalR.StopAsync();
-                await _signalR.DisposeAsync();
-                _signalR.OnMessageReceived -= HandleTick;
-                _signalR.OnReconnected -= SignalR_OnReconnected;
+                if (_signalR != null)
+                {
+                    await _signalR.StopAsync();
+                    await _signalR.DisposeAsync();
+                    _signalR.OnMessageReceived -= HandleTick;
+                    _signalR.OnReconnected -= SignalR_OnReconnected;
+                }
+
+                _signalR = new SignalRManager(signalRUrl);
+                _signalR.OnMessageReceived += HandleTick;
+                _signalR.OnReconnected += SignalR_OnReconnected;
+
+                await _signalR.StartAsync();
+
+                if (_signalR.ConnectionState == HubConnectionState.Connected)
+                {
+                    OnConnected?.Invoke();
+                }
             }
-
-            _signalR = new SignalRManager(signalRUrl);
-            _signalR.OnMessageReceived += HandleTick;
-            _signalR.OnReconnected += SignalR_OnReconnected;
-
-            await _signalR.StartAsync();
-
-            if (_signalR.ConnectionState == HubConnectionState.Connected)
+            catch (Exception ex)
             {
-                OnConnected?.Invoke();
+                FileLogger.ApplicationLog(nameof(InitializeAndStartAsync), ex);
             }
         }
 
@@ -55,19 +63,27 @@ namespace ClientDesktop.Infrastructure.Services
         /// </summary>
         public async Task<bool> SubscribeSymbolAsync(string symbolName)
         {
-            if (string.IsNullOrWhiteSpace(symbolName) || _signalR == null) return false;
-
-            if (_signalR.ConnectionState != HubConnectionState.Connected) return false;
-
-            _subscriptions.AddOrUpdate(symbolName, 1, (key, count) => count + 1);
-
-            if (_subscriptions[symbolName] == 1)
+            try
             {
-                await _signalR.SafeInvokeAsync("GetLastTickBySymbol", symbolName);
-                await _signalR.SafeInvokeAsync("AddToGroup", symbolName);
-            }
+                if (string.IsNullOrWhiteSpace(symbolName) || _signalR == null) return false;
 
-            return true;
+                if (_signalR.ConnectionState != HubConnectionState.Connected) return false;
+
+                _subscriptions.AddOrUpdate(symbolName, 1, (key, count) => count + 1);
+
+                if (_subscriptions[symbolName] == 1)
+                {
+                    await _signalR.SafeInvokeAsync("GetLastTickBySymbol", symbolName);
+                    await _signalR.SafeInvokeAsync("AddToGroup", symbolName);
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(SubscribeSymbolAsync), ex);
+                return false;
+            }
         }
 
         /// <summary>
@@ -75,20 +91,28 @@ namespace ClientDesktop.Infrastructure.Services
         /// </summary>
         public async Task<bool> UnsubscribeSymbolAsync(string symbolName)
         {
-            if (string.IsNullOrWhiteSpace(symbolName) || _signalR == null) return false;
-
-            if (_subscriptions.ContainsKey(symbolName))
+            try
             {
-                _subscriptions[symbolName]--;
+                if (string.IsNullOrWhiteSpace(symbolName) || _signalR == null) return false;
 
-                if (_subscriptions[symbolName] <= 0)
+                if (_subscriptions.ContainsKey(symbolName))
                 {
-                    _subscriptions.TryRemove(symbolName, out _);
-                    await _signalR.SafeInvokeAsync("RemoveFromGroup", symbolName);
-                }
-            }
+                    _subscriptions[symbolName]--;
 
-            return true;
+                    if (_subscriptions[symbolName] <= 0)
+                    {
+                        _subscriptions.TryRemove(symbolName, out _);
+                        await _signalR.SafeInvokeAsync("RemoveFromGroup", symbolName);
+                    }
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(UnsubscribeSymbolAsync), ex);
+                return false;
+            }
         }
 
         /// <summary>
@@ -96,18 +120,25 @@ namespace ClientDesktop.Infrastructure.Services
         /// </summary>
         public async Task StopConnectionAsync()
         {
-            if (_signalR != null)
+            try
             {
-                _signalR.OnMessageReceived -= HandleTick;
-                _signalR.OnReconnected -= SignalR_OnReconnected;
+                if (_signalR != null)
+                {
+                    _signalR.OnMessageReceived -= HandleTick;
+                    _signalR.OnReconnected -= SignalR_OnReconnected;
 
-                await _signalR.StopAsync();
-                await _signalR.DisposeAsync();
+                    await _signalR.StopAsync();
+                    await _signalR.DisposeAsync();
 
-                _signalR = null;
+                    _signalR = null;
+                }
+
+                _subscriptions.Clear();
             }
-
-            _subscriptions.Clear();
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(StopConnectionAsync), ex);
+            }
         }
 
         #endregion
@@ -119,29 +150,36 @@ namespace ClientDesktop.Infrastructure.Services
         /// </summary>
         private void HandleTick(string rawData)
         {
-            if (string.IsNullOrEmpty(rawData)) return;
-            var parts = rawData.Split('|');
-            if (parts.Length < 12) return;
-
-            bool TryParseDouble(string val, out double result) =>
-                double.TryParse(val, NumberStyles.Any, CultureInfo.InvariantCulture, out result);
-
-            long.TryParse(parts[7], out var updateTime);
-
-            var tick = new TickData
+            try
             {
-                SymbolName = parts[0],
-                Bid = TryParseDouble(parts[2], out var bid) ? bid : 0,
-                Ask = TryParseDouble(parts[3], out var ask) ? ask : 0,
-                Ltp = TryParseDouble(parts[4], out var ltp) ? ltp : 0,
-                High = TryParseDouble(parts[5], out var high) ? high : 0,
-                Low = TryParseDouble(parts[6], out var low) ? low : 0,
-                Open = TryParseDouble(parts[10], out var open) ? open : 0,
-                PreviousClose = TryParseDouble(parts[11], out var close) ? close : 0,
-                UpdateTime = updateTime
-            };
+                if (string.IsNullOrEmpty(rawData)) return;
+                var parts = rawData.Split('|');
+                if (parts.Length < 12) return;
 
-            OnTickReceived?.Invoke(tick);
+                bool TryParseDouble(string val, out double result) =>
+                    double.TryParse(val, NumberStyles.Any, CultureInfo.InvariantCulture, out result);
+
+                long.TryParse(parts[7], out var updateTime);
+
+                var tick = new TickData
+                {
+                    SymbolName = parts[0],
+                    Bid = TryParseDouble(parts[2], out var bid) ? bid : 0,
+                    Ask = TryParseDouble(parts[3], out var ask) ? ask : 0,
+                    Ltp = TryParseDouble(parts[4], out var ltp) ? ltp : 0,
+                    High = TryParseDouble(parts[5], out var high) ? high : 0,
+                    Low = TryParseDouble(parts[6], out var low) ? low : 0,
+                    Open = TryParseDouble(parts[10], out var open) ? open : 0,
+                    PreviousClose = TryParseDouble(parts[11], out var close) ? close : 0,
+                    UpdateTime = updateTime
+                };
+
+                OnTickReceived?.Invoke(tick);
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(HandleTick), ex);
+            }
         }
 
         /// <summary>
@@ -149,8 +187,15 @@ namespace ClientDesktop.Infrastructure.Services
         /// </summary>
         private void SignalR_OnReconnected()
         {
-            _subscriptions.Clear();
-            OnReconnected?.Invoke();
+            try
+            {
+                _subscriptions.Clear();
+                OnReconnected?.Invoke();
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(SignalR_OnReconnected), ex);
+            }
         }
 
         #endregion

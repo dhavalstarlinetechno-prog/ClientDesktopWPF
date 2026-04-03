@@ -1,7 +1,6 @@
 ﻿using ClientDesktop.Core.Enums;
 using ClientDesktop.Core.Models;
-using System;
-using System.Collections.Generic;
+using ClientDesktop.Infrastructure.Logger;
 
 namespace ClientDesktop.ViewModel
 {
@@ -20,15 +19,22 @@ namespace ClientDesktop.ViewModel
             get => _positionGridRow;
             set
             {
-                if (SetProperty(ref _positionGridRow, value))
+                try
                 {
-                    OnPropertyChanged(nameof(IsSymbolEditable));
-                    if (value != null)
+                    if (SetProperty(ref _positionGridRow, value))
                     {
-                        SelectedSymbol = value.SymbolName;
-                        _ = GetSymbolDataAsync(value.SymbolId);
-                        UpdateCloseButtonCaption();
+                        OnPropertyChanged(nameof(IsSymbolEditable));
+                        if (value != null)
+                        {
+                            SelectedSymbol = value.SymbolName;
+                            _ = GetSymbolDataAsync(value.SymbolId);
+                            UpdateCloseButtonCaption();
+                        }
                     }
+                }
+                catch (Exception ex)
+                {
+                    FileLogger.ApplicationLog(nameof(positionGridRow), ex);
                 }
             }
         }
@@ -44,8 +50,15 @@ namespace ClientDesktop.ViewModel
             get => _originalOrderType;
             set
             {
-                if (SetProperty(ref _originalOrderType, value))
-                    OnPropertyChanged(nameof(IsModifyDeleteMode));
+                try
+                {
+                    if (SetProperty(ref _originalOrderType, value))
+                        OnPropertyChanged(nameof(IsModifyDeleteMode));
+                }
+                catch (Exception ex)
+                {
+                    FileLogger.ApplicationLog(nameof(OriginalOrderType), ex);
+                }
             }
         }
 
@@ -61,18 +74,25 @@ namespace ClientDesktop.ViewModel
             get => _currentOrderType;
             set
             {
-                if (SetProperty(ref _currentOrderType, value))
+                try
                 {
-                    OnPropertyChanged(nameof(IsModifyDeleteMode));
-                    OnPropertyChanged(nameof(LeftActionText));
-                    OnPropertyChanged(nameof(RightActionText));
-                    OnPropertyChanged(nameof(IsLimitActive));
-                    OnPropertyChanged(nameof(IsMarketActive));
-                    OnPropertyChanged(nameof(IsStopLimitActive));
-                    OnPropertyChanged(nameof(SellButtonText));
-                    OnPropertyChanged(nameof(BuyButtonText));
-                    OnPropertyChanged(nameof(RateLabelText));
-                    OnPropertyChanged(nameof(IsExpiryVisible));
+                    if (SetProperty(ref _currentOrderType, value))
+                    {
+                        OnPropertyChanged(nameof(IsModifyDeleteMode));
+                        OnPropertyChanged(nameof(LeftActionText));
+                        OnPropertyChanged(nameof(RightActionText));
+                        OnPropertyChanged(nameof(IsLimitActive));
+                        OnPropertyChanged(nameof(IsMarketActive));
+                        OnPropertyChanged(nameof(IsStopLimitActive));
+                        OnPropertyChanged(nameof(SellButtonText));
+                        OnPropertyChanged(nameof(BuyButtonText));
+                        OnPropertyChanged(nameof(RateLabelText));
+                        OnPropertyChanged(nameof(IsExpiryVisible));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    FileLogger.ApplicationLog(nameof(CurrentOrderTypeEnum), ex);
                 }
             }
         }
@@ -85,12 +105,19 @@ namespace ClientDesktop.ViewModel
             get => _currentWindowModeEnum;
             set
             {
-                if (SetProperty(ref _currentWindowModeEnum, value))
+                try
                 {
-                    OnPropertyChanged(nameof(IsModifyDeleteMode));
-                    OnPropertyChanged(nameof(LeftActionText));
-                    OnPropertyChanged(nameof(RightActionText));
-                    OnPropertyChanged(nameof(IsCloseButtonVisible));
+                    if (SetProperty(ref _currentWindowModeEnum, value))
+                    {
+                        OnPropertyChanged(nameof(IsModifyDeleteMode));
+                        OnPropertyChanged(nameof(LeftActionText));
+                        OnPropertyChanged(nameof(RightActionText));
+                        OnPropertyChanged(nameof(IsCloseButtonVisible));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    FileLogger.ApplicationLog(nameof(CurrentWindowModeEnum), ex);
                 }
             }
         }
@@ -119,18 +146,25 @@ namespace ClientDesktop.ViewModel
             get => _selectedSymbol;
             set
             {
-                if (SetProperty(ref _selectedSymbol, value))
+                try
                 {
-                    if (!string.IsNullOrEmpty(value) && _symbolMap.TryGetValue(value, out var symbolInfo))
+                    if (SetProperty(ref _selectedSymbol, value))
                     {
-                        _currentDigits = symbolInfo.Digits;
-                        _ = GetSymbolDataAsync(symbolInfo.Id);
-                        LiveBid = symbolInfo.SymbolBook?.bid.ToString()
-                                  ?? 0m.ToString("F" + _currentDigits);
-                        LiveAsk = symbolInfo.SymbolBook?.ask.ToString()
-                                  ?? 0m.ToString("F" + _currentDigits);
+                        if (!string.IsNullOrEmpty(value) && _symbolMap != null && _symbolMap.TryGetValue(value, out var symbolInfo))
+                        {
+                            _currentDigits = symbolInfo.Digits;
+                            _ = GetSymbolDataAsync(symbolInfo.Id);
+                            LiveBid = symbolInfo.SymbolBook?.bid.ToString()
+                                      ?? 0m.ToString("F" + _currentDigits);
+                            LiveAsk = symbolInfo.SymbolBook?.ask.ToString()
+                                      ?? 0m.ToString("F" + _currentDigits);
+                        }
+                        _ = ManageLiveTicksAsync(value);
                     }
-                    _ = ManageLiveTicksAsync(value);
+                }
+                catch (Exception ex)
+                {
+                    FileLogger.ApplicationLog(nameof(SelectedSymbol), ex);
                 }
             }
         }
@@ -141,9 +175,16 @@ namespace ClientDesktop.ViewModel
             get => _currentSelectedSymbol;
             set
             {
-                if (SetProperty(ref _currentSelectedSymbol, value))
+                try
                 {
-                    OnPropertyChanged(nameof(IsExpiryVisible));
+                    if (SetProperty(ref _currentSelectedSymbol, value))
+                    {
+                        OnPropertyChanged(nameof(IsExpiryVisible));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    FileLogger.ApplicationLog(nameof(CurrentSelectedSymbol), ex);
                 }
             }
         }
@@ -191,10 +232,17 @@ namespace ClientDesktop.ViewModel
             get => _quantity;
             set
             {
-                if (SetProperty(ref _quantity, value))
+                try
                 {
-                    UpdateCloseButtonCaption();
-                    System.Windows.Input.CommandManager.InvalidateRequerySuggested();
+                    if (SetProperty(ref _quantity, value))
+                    {
+                        UpdateCloseButtonCaption();
+                        System.Windows.Input.CommandManager.InvalidateRequerySuggested();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    FileLogger.ApplicationLog(nameof(Quantity), ex);
                 }
             }
         }
@@ -210,8 +258,15 @@ namespace ClientDesktop.ViewModel
             get => _selectedExpiry;
             set
             {
-                if (SetProperty(ref _selectedExpiry, value))
-                    OnPropertyChanged(nameof(IsSpecificDateVisible));
+                try
+                {
+                    if (SetProperty(ref _selectedExpiry, value))
+                        OnPropertyChanged(nameof(IsSpecificDateVisible));
+                }
+                catch (Exception ex)
+                {
+                    FileLogger.ApplicationLog(nameof(SelectedExpiry), ex);
+                }
             }
         }
 
@@ -385,11 +440,18 @@ namespace ClientDesktop.ViewModel
             get => _isProcessingOrDone;
             set
             {
-                if (SetProperty(ref _isProcessingOrDone, value))
+                try
                 {
-                    OnPropertyChanged(nameof(IsFormEnabled));
-                    OnPropertyChanged(nameof(ShowTradeActions));
-                    OnPropertyChanged(nameof(ShowOkPanel));
+                    if (SetProperty(ref _isProcessingOrDone, value))
+                    {
+                        OnPropertyChanged(nameof(IsFormEnabled));
+                        OnPropertyChanged(nameof(ShowTradeActions));
+                        OnPropertyChanged(nameof(ShowOkPanel));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    FileLogger.ApplicationLog(nameof(IsProcessingOrDone), ex);
                 }
             }
         }

@@ -1,4 +1,5 @@
 ﻿using ClientDesktop.Infrastructure.Logger;
+using System;
 
 namespace ClientDesktop.Infrastructure.Helpers
 {
@@ -12,10 +13,21 @@ namespace ClientDesktop.Infrastructure.Helpers
 
         public static T GetService<T>()
         {
-            if (Current == null)
-                FileLogger.Log("Error", "AppServiceLocator is not initialized. Call AppServiceLocator.Current = provider in App.xaml.cs");
+            try
+            {
+                if (Current == null)
+                {
+                    FileLogger.ApplicationLog(nameof(GetService), "AppServiceLocator is not initialized. Call AppServiceLocator.Current = provider in App.xaml.cs");
+                    return default;
+                }
 
-            return (T)Current.GetService(typeof(T));
+                return (T)Current.GetService(typeof(T));
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(GetService), ex);
+                return default;
+            }
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using ClientDesktop.Infrastructure.Logger;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -16,16 +17,40 @@ namespace ClientDesktop.View.TradeOrder
 
         public OrderWindow()
         {
-            InitializeComponent();
+            try
+            {
+                InitializeComponent();
 
-            Loaded += OnLoaded;
+                Loaded += OnLoaded;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(OrderWindow), ex);
+            }
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
-            if (DataContext is ViewModel.TradeViewModel vm)
+            try
             {
-                vm.CloseAction = () => Window.GetWindow(this)?.Close();
+                if (DataContext is ViewModel.TradeViewModel vm)
+                {
+                    vm.CloseAction = () =>
+                    {
+                        try
+                        {
+                            Window.GetWindow(this)?.Close();
+                        }
+                        catch (Exception ex)
+                        {
+                            FileLogger.ApplicationLog(nameof(OnLoaded) + "_CloseAction", ex);
+                        }
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(OnLoaded), ex);
             }
         }
 
@@ -35,8 +60,15 @@ namespace ClientDesktop.View.TradeOrder
         /// </summary>
         private void UserControl_Unloaded(object sender, RoutedEventArgs e)
         {
-            if (DataContext is ViewModel.TradeViewModel vm)
-                vm.Cleanup();
+            try
+            {
+                if (DataContext is ViewModel.TradeViewModel vm)
+                    vm.Cleanup();
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(UserControl_Unloaded), ex);
+            }
         }
 
         /// <summary>
@@ -45,16 +77,23 @@ namespace ClientDesktop.View.TradeOrder
         /// </summary>
         private void NumberValidationTextBox(object sender, TextCompositionEventArgs e)
         {
-            if (sender is not TextBox textBox) return;
-
-            // Block a second decimal point
-            if (e.Text == "." && textBox.Text.Contains("."))
+            try
             {
-                e.Handled = true;
-                return;
-            }
+                if (sender is not TextBox textBox) return;
 
-            e.Handled = !NumericInputRegex.IsMatch(e.Text);
+                // Block a second decimal point
+                if (e.Text == "." && textBox.Text.Contains("."))
+                {
+                    e.Handled = true;
+                    return;
+                }
+
+                e.Handled = !NumericInputRegex.IsMatch(e.Text);
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(NumberValidationTextBox), ex);
+            }
         }
     }
 }
