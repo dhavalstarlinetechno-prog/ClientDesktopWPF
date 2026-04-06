@@ -26,6 +26,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 
 namespace ClientDesktop.View.Navigation
 {
@@ -34,7 +35,7 @@ namespace ClientDesktop.View.Navigation
         #region Variable
 
         private readonly FeedbackViewModel _viewModel;
-        private readonly SessionService _sessionService;      
+        private readonly SessionService _sessionService;
         Label lblNoData = new Label();
         private string lastSavedRtf = "";
         private Stack<string> undoStack = new Stack<string>();
@@ -43,6 +44,9 @@ namespace ClientDesktop.View.Navigation
         private string ReplayImagePath = string.Empty;
         private readonly IDialogService _dialogService;
         private int _currentFeedbackId = 0;
+        private DispatcherTimer _scrollTimer;
+        private double _scrollTarget;
+        private const double ScrollEasingFactor = 0.15;
 
         #endregion Variable
 
@@ -68,9 +72,55 @@ namespace ClientDesktop.View.Navigation
                     });
                 };
             }
+            InitSmoothScroll();
         }
 
         #endregion Constructor
+
+        #region SmoothScroll
+
+        private void InitSmoothScroll()
+        {
+            _scrollTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(16)
+            };
+
+            _scrollTimer.Tick += (s, e) =>
+            {
+                double current = ReplyPanel.VerticalOffset;
+                double diff = _scrollTarget - current;
+
+                if (Math.Abs(diff) < 0.8)
+                {
+                    ReplyPanel.ScrollToVerticalOffset(_scrollTarget);
+                    _scrollTimer.Stop();
+                }
+                else
+                {
+                    ReplyPanel.ScrollToVerticalOffset(current + diff * ScrollEasingFactor);
+                }
+            };
+            ReplyPanel.PreviewMouseWheel += ReplyPanel_PreviewMouseWheel;
+        }
+        private void ReplyPanel_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            SmoothScrollBy(e.Delta < 0 ? 150 : -150);
+            e.Handled = true;
+        }
+
+        private void SmoothScrollBy(double pixelDelta)
+        {
+            double startFrom = _scrollTimer.IsEnabled ? _scrollTarget : ReplyPanel.VerticalOffset;
+
+            _scrollTarget = Math.Max(0,
+                            Math.Min(ReplyPanel.ScrollableHeight, startFrom + pixelDelta));
+
+            if (!_scrollTimer.IsEnabled)
+                _scrollTimer.Start();
+        }
+
+        #endregion SmoothScroll
 
         #region PanelNavigation
         private void ShowDataGridPanel()
@@ -112,7 +162,7 @@ namespace ClientDesktop.View.Navigation
         {
             try
             {
-                var newListItem = await CreateChatListBoxItemAsync(chatItem);            
+                var newListItem = await CreateChatListBoxItemAsync(chatItem);
                 if (ChatPanel.ItemsSource != null)
                 {
                     var existing = ChatPanel.Items.Cast<object>().ToList();
@@ -133,7 +183,7 @@ namespace ClientDesktop.View.Navigation
             }
         }
         private async Task<ListBoxItem> CreateChatListBoxItemAsync(ChatList chat)
-        {           
+        {
             var outerBorder = new Border
             {
                 Background = Brushes.White,
@@ -147,7 +197,7 @@ namespace ClientDesktop.View.Navigation
             };
 
             var messageLayout = new StackPanel { Orientation = Orientation.Vertical };
-         
+
             var webView = new Microsoft.Web.WebView2.Wpf.WebView2
             {
                 Height = 1,
@@ -155,7 +205,7 @@ namespace ClientDesktop.View.Navigation
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 Margin = new Thickness(0)
             };
-           
+
             var webViewWrapper = new Border
             {
                 Opacity = 0,
@@ -167,23 +217,43 @@ namespace ClientDesktop.View.Navigation
 <html>
 <head>
     <style>
-        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-        html, body {{
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            white-space: pre-wrap;
+        *, *::before, *::after {{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }}
+        html {{
             overflow: hidden;
-            background: white;
             width: 100%;
         }}
-        p {{ margin: 0; padding: 0; word-break: break-word; }}
+        body {{
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden;
+            background: white;
+            width: 100%;                      
+            display: block;
+        }}
+        p {{
+            margin: 0;
+            padding: 0;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            white-space: pre-wrap;
+        }}
     </style>
+    <script>      
+        window.addEventListener('wheel', function(e) {{
+            window.chrome.webview.postMessage('scroll_wheel:' + e.deltaY);
+            e.preventDefault();
+        }}, {{ passive: false }});
+    </script>
 </head>
 <body><p>{chat.feedbackMessage}</p></body>
 </html>";
 
             messageLayout.Children.Add(webViewWrapper);
-            
+
             if (chat.filePath != null && chat.filePath.Count > 0)
             {
                 try
@@ -235,7 +305,7 @@ namespace ClientDesktop.View.Navigation
                 catch { }
             }
 
-           
+
             DateTime msgTime = CommonHelper.ConvertUtcToIst(chat.createdOn);
             messageLayout.Children.Add(new TextBlock
             {
@@ -258,7 +328,7 @@ namespace ClientDesktop.View.Navigation
                 Background = Brushes.Transparent
             };
 
-            
+
             var capturedWebView = webView;
             var capturedWrapper = webViewWrapper;
             var capturedHtml = wrappedHtml;
@@ -274,21 +344,41 @@ namespace ClientDesktop.View.Navigation
                     capturedWebView.CoreWebView2.Settings.IsZoomControlEnabled = false;
                     capturedWebView.CoreWebView2.Settings.AreBrowserAcceleratorKeysEnabled = false;
 
-                    
+                    capturedWebView.CoreWebView2.WebMessageReceived += (wvSender, wvArgs) =>
+                    {
+                        try
+                        {
+                            string msg = wvArgs.TryGetWebMessageAsString();
+                            if (msg != null && msg.StartsWith("scroll_wheel:"))
+                            {
+                                string deltaStr = msg.Substring("scroll_wheel:".Length);
+                                if (double.TryParse(deltaStr, System.Globalization.NumberStyles.Float,
+                                    System.Globalization.CultureInfo.InvariantCulture, out double delta))
+                                {
+                                    Application.Current.Dispatcher.InvokeAsync(() =>
+                                    {
+                                        SmoothScrollBy(delta * 0.5);
+                                    });
+                                }
+                            }
+                        }
+                        catch { }
+                    };
+
                     bool heightSet = false;
 
                     capturedWebView.NavigationCompleted += async (s, navArgs) =>
                     {
-                        
+
                         if (heightSet) return;
                         heightSet = true;
 
                         try
                         {
-                            
+
                             await Task.Delay(200);
 
-                            
+
                             string heightStr = await capturedWebView.CoreWebView2.ExecuteScriptAsync(@"
                                 (function() {
                                     document.body.style.overflow = 'hidden';
@@ -332,13 +422,13 @@ namespace ClientDesktop.View.Navigation
                                         capturedWrapper.Opacity = 1;
                                     });
                                 }
-                            }                        
+                            }
                         }
                         catch
                         {
                             await Application.Current.Dispatcher.InvokeAsync(() =>
                             {
-                                capturedWebView.Height = 40; 
+                                capturedWebView.Height = 40;
                                 capturedWrapper.Opacity = 1;
                             });
                         }
@@ -363,18 +453,18 @@ namespace ClientDesktop.View.Navigation
         private async Task LoadChatPanel(FeedbackData feedback)
         {
             try
-            {               
+            {
                 ChatPanel.ItemsSource = null;
                 ChatPanel.Items.Clear();
 
                 if (feedback?.ChatList == null || feedback.ChatList.Count == 0)
                     return;
-               
+
                 foreach (var chat in feedback.ChatList)
                 {
                     var listItem = await CreateChatListBoxItemAsync(chat);
                     ChatPanel.Items.Add(listItem);
-                }               
+                }
                 await Task.Delay(300);
                 ScrollChatToBottom();
             }
@@ -536,7 +626,7 @@ namespace ClientDesktop.View.Navigation
                 btn.Click += EmojiReplayItem_Click;
                 ReplayeEmojiWrapPanel.Children.Add(btn);
             }
-        }   
+        }
         private void ToggleFormattingForReplay(DependencyProperty property, object value, object normalValue)
         {
             if (TxtReply.Selection.IsEmpty)
@@ -570,8 +660,8 @@ namespace ClientDesktop.View.Navigation
             _ = InitialLoadAsync();
         }
         private async Task InitialLoadAsync()
-        {          
-            await _viewModel.LoadFeedbackAsync();         
+        {
+            await _viewModel.LoadFeedbackAsync();
             await RefreshFeedbackGrid();
         }
         private async void DgvFeedbackRecord_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
@@ -590,7 +680,7 @@ namespace ClientDesktop.View.Navigation
             if (header == "Subject")
             {
                 int feedbackId = selectedRow.FeedbackId;
-                _currentFeedbackId = feedbackId; 
+                _currentFeedbackId = feedbackId;
 
                 await _viewModel.GetFeedbackDetailsAsync(feedbackId);
 
@@ -634,7 +724,7 @@ namespace ClientDesktop.View.Navigation
                     ShowReplyPanel();
                     GroupBoxPanel.Visibility = Visibility.Collapsed;
                 }
-            }            
+            }
         }
 
         #endregion Events — UserControl / Grid
@@ -785,7 +875,7 @@ namespace ClientDesktop.View.Navigation
             }
 
             string html = Rtf.ToHtml(rtfContent);
-            string file = this.ReplayImagePath;          
+            string file = this.ReplayImagePath;
             var result = await _viewModel.SubmitFeedbackReplyAsync(feedbackid, html, file);
 
             GroupBoxPanel.Visibility = Visibility.Collapsed;
@@ -793,13 +883,13 @@ namespace ClientDesktop.View.Navigation
             this.ReplayImagePath = string.Empty;
 
             if (result != null && result.IsSuccess)
-            {              
+            {
                 if (!_viewModel.IsSocketConnected)
                 {
                     await _viewModel.GetFeedbackDetailsAsync(feedbackid);
                     if (_viewModel.SelectedFeedbackDetails != null)
                         await LoadChatPanel(_viewModel.SelectedFeedbackDetails);
-                }               
+                }
             }
             else if (!string.IsNullOrEmpty(_viewModel.ErrorMessage))
             {
