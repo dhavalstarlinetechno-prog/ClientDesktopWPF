@@ -1,6 +1,7 @@
 ﻿using AvalonDock.Layout;
 using AvalonDock.Layout.Serialization;
 using ClientDesktop.Infrastructure.Logger;
+using ClientDesktop.Infrastructure.Services;
 using ClientDesktop.ViewModel;
 using System.IO;
 using System.Windows;
@@ -49,7 +50,10 @@ namespace ClientDesktop.Main
                         }
                         else if (e.PropertyName == nameof(MainWindowViewModel.IsPasswordReadonly))
                         {
-                            MenuNewOrder.Visibility = viewModel.IsPasswordReadonly ? Visibility.Collapsed : Visibility.Visible;
+                            MenuNewOrder.Visibility = (!viewModel.IsPasswordReadonly
+                                                       && viewModel.IsLoggedIn)
+                                ? Visibility.Visible
+                                : Visibility.Collapsed;
                         }
                     }
                     catch (Exception ex)

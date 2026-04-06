@@ -324,18 +324,22 @@ namespace ClientDesktop.ViewModel
                 if (selectedSymbol == null || string.IsNullOrWhiteSpace(selectedSymbol.SymbolName))
                     return;
 
-                _dialogService.ShowDialog<TradeViewModel>(
-                    "New Trade Order",
-                    configureViewModel: vm =>
-                    {
-                        _ = vm.LoadSymbolListAsync();
+                if (_sessionService.IsLoggedIn && _sessionService.IsInternetAvailable)
+                {
+                    _dialogService.ShowDialog<TradeViewModel>(
+                        "New Trade Order",
+                        configureViewModel: vm =>
+                        {
+                            _ = vm.LoadSymbolListAsync();
 
-                        vm.CurrentOrderTypeEnum = EnumTradeOrderType.Market;
-                        vm.CurrentWindowModeEnum = EnumTradeWindowMode.FromMarketWatch;
-                        vm.SelectedSymbol = selectedSymbol.SymbolName;
+                            vm.CurrentOrderTypeEnum = EnumTradeOrderType.Market;
+                            vm.CurrentWindowModeEnum = EnumTradeWindowMode.FromMarketWatch;
+                            vm.SelectedSymbol = selectedSymbol.SymbolName;
 
-                    }
-                );
+                        }
+                    );
+                }
+
             }
             catch (Exception ex)
             {

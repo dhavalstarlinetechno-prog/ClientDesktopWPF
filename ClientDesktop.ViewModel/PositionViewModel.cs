@@ -178,7 +178,13 @@ namespace ClientDesktop.ViewModel
         {
             try
             {
-                Task.Run(() => _positionService.UpdateLocalOrder(updatedOrder, isDeleted));
+                var order = updatedOrder ?? (isDeleted ? new OrderModel { OrderId = orderId } : null);
+
+                if (order == null)
+                    FileLogger.ApplicationLog(nameof(HandleOrderUpdated), new ArgumentNullException(nameof(updatedOrder), "Order cannot be null unless deleting."));
+
+                Task.Run(() => _positionService.UpdateLocalOrder(order, isDeleted));
+
 
                 Application.Current.Dispatcher.InvokeAsync(() =>
                 {
@@ -653,25 +659,29 @@ namespace ClientDesktop.ViewModel
 
             try
             {
-                _dialogService.ShowDialog<TradeViewModel>(
-                        "Trade Order",
-                        configureViewModel: vm =>
-                        {
-                            _ = vm.LoadSymbolListAsync();
+                if (_sessionService.IsInternetAvailable && _sessionService.IsLoggedIn)
+                {
+                    _dialogService.ShowDialog<TradeViewModel>(
+                            "Trade Order",
+                            configureViewModel: vm =>
+                            {
+                                _ = vm.LoadSymbolListAsync();
 
-                            vm.positionGridRow = selectedRow;
-                            vm.CurrentWindowModeEnum = selectedRow.Type == RowType.Position ? EnumTradeWindowMode.FromPosition : EnumTradeWindowMode.FromOrder;
-                            vm.CurrentOrderTypeEnum = selectedRow.IsPosition ? EnumTradeOrderType.Market :
-                                  selectedRow.OrderType?.Contains("Stop", StringComparison.OrdinalIgnoreCase) == true ? EnumTradeOrderType.StopLimit :
-                                  selectedRow.OrderType?.Contains("Limit", StringComparison.OrdinalIgnoreCase) == true ? EnumTradeOrderType.Limit :
-                                  EnumTradeOrderType.Market;
-                            vm.OriginalOrderType = !selectedRow.IsOrder ? null :
-                                  selectedRow.OrderType?.Contains("Stop", StringComparison.OrdinalIgnoreCase) == true ? EnumTradeOrderType.StopLimit :
-                                  selectedRow.OrderType?.Contains("Limit", StringComparison.OrdinalIgnoreCase) == true ? EnumTradeOrderType.Limit :
-                                  null;
-                            vm.LimitRate = selectedRow.AveragePrice?.ToString($"F{selectedRow.SymbolDigit}");
-                        }
-                   );
+                                vm.positionGridRow = selectedRow;
+                                vm.CurrentWindowModeEnum = selectedRow.Type == RowType.Position ? EnumTradeWindowMode.FromPosition : EnumTradeWindowMode.FromOrder;
+                                vm.CurrentOrderTypeEnum = selectedRow.IsPosition ? EnumTradeOrderType.Market :
+                                      selectedRow.OrderType?.Contains("Stop", StringComparison.OrdinalIgnoreCase) == true ? EnumTradeOrderType.StopLimit :
+                                      selectedRow.OrderType?.Contains("Limit", StringComparison.OrdinalIgnoreCase) == true ? EnumTradeOrderType.Limit :
+                                      EnumTradeOrderType.Market;
+                                vm.OriginalOrderType = !selectedRow.IsOrder ? null :
+                                      selectedRow.OrderType?.Contains("Stop", StringComparison.OrdinalIgnoreCase) == true ? EnumTradeOrderType.StopLimit :
+                                      selectedRow.OrderType?.Contains("Limit", StringComparison.OrdinalIgnoreCase) == true ? EnumTradeOrderType.Limit :
+                                      null;
+                                vm.LimitRate = selectedRow.AveragePrice?.ToString($"F{selectedRow.SymbolDigit}");
+                            }
+                       );
+                }
+
             }
             catch (Exception ex)
             {

@@ -1,9 +1,11 @@
 ﻿using ClientDesktop.Core.Config;
+using ClientDesktop.Core.Events;
 using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Helpers;
 using ClientDesktop.Infrastructure.Logger;
 using ClientDesktop.Infrastructure.Services;
+using CommunityToolkit.Mvvm.Messaging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Net.NetworkInformation;
@@ -50,6 +52,7 @@ namespace ClientDesktop.Services
             {
                 _apiService = apiService;
                 _sessionService = sessionService;
+                RegisterMessenger();
             }
             catch (Exception ex)
             {
@@ -109,6 +112,27 @@ namespace ClientDesktop.Services
             {
                 FileLogger.ApplicationLog(nameof(Stop), ex);
             }
+        }
+        private void RegisterMessenger()
+        {
+            WeakReferenceMessenger.Default.Register<UserAuthEvent>(this, async (recipient, message) =>
+            {
+                try
+                {
+                    if (message.IsLoggedIn)
+                    {
+                        Start();
+                    }
+                    else
+                    {
+                        Stop();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    FileLogger.ApplicationLog(nameof(RegisterMessenger), ex);
+                }
+            });
         }
         #endregion
 

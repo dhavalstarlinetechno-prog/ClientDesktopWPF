@@ -162,6 +162,10 @@ namespace ClientDesktop.ViewModel
 
                 if (newType == EnumTradeOrderType.Market)
                     LimitRate = LiveAsk;
+                else if (positionGridRow != null && !positionGridRow.IsFooter)
+                {
+                    LimitRate = positionGridRow.AveragePrice?.ToString($"F{positionGridRow.SymbolDigit}");
+                }
 
                 OnPropertyChanged(nameof(IsCloseButtonVisible));
                 UpdateCloseButtonCaption();
