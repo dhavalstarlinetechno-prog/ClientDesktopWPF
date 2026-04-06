@@ -1,6 +1,7 @@
 ﻿using ClientDesktop.Core.Base;
 using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
+using ClientDesktop.Infrastructure.Logger;
 using ClientDesktop.Infrastructure.Services;
 using System.Collections.ObjectModel;
 
@@ -8,13 +9,13 @@ namespace ClientDesktop.ViewModel
 {
     public class BanScriptViewModel : ViewModelBase, ICloseable
     {
+        #region Variables/Properties
+
         public readonly SessionService _sessionService;
         private readonly BanScriptService _banScriptService;
-
         public ObservableCollection<BanscriptGridRow> GridRows { get; set; }
 
         private bool _isDataLoaded;
-
         public bool IsDataLoaded
         {
             get => _isDataLoaded;
@@ -28,14 +29,19 @@ namespace ClientDesktop.ViewModel
 
         public bool IsNoDataVisible => IsDataLoaded && (GridRows?.Count ?? 0) == 0;
 
+        #endregion Variables/Properties
+
+        #region Constructor
         public BanScriptViewModel(SessionService sessionService, BanScriptService banScriptService)
         {
             _sessionService = sessionService;
             _banScriptService = banScriptService;
-
             GridRows = new ObservableCollection<BanscriptGridRow>();
         }
 
+        #endregion Constructor
+
+        #region Method
         public async Task LoadBanScriptData()
         {
             try
@@ -61,12 +67,14 @@ namespace ClientDesktop.ViewModel
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Data Load Error: " + ex.Message);
+                FileLogger.ApplicationLog(nameof(LoadBanScriptData), "Data Load Error: " + ex.Message);
             }
             finally
             {
                 IsDataLoaded = true;
             }
         }
+
+        #endregion Method
     }
 }

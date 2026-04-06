@@ -23,10 +23,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 
 namespace ClientDesktop.View.Specification
-{
-    /// <summary>
-    /// Interaction logic for SymbolSpecificationView.xaml
-    /// </summary>
+{   
     public partial class SymbolSpecificationView : UserControl
     {
         #region Variable
@@ -157,7 +154,7 @@ namespace ClientDesktop.View.Specification
             {
                 if (!vm._sessionService.IsLoggedIn || !vm._sessionService.IsInternetAvailable)
                 {
-                    Window.GetWindow(this)?.Close(); // ✅ Window band karega
+                    Window.GetWindow(this)?.Close();
                     return;
                 }
 

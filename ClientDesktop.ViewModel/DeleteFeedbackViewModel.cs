@@ -2,6 +2,7 @@
 using ClientDesktop.Core.Config;
 using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
+using ClientDesktop.Infrastructure.Logger;
 using ClientDesktop.Infrastructure.Services;
 using System;
 using System.Linq;
@@ -13,6 +14,8 @@ namespace ClientDesktop.ViewModel
 {
     public class DeleteFeedbackViewModel : ViewModelBase, ICloseable
     {
+        #region Variables/Properties
+
         private readonly SessionService _sessionService;
         private readonly FeedbackService _FeedbackService;
         public int FeedbackId { get; set; }
@@ -50,12 +53,14 @@ namespace ClientDesktop.ViewModel
                 }
             }
         }
-
         public bool IsFormEnabled => !IsBusy;
         public ICommand SubmitCommand { get; }
         public ICommand CancelCommand { get; }
         public Action CloseAction { get; set; }
 
+        #endregion Variables/Properties
+
+        #region Constructor
         public DeleteFeedbackViewModel(SessionService sessionService, FeedbackService feedbackService)
         {
             _sessionService = sessionService;
@@ -70,6 +75,9 @@ namespace ClientDesktop.ViewModel
             CancelCommand = new RelayCommand(_ => CloseAction?.Invoke());
         }
 
+        #endregion Constructor
+
+        #region Methods
         private void GenerateConfirmationCode()
         {
             if (!_sessionService.IsInternetAvailable)
@@ -82,7 +90,6 @@ namespace ClientDesktop.ViewModel
                 .Select(b => chars[b % chars.Length])
                 .ToArray());
         }
-
         private bool CanSubmit()
         {
             if (!_sessionService.IsInternetAvailable)
@@ -90,7 +97,6 @@ namespace ClientDesktop.ViewModel
             if (IsBusy) return false;
             return UserInput == RandomString || UserInput == " ";
         }
-
         private async Task ExecuteDeleteAsync()
         {
             if (!_sessionService.IsInternetAvailable)
@@ -111,11 +117,17 @@ namespace ClientDesktop.ViewModel
                     FeedbackViewModel.OnRecordDeletedExternally?.Invoke(FeedbackId);
                 }
             }
+            catch(Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(ExecuteDeleteAsync),ex.Message);
+            }
             finally
             {
                 IsBusy = false;
                 CloseAction?.Invoke();
             }
         }
+        
+        #endregion Methods
     }
 }

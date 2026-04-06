@@ -5,12 +5,10 @@ using System.Windows;
 using System.Windows.Controls;
 
 namespace ClientDesktop.View.Navigation
-{
-    /// <summary>
-    /// Interaction logic for BanScript.xaml
-    /// </summary>
+{   
     public partial class BanScript : UserControl
     {
+        #region Constructor
         public BanScript()
         {
             InitializeComponent();
@@ -27,13 +25,17 @@ namespace ClientDesktop.View.Navigation
             }
             Loaded += BanScript_Loaded;
         }
+
+        #endregion Constructor
+
+        #region Event
         private async void BanScript_Loaded(object sender, RoutedEventArgs e)
         {
             if (DataContext is BanScriptViewModel vm)
             {
                 if (!vm._sessionService.IsLoggedIn || !vm._sessionService.IsInternetAvailable)
                 {
-                    Window.GetWindow(this)?.Close(); // ✅ Window band karega
+                    Window.GetWindow(this)?.Close();
                     return;
                 }
 
@@ -45,5 +47,7 @@ namespace ClientDesktop.View.Navigation
                 }
             }
         }
+
+        #endregion Event
     }
 }

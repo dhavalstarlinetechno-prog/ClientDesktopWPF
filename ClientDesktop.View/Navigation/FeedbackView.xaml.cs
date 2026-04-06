@@ -34,9 +34,7 @@ namespace ClientDesktop.View.Navigation
         #region Variable
 
         private readonly FeedbackViewModel _viewModel;
-        private readonly SessionService _sessionService;
-        //private readonly ISocketService _socketService;   
-        //private List<FeedbackModel> _Feedback;
+        private readonly SessionService _sessionService;      
         Label lblNoData = new Label();
         private string lastSavedRtf = "";
         private Stack<string> undoStack = new Stack<string>();
@@ -944,10 +942,7 @@ namespace ClientDesktop.View.Navigation
                     EmojiPopup.IsOpen = true;
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Emoji Panel error: " + ex.Message);
-            }
+            catch { }
         }
         private void EmojiItem_Click(object sender, RoutedEventArgs e)
         {

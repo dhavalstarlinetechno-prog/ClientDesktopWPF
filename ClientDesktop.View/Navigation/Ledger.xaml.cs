@@ -22,10 +22,9 @@ namespace ClientDesktop.View.Navigation
         private DateTime _currentFromDate = DateTime.Today;
         private DateTime _currentToDate = DateTime.Today;
 
-        #endregion
+        #endregion Fields
 
         #region Constructor
-
         public Ledger()
         {
             InitializeComponent();
@@ -49,43 +48,28 @@ namespace ClientDesktop.View.Navigation
             this.Loaded += Ledger_Loaded;
 
             this.Unloaded += Ledger_Unloaded;
-
-
-            //if (MainWindowViewModel.isViewLocked == true)
-            //{
-            //    Lbldetails.Text = CommonMessages.InvoiceLedgerWrongPassword;
-            //    Lbldetails.FontFamily = new System.Windows.Media.FontFamily("Segoe UI");
-            //    Lbldetails.Foreground = System.Windows.Media.Brushes.Red;
-            //    Lbldetails.Margin = new System.Windows.Thickness(0, 10, 250, 0);
-            //    TxtPassword.Visibility = System.Windows.Visibility.Collapsed;
-            //    Btngo.Visibility = System.Windows.Visibility.Collapsed;
-            //}
+           
         }
 
-        #endregion
+        #endregion Constructor
 
         #region Loaded / Unloaded
-
         private void Ledger_Loaded(object sender, RoutedEventArgs e)
-        {
-            // ✅ Apply initial lock state once View is fully rendered
+        {           
             ApplyViewLockUI(_viewModel?.IsViewLocked ?? MainWindowViewModel.isViewLocked);
         }
-
         private void Ledger_Unloaded(object sender, RoutedEventArgs e)
         {
             if (_viewModel != null)
             {
                 _viewModel.PropertyChanged -= ViewModel_PropertyChanged;
-                _viewModel.Cleanup();   // unsubscribe socket event — no memory leak
+                _viewModel.Cleanup(); 
             }
         }
 
-        #endregion
+        #endregion Loaded / Unloaded
 
-        #region WebSocket — Real-time View Lock
-
-        // ✅ Called whenever CLIENT_UPDATE fires isViewLocked via WebSocket
+        #region WebSocket — Real-time View Lock       
         private void ViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(LedgerViewModel.IsViewLocked))
@@ -93,7 +77,6 @@ namespace ClientDesktop.View.Navigation
                 ApplyViewLockUI(_viewModel.IsViewLocked);
             }
         }
-
         private void ApplyViewLockUI(bool isLocked)
         {
             if (isLocked)
@@ -106,8 +89,7 @@ namespace ClientDesktop.View.Navigation
                 Btngo.Visibility = System.Windows.Visibility.Collapsed;
             }
             else
-            {
-                // ✅ Restore normal UI when unlocked via socket
+            {               
                 Lbldetails.Text = "This report represents sample ledger format. It contains sample data only for education purpose. Ledger can be displayed in below structure.";
                 Lbldetails.FontFamily = new System.Windows.Media.FontFamily("Microsoft Sans Serif");
                 Lbldetails.Foreground = System.Windows.Media.Brushes.Black;
@@ -118,9 +100,8 @@ namespace ClientDesktop.View.Navigation
             }
         }
 
-        #endregion
+        #endregion WebSocket — Real-time View Lock  
 
-        
         #region Loaded(existing)
 
         private async void UserControl_Loaded(object sender, RoutedEventArgs e)
@@ -142,10 +123,9 @@ namespace ClientDesktop.View.Navigation
             }
         }
 
-        #endregion
+        #endregion Loaded(existing)
 
         #region Password & Auth
-
         private void TxtPassword_PasswordChanged(object sender, RoutedEventArgs e)
         {
             Btngo.IsEnabled = !string.IsNullOrEmpty(TxtPassword.Password);
@@ -162,12 +142,10 @@ namespace ClientDesktop.View.Navigation
                 TxtNoData.Visibility = Visibility.Visible;
                 Mainpanel.Visibility = Visibility.Collapsed;
                 ChildPanel.Visibility = Visibility.Visible;
-                Lblprintamount.Visibility = Visibility.Visible;
-                //Lblprintamount.Text = LblAmountFormatted?.ToString();
+                Lblprintamount.Visibility = Visibility.Visible;                
                 DgvLedgerRecord.ColumnHeaderHeight = 35;
                 _viewModel.GridRows.Clear();
-
-                // Add Columns
+               
                 DgvLedgerRecord.Columns.Add(new DataGridTextColumn
                 {
                     Header = "Sr",
@@ -216,18 +194,16 @@ namespace ClientDesktop.View.Navigation
             }
         }
 
-        #endregion
+        #endregion Password & Auth
 
         #region Get Data
 
         private async void Btngetdata_Click(object sender, RoutedEventArgs e)
         {
-            DgvLedgerRecord.Columns.Clear();
-            //DgvLedgerRecord.Items.Clear();
+            DgvLedgerRecord.Columns.Clear();            
 
             _viewModel.GridRows.Clear();
-
-            // Add Columns (Ideally this duplication should be refactored, but keeping logic as requested)
+           
             DgvLedgerRecord.Columns.Add(new DataGridTextColumn
             {
                 Header = "Sr",
@@ -272,30 +248,23 @@ namespace ClientDesktop.View.Navigation
 
             if (!Dtpstartdate.SelectedDate.HasValue || !Dtpenddate.SelectedDate.HasValue)
                 return;
-
-            // Cache for PdfExport_Click
+          
             _currentFromDate = Dtpstartdate.SelectedDate.Value.Date;
             _currentToDate = Dtpenddate.SelectedDate.Value.Date;
-
-            // ViewModel fetches data and fills GridRows (DataGrid auto-updates via binding)
+            
             bool hasData = await _viewModel.LoadAndPopulateGridAsync(
                 _currentFromDate,
                 _currentToDate);
-
-            // Show / hide icons and "No Data" label
+            
             TxtNoData.Visibility = hasData ? Visibility.Collapsed : Visibility.Visible;
             PdfExportBtn.Visibility = hasData ? Visibility.Visible : Visibility.Collapsed;
             ExcelExportBtn.Visibility = hasData ? Visibility.Visible : Visibility.Collapsed;
         }
 
-        #endregion
+        #endregion Get Data
 
         #region Export — PDF
-
-        /// <summary>
-        /// PDF export: fully delegated to ViewModel.
-        /// Code-behind only passes the date range (UI values not known to VM).
-        /// </summary>
+       
         private void PdfExportBtn_Click(object sender, RoutedEventArgs e)
         {
             _viewModel.ExportToPdf(_currentFromDate, _currentToDate);

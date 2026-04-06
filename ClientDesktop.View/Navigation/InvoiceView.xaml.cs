@@ -19,7 +19,6 @@ using System.Windows.Media;
 
 namespace ClientDesktop.View.Navigation
 {
-
     public class SecurityGridItem
     {
         public string SecurityName { get; set; }
@@ -41,19 +40,21 @@ namespace ClientDesktop.View.Navigation
 
     public partial class InvoiceView : UserControl
     {
+        #region Variables
+
         private readonly InvoiceViewModel _viewModel;
         private readonly SessionService _sessionService;
-
         bool isDataLoaded = false;
         DateTime today = DateTime.Today;
         DateTime thisWeekStart = new DateTime();
         DateTime thisWeekEnd = new DateTime();
-
         public static string fromdatefilter = string.Empty;
         public static string todatefilter = string.Empty;
-
         Invoicemodel invoice = new Invoicemodel();
-        
+
+        #endregion Variables
+
+        #region Constructor
         public InvoiceView()
         {            
             InitializeComponent();
@@ -72,35 +73,12 @@ namespace ClientDesktop.View.Navigation
 
             this.Unloaded += InvoiceView_Unloaded;
 
-            this.Loaded += InvoiceView_Loaded;
-
-            //if (MainWindowViewModel.isViewLocked == true)
-            //{
-            //    Lbltext.Text = CommonMessages.InvoiceLedgerWrongPassword;
-            //    Lbltext.FontFamily = new System.Windows.Media.FontFamily("Segoe UI");
-            //    Lbltext.Foreground = System.Windows.Media.Brushes.Red;
-            //    Lbltext.Margin = new System.Windows.Thickness(0, 10, 250, 0);
-            //    TxtPassword.Visibility = System.Windows.Visibility.Collapsed;
-            //    Btngo.Visibility = System.Windows.Visibility.Collapsed;
-            //}
-        }
-        private void InvoiceView_Loaded(object sender, RoutedEventArgs e)
-        {
-            if (!_sessionService.IsLoggedIn || !_sessionService.IsInternetAvailable)
-            {
-                Window.GetWindow(this)?.Close();
-                return;
-            }
+            this.Loaded += InvoiceView_Loaded;           
         }
 
-        private void ViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(InvoiceViewModel.IsViewLocked))
-            {
-                ApplyViewLockUI(_viewModel.IsViewLocked);
-            }
-        }
+        #endregion Constructor
 
+        #region Methods
         private void ApplyViewLockUI(bool isLocked)
         {
             if (isLocked)
@@ -113,17 +91,132 @@ namespace ClientDesktop.View.Navigation
                 Btngo.Visibility = System.Windows.Visibility.Collapsed;
             }
             else
-            {                
+            {
                 Lbltext.Text = "This report represents sample invoice format. It contains sample data only for education purpose. Invoice can be displayed in below structure";
                 Lbltext.FontFamily = new System.Windows.Media.FontFamily("Microsoft Sans Serif");
                 Lbltext.Foreground = System.Windows.Media.Brushes.Black;
-                Lbltext.Margin = new System.Windows.Thickness(40,30,60,20);
+                Lbltext.Margin = new System.Windows.Thickness(40, 30, 60, 20);
                 TxtPassword.Visibility = System.Windows.Visibility.Visible;
                 Btngo.Visibility = System.Windows.Visibility.Visible;
                 Btngo.IsEnabled = !string.IsNullOrEmpty(TxtPassword.Password);
             }
         }
+        private DataTable BuildSummaryPdfTable(DataTable source)
+        {
+            DataTable pdf = new DataTable();
+            pdf.Columns.Add("Symbol", typeof(string));
+            pdf.Columns.Add("M2M", typeof(string));
+            pdf.Columns.Add("Comm", typeof(string));
+            pdf.Columns.Add("Total", typeof(string));
+            pdf.Columns.Add("RowType", typeof(string));
 
+            foreach (DataRow dr in source.Rows)
+            {
+                pdf.Rows.Add(
+                    dr["Symbol"]?.ToString(),
+                    dr["M2M"]?.ToString(),
+                    dr["Comm"]?.ToString(),
+                    dr["Total"]?.ToString(),
+                    dr["RowType"]?.ToString());
+            }
+
+            return pdf;
+        }
+        private DataTable BuildCarryPdfTable(DataTable source)
+        {
+            DataTable pdf = new DataTable();
+            pdf.Columns.Add("Symbol", typeof(string));
+            pdf.Columns.Add("Type", typeof(string));
+            pdf.Columns.Add("Quantity", typeof(string));
+            pdf.Columns.Add("Net", typeof(string));
+            pdf.Columns.Add("RowType", typeof(string));
+
+            foreach (DataRow dr in source.Rows)
+            {
+                pdf.Rows.Add(
+                    dr["Symbol"]?.ToString(),
+                    dr["Type"]?.ToString(),
+                    dr["Quantity"]?.ToString(),
+                    dr["Net"]?.ToString(),
+                    dr["RowType"]?.ToString());
+            }
+
+            return pdf;
+        }
+        private void ShowNoData()
+        {
+            Lblfrom.Visibility = Visibility.Collapsed;
+            Lblfromdate.Visibility = Visibility.Visible;
+            Lblfromdate.Content = CommonMessages.NoDataAvailable;
+            Lblfromdate.FontSize = 20;
+            Lblfromdate.Foreground = Brushes.Gray;
+            Lblfromdate.FontWeight = FontWeights.Regular;
+            isDataLoaded = false;
+            Btngetdata.IsEnabled = true;
+        }
+        private void UpdateDateLabel()
+        {
+            DateTime localToday = DateTime.Today;
+            if (Cmbselectweek.Text == "Current week")
+            {
+                int diff = (7 + ((int)localToday.DayOfWeek - (int)DayOfWeek.Monday)) % 7;
+                thisWeekStart = localToday.AddDays(-diff);
+                thisWeekEnd = thisWeekStart.AddDays(5);
+            }
+            else if (Cmbselectweek.Text == "Previous Week")
+            {
+                int diff = (7 + (localToday.DayOfWeek - DayOfWeek.Monday)) % 7;
+                thisWeekStart = localToday.AddDays(-1 * diff).AddDays(-7);
+                thisWeekEnd = thisWeekStart.AddDays(5);
+            }
+            else if (Cmbselectweek.Text == "Last Previous Week")
+            {
+                int diff = (7 + ((int)localToday.DayOfWeek - (int)DayOfWeek.Monday)) % 7;
+                thisWeekStart = localToday.AddDays(-diff).AddDays(-14);
+                thisWeekEnd = thisWeekStart.AddDays(5);
+            }
+
+            Lblfrom.Content = $"From {thisWeekStart:dd-MM-yyyy} To {thisWeekEnd:dd-MM-yyyy}";
+        }
+        public DataTable ToDataTable<T>(List<T> items)
+        {
+            var dt = new DataTable(typeof(T).Name);
+            var props = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+            foreach (var prop in props)
+                dt.Columns.Add(prop.Name,
+                    Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType);
+
+            foreach (var item in items)
+            {
+                var values = new object[props.Length];
+                for (int i = 0; i < props.Length; i++)
+                    values[i] = props[i].GetValue(item) ?? DBNull.Value;
+                dt.Rows.Add(values);
+            }
+
+            return dt;
+        }
+
+        #endregion Methods
+
+        #region Events
+
+        private void InvoiceView_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (!_sessionService.IsLoggedIn || !_sessionService.IsInternetAvailable)
+            {
+                Window.GetWindow(this)?.Close();
+                return;
+            }
+        }
+        private void ViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(InvoiceViewModel.IsViewLocked))
+            {
+                ApplyViewLockUI(_viewModel.IsViewLocked);
+            }
+        }      
         private void InvoiceView_Unloaded(object sender, RoutedEventArgs e)
         {
             if (_viewModel != null)
@@ -132,7 +225,6 @@ namespace ClientDesktop.View.Navigation
                 _viewModel.Cleanup();
             }
         }
-
         private async void Btngo_Click(object sender, RoutedEventArgs e)
         {
             Btngo.IsEnabled = false;
@@ -174,12 +266,10 @@ namespace ClientDesktop.View.Navigation
                 }
             }
         }
-
         private void TxtPassword_PasswordChanged(object sender, RoutedEventArgs e)
         {
             Btngo.IsEnabled = !string.IsNullOrEmpty(TxtPassword.Password);
-        }
-        
+        }       
         private void Cmbselectweek_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (Btngetdata == null) return;
@@ -227,8 +317,7 @@ namespace ClientDesktop.View.Navigation
             Lblfrom.Content = $"From {thisWeekStart:dd-MM-yyyy} To {thisWeekEnd:dd-MM-yyyy}";
             fromdatefilter = thisWeekStart.ToString("yyyy-MM-dd");
             todatefilter = thisWeekEnd.ToString("yyyy-MM-dd");
-        }
-       
+        }      
         private async void Btngetdata_Click(object sender, RoutedEventArgs e)
         {
             if (Cmbselectweek.SelectedIndex == 0)
@@ -237,8 +326,7 @@ namespace ClientDesktop.View.Navigation
                 Btngetdata.IsEnabled = true;
                 return;
             }
-
-            // Clear previous bindings
+            
             SecurityGridsList.ItemsSource = null;
             SummaryDataGrid.ItemsSource = null;
             SummaryPanel.Visibility = Visibility.Collapsed;
@@ -274,8 +362,7 @@ namespace ClientDesktop.View.Navigation
                 return;
             }
             PdfExportBtn.Visibility = Visibility.Visible;
-
-            // Update date label
+           
             UpdateDateLabel();
 
             DataTable securityTable = ToDataTable(_viewModel.InvoiceDetails.ToList());          
@@ -315,8 +402,7 @@ namespace ClientDesktop.View.Navigation
                 pdfSecurity.Columns.Add("RowType", typeof(string)); 
 
                 foreach (var symbol in symbols)
-                {
-                    // Header row
+                {                   
                     dtSecurity.Rows.Add(symbol, "", "", "", "", "", "", true, false);
                     pdfSecurity.Rows.Add(symbol, "", "", "", "", "", "", "SecurityHeader");
 
@@ -349,12 +435,11 @@ namespace ClientDesktop.View.Navigation
                         string fRate = CommonHelper.FormatAmount(invoice.Price);
                         string fComm = CommonHelper.FormatAmount(invoice.UplineCommission);
                         string fNet = CommonHelper.FormatAmount(invoice.Pnl);
-
-                        // UI row
+                      
                         dtSecurity.Rows.Add(invoice.DealCreatedOn, invoice.Side,
                                             bVol, sVol, fRate, fComm, fNet,
                                             false, false);
-                        // PDF row
+                        
                         pdfSecurity.Rows.Add(invoice.DealCreatedOn, invoice.Side,
                                              bVol, sVol, fRate, fComm, fNet,
                                              "Data");
@@ -370,7 +455,7 @@ namespace ClientDesktop.View.Navigation
                     dtSecurity.Rows.Add("", "", "", "", "", fTotalComm, fTotalPnl, false, false);
                     pdfSecurity.Rows.Add("", "", "", "", "", fTotalComm, fTotalPnl, "SubTotal");
 
-                    // Total row
+                    
                     dtSecurity.Rows.Add("", "", "", "", "", "Total", fGrandNet, false, true);
                     pdfSecurity.Rows.Add("", "", "", "", "", "Total", fGrandNet, "Total");
                 }
@@ -572,109 +657,7 @@ namespace ClientDesktop.View.Navigation
                 carryPdfTable);
 
             Btngetdata.IsEnabled = true;
-        }       
-          
-        private DataTable BuildSummaryPdfTable(DataTable source)
-        {
-            DataTable pdf = new DataTable();
-            pdf.Columns.Add("Symbol", typeof(string));
-            pdf.Columns.Add("M2M", typeof(string));
-            pdf.Columns.Add("Comm", typeof(string));
-            pdf.Columns.Add("Total", typeof(string));
-            pdf.Columns.Add("RowType", typeof(string));
-
-            foreach (DataRow dr in source.Rows)
-            {
-                pdf.Rows.Add(
-                    dr["Symbol"]?.ToString(),
-                    dr["M2M"]?.ToString(),
-                    dr["Comm"]?.ToString(),
-                    dr["Total"]?.ToString(),
-                    dr["RowType"]?.ToString());
-            }
-
-            return pdf;
-        }
-    
-        private DataTable BuildCarryPdfTable(DataTable source)
-        {
-            DataTable pdf = new DataTable();
-            pdf.Columns.Add("Symbol", typeof(string));
-            pdf.Columns.Add("Type", typeof(string));
-            pdf.Columns.Add("Quantity", typeof(string));
-            pdf.Columns.Add("Net", typeof(string));
-            pdf.Columns.Add("RowType", typeof(string));
-
-            foreach (DataRow dr in source.Rows)
-            {
-                pdf.Rows.Add(
-                    dr["Symbol"]?.ToString(),
-                    dr["Type"]?.ToString(),
-                    dr["Quantity"]?.ToString(),
-                    dr["Net"]?.ToString(),
-                    dr["RowType"]?.ToString());
-            }
-
-            return pdf;
-        }
-
-        private void ShowNoData()
-        {
-            Lblfrom.Visibility = Visibility.Collapsed;
-            Lblfromdate.Visibility = Visibility.Visible;
-            Lblfromdate.Content = CommonMessages.NoDataAvailable;
-            Lblfromdate.FontSize = 20;
-            Lblfromdate.Foreground = Brushes.Gray;
-            Lblfromdate.FontWeight = FontWeights.Regular;
-            isDataLoaded = false;
-            Btngetdata.IsEnabled = true;
-        }
-
-        private void UpdateDateLabel()
-        {
-            DateTime localToday = DateTime.Today;
-            if (Cmbselectweek.Text == "Current week")
-            {
-                int diff = (7 + ((int)localToday.DayOfWeek - (int)DayOfWeek.Monday)) % 7;
-                thisWeekStart = localToday.AddDays(-diff);
-                thisWeekEnd = thisWeekStart.AddDays(5);
-            }
-            else if (Cmbselectweek.Text == "Previous Week")
-            {
-                int diff = (7 + (localToday.DayOfWeek - DayOfWeek.Monday)) % 7;
-                thisWeekStart = localToday.AddDays(-1 * diff).AddDays(-7);
-                thisWeekEnd = thisWeekStart.AddDays(5);
-            }
-            else if (Cmbselectweek.Text == "Last Previous Week")
-            {
-                int diff = (7 + ((int)localToday.DayOfWeek - (int)DayOfWeek.Monday)) % 7;
-                thisWeekStart = localToday.AddDays(-diff).AddDays(-14);
-                thisWeekEnd = thisWeekStart.AddDays(5);
-            }
-
-            Lblfrom.Content = $"From {thisWeekStart:dd-MM-yyyy} To {thisWeekEnd:dd-MM-yyyy}";
-        }
-      
-        public DataTable ToDataTable<T>(List<T> items)
-        {
-            var dt = new DataTable(typeof(T).Name);
-            var props = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
-
-            foreach (var prop in props)
-                dt.Columns.Add(prop.Name,
-                    Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType);
-
-            foreach (var item in items)
-            {
-                var values = new object[props.Length];
-                for (int i = 0; i < props.Length; i++)
-                    values[i] = props[i].GetValue(item) ?? DBNull.Value;
-                dt.Rows.Add(values);
-            }
-
-            return dt;
-        }
-
+        }                
         private void SecurityDataGrid_LoadingRow(object sender, DataGridRowEventArgs e)
         {
             var row = e.Row;
@@ -741,7 +724,6 @@ namespace ClientDesktop.View.Navigation
                 }
             }), System.Windows.Threading.DispatcherPriority.Render);
         }
-
         private void SummaryDataGrid_LoadingRow(object sender, DataGridRowEventArgs e)
         {
             var row = e.Row;
@@ -811,7 +793,6 @@ namespace ClientDesktop.View.Navigation
                 }
             }), System.Windows.Threading.DispatcherPriority.Render);
         }
-
         private void CarryForwardDataGrid_LoadingRow(object sender, DataGridRowEventArgs e)
         {
             var row = e.Row;
@@ -857,13 +838,11 @@ namespace ClientDesktop.View.Navigation
                 }
             }), System.Windows.Threading.DispatcherPriority.Render);
         }
-
         private void DataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (sender is DataGrid dg && dg.SelectedItem != null)
                 dg.UnselectAll();
         }
-
         private void PdfExportBtn_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -873,13 +852,9 @@ namespace ClientDesktop.View.Navigation
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"PDF export failed: {ex.Message}",
-                                "Error",
-                                MessageBoxButton.OK,
-                                MessageBoxImage.Error);
+                FileLogger.ApplicationLog("InvoiceView", $"PDF export failed: {ex.Message}");
             }
         }
-
         private void DataGrid_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
             if (!e.Handled)
@@ -904,5 +879,7 @@ namespace ClientDesktop.View.Navigation
                 }
             }
         }
+
+        #endregion Events
     }
 }

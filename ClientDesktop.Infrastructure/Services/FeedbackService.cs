@@ -73,8 +73,8 @@ namespace ClientDesktop.Infrastructure.Services
                 };
             }
             catch (Exception ex)
-            {                
-                Console.WriteLine($"Error occurred: {ex.Message}");
+            {
+                FileLogger.ApplicationLog(nameof(GenerateFeedbackAsync), $"Error occurred: {ex.Message}");
                 return new FeedbackResponse
                 {
                     IsSuccess = false,
@@ -93,6 +93,7 @@ namespace ClientDesktop.Infrastructure.Services
             }
             catch (Exception ex)
             {
+                FileLogger.ApplicationLog(nameof(GetFeedbackListAsync), ex.Message);
                 return new FeedbackListResponse
                 {
                     IsSuccess = false,
@@ -117,7 +118,7 @@ namespace ClientDesktop.Infrastructure.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error occurred while fetching feedback details: {ex.Message}");
+                FileLogger.ApplicationLog(nameof(GetFeedbackDetailsAsync), $"Error occurred while fetching feedback details: {ex.Message}");
                 return null;
             }
         }
@@ -162,7 +163,7 @@ namespace ClientDesktop.Infrastructure.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error occurred: {ex.Message}");
+                FileLogger.ApplicationLog(nameof(ReplyFeedbackAsync), $"Error occurred: {ex.Message}");
                 return new FeedbackReplyResponse
                 {
                     IsSuccess = false,
@@ -182,7 +183,7 @@ namespace ClientDesktop.Infrastructure.Services
             }
             catch (Exception ex)
             {
-                FileLogger.ApplicationLog(nameof(DeleteFeedbackAsync), ex);
+                FileLogger.ApplicationLog(nameof(DeleteFeedbackAsync), ex.Message);
                 return new FeedbackResponse { IsSuccess = false, Exception = ex.Message };
             }
         }

@@ -14,22 +14,26 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 
 namespace ClientDesktop.View.Navigation
-{
-    /// <summary>
-    /// Interaction logic for ColorPickerWindow.xaml
-    /// </summary>
+{  
     public partial class ColorPickerWindow : UserControl
     {
+        #region Variables
         public Brush SelectedBrush { get; set; }
 
+        #endregion Variables
+
+        #region Constructor
         public ColorPickerWindow()
         {
             InitializeComponent();
             LoadColors();
         }
+
+        #endregion Constructor
+
+        #region Method
         private void LoadColors()
-        {
-            // Check karo ki ColorPanel null na ho (Safety first!)
+        {           
             if (ColorPanel == null) return;
 
             foreach (var property in typeof(Colors).GetProperties())
@@ -42,17 +46,14 @@ namespace ClientDesktop.View.Navigation
                 btn.Height = 20;
                 btn.Margin = new Thickness(5);
                 btn.Background = brush;
-
-                // Lambda expression mein 's' (sender) ka use karo
+               
                 btn.Click += (s, e) =>
-                {
-                    // 's' ko Button mein cast karo taaki uska Background nikal sakein
+                {                   
                     Button clickedButton = s as Button;
                     if (clickedButton != null)
                     {
                         SelectedBrush = clickedButton.Background;
-
-                        // Parent window dhundho aur close karo
+                       
                         Window parentWindow = Window.GetWindow(this);
                         if (parentWindow != null)
                         {
@@ -65,5 +66,7 @@ namespace ClientDesktop.View.Navigation
                 ColorPanel.Children.Add(btn);
             }
         }
+
+        #endregion Method
     }
 }

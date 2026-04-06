@@ -2,35 +2,41 @@
 using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Helpers;
+using ClientDesktop.Infrastructure.Logger;
 using System.Windows;
 
 namespace ClientDesktop.Infrastructure.Services
 {
     public class LedgerService
     {
+        #region Variables
+
         private readonly IApiService _apiService;
         private readonly SessionService _sessionService;
-        private readonly IRepository<List<Ledgermodel>> _symbolMode;
 
+        #endregion Variables
+
+        #region Constructor
         public LedgerService(IApiService apiService, SessionService sessionService)
         {
             _apiService = apiService;
             _sessionService = sessionService;
         }
 
+        #endregion Constructor
+
+        #region Methods
         public async Task<(bool Success, string ErrorMessage, LedgerAuthData ResponseData)> VerifyUserPasswordAsync(string clientId, string password, string licenseId)
         {
             try
-            {
-                // ✅ Payload
+            {                
                 var payload = new
                 {
                     type = "USER",
                     password,
                     clientId
                 };
-
-                // ✅ Resolve server URL
+               
                 var serverDomain = _sessionService.ServerListData
                     .FirstOrDefault(x => x.licenseId.ToString() == licenseId)
                     ?.primaryDomain;
@@ -39,8 +45,7 @@ namespace ClientDesktop.Infrastructure.Services
                 var fullUrl = baseUrl.Contains("http")
                     ? baseUrl
                     : $"{serverDomain}{baseUrl}";
-
-                // ✅ Call ApiService
+               
                 var result = await _apiService
                     .PutAsync<LedgerAuthResponse>(fullUrl, payload);
 
@@ -51,8 +56,7 @@ namespace ClientDesktop.Infrastructure.Services
                     return (false,
                         result.successMessage ?? CommonMessages.FailedVerifyUser,
                         null);
-
-                // ✅ Interpret response message
+               
                 var message = result.data.msg?.FirstOrDefault()?.Trim() ?? string.Empty;
 
                 if (message.Equals(CommonMessages.WrongPassword, StringComparison.OrdinalIgnoreCase))
@@ -71,10 +75,10 @@ namespace ClientDesktop.Infrastructure.Services
             }
             catch (Exception ex)
             {
+                FileLogger.ApplicationLog(nameof(VerifyUserPasswordAsync), ex.Message);
                 return (false, ex.Message, null);
             }
         }
-
         public async Task<LedgerUserDetail> GetLedgerUserDetail()
         {
             try
@@ -85,11 +89,7 @@ namespace ClientDesktop.Infrastructure.Services
                 var response = await _apiService.GetAsync<LedgerUserResponse>(url);
 
                 if (response == null)
-                {
-                    MessageBox.Show("Invalid response from server",
-                                    "Error",
-                                    MessageBoxButton.OK,
-                                    MessageBoxImage.Error);
+                {                  
                     return null;
                 }
 
@@ -97,14 +97,10 @@ namespace ClientDesktop.Infrastructure.Services
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error: " + ex.Message,
-                                "Error",
-                                MessageBoxButton.OK,
-                                MessageBoxImage.Error);
+                FileLogger.ApplicationLog(nameof(GetLedgerUserDetail), ex.Message);
                 return null;
             }
         }
-
         public async Task<(bool Success, string ErrorMessage, LedgerData ResponseData)> GetLedgerListAsync(string clientId, DateTime fromDate, DateTime toDate, string licenseId)
         {
             try
@@ -115,8 +111,7 @@ namespace ClientDesktop.Infrastructure.Services
                     fromDate = fromDate.ToString("yyyy-MM-dd"),
                     toDate = toDate.ToString("yyyy-MM-dd")
                 };
-
-                // Resolve server domain
+               
                 var serverDomain = _sessionService.ServerListData
                     .FirstOrDefault(w => w.licenseId.ToString() == licenseId)
                     ?.primaryDomain;
@@ -144,10 +139,11 @@ namespace ClientDesktop.Infrastructure.Services
             }
             catch (Exception ex)
             {
+                FileLogger.ApplicationLog(nameof(GetLedgerListAsync), ex.Message);
                 return (false, ex.Message, null);
             }
         }
-
-
+        
+        #endregion Methods
     }
 }

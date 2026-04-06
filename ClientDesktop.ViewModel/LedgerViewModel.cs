@@ -3,6 +3,7 @@ using ClientDesktop.Core.Enums;
 using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Helpers;
+using ClientDesktop.Infrastructure.Logger;
 using ClientDesktop.Infrastructure.Services;
 using ClientDesktop.Services;
 using System.Collections.ObjectModel;
@@ -28,19 +29,10 @@ namespace ClientDesktop.ViewModel
         private bool _isBusy;
         private bool _isViewLocked;
 
-        #endregion
+        #endregion Fields
 
-        #region Constructor
-
-        /// <summary>
-        /// All three dependencies injected via DI container (AppServiceLocator).
-        /// </summary>
-        public LedgerViewModel(
-            SessionService sessionService,
-            LedgerService ledgerService,
-            IPdfService pdfService,
-            IExcelService excelService,
-            ISocketService socketService)           
+        #region Constructor      
+        public LedgerViewModel(SessionService sessionService,LedgerService ledgerService,IPdfService pdfService,IExcelService excelService,ISocketService socketService)           
         {
             _sessionService = sessionService;
             _ledgerService = ledgerService;
@@ -58,20 +50,16 @@ namespace ClientDesktop.ViewModel
                 _socketService.Start();
         }
 
-        #endregion
+        #endregion Constructor
 
         #region Properties
-        
+
         public ObservableCollection<LedgerRowModel> GridRows { get; }
-
-
         public LedgerUserDetail LedgerUser
         {
             get => _ledgerUser;
             set { _ledgerUser = value; OnPropertyChanged(); }
-        }
-
-        /// <summary>True while an API call is running — bind to UI loading indicator if needed.</summary>
+        }        
         public bool IsBusy
         {
             get => _isBusy;
@@ -89,11 +77,9 @@ namespace ClientDesktop.ViewModel
             }
         }
 
-        #endregion
+        #endregion Properties
 
-        #region WebSocket Handler
-
-        // ✅ Called from background socket thread — marshal to UI thread
+        #region WebSocket Handler  
         private void OnViewLockChangedHandler(bool isLocked)
         {
             Application.Current?.Dispatcher.Invoke(() =>
@@ -102,49 +88,60 @@ namespace ClientDesktop.ViewModel
             });
         }
 
-        // ✅ Call on View Unloaded — prevents memory leak
         public void Cleanup()
         {
             _socketService.OnViewLockChanged -= OnViewLockChangedHandler;
         }
 
-        #endregion
+        #endregion WebSocket Handler  
 
         #region Auth & User Detail
 
         public async Task<bool> VerifyPasswordAsync(string password)
         {
-            if (!_sessionService.IsInternetAvailable)
-                return false;
-
-            var result = await _ledgerService.VerifyUserPasswordAsync(
-                _sessionService.UserId, password, _sessionService.LicenseId);
-
-            if (!result.Success)
+            try
             {
-                MessageBox.Show(result.ErrorMessage,
-                    "Authentication Failed",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                if (!_sessionService.IsInternetAvailable)
+                    return false;
+
+                var result = await _ledgerService.VerifyUserPasswordAsync(
+                    _sessionService.UserId, password, _sessionService.LicenseId);
+
+                if (!result.Success)
+                {
+                    return false;
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(VerifyPasswordAsync), ex.Message);
                 return false;
             }
-            return true;
+            
         }
 
         public async Task LoadLedgerUserDetailAsync()
         {
-            if (!_sessionService.IsInternetAvailable)
-                return;
+            try
+            {
+                if (!_sessionService.IsInternetAvailable)
+                    return;
 
-            var result = await _ledgerService.GetLedgerUserDetail();
-            if (result != null)
-                LedgerUser = result;
+                var result = await _ledgerService.GetLedgerUserDetail();
+                if (result != null)
+                    LedgerUser = result;
+            }
+            catch(Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(LoadLedgerUserDetailAsync), ex.Message);
+            }
         }
 
-        #endregion
+        #endregion Auth & User Detail
 
         #region Grid Population
-     
+
         public async Task<bool> LoadAndPopulateGridAsync(DateTime fromDate,DateTime toDate)
         {
             if (!_sessionService.IsInternetAvailable)
@@ -171,9 +168,8 @@ namespace ClientDesktop.ViewModel
                     ledgerData.Transactions != null && ledgerData.Transactions.Count > 0;
 
                 if (!hasTransactions)
-                    return false;   // caller shows "No Data" label
-
-                // ── Opening Balance row ──────────────────────────────────────
+                    return false;  
+                
                 GridRows.Add(new LedgerRowModel
                 {
                     Sr = "",
@@ -183,8 +179,7 @@ namespace ClientDesktop.ViewModel
                     Remarks = "",
                     IsSummaryRow = true
                 });
-
-                // ── Transaction rows ─────────────────────────────────────────
+               
                 int sr = 1;
                 foreach (var led in ledgerData.Transactions)
                 {
@@ -201,8 +196,7 @@ namespace ClientDesktop.ViewModel
                     });
                     sr++;
                 }
-
-                // ── Closing Balance row ──────────────────────────────────────
+               
                 GridRows.Add(new LedgerRowModel
                 {
                     Sr = "",
@@ -215,23 +209,25 @@ namespace ClientDesktop.ViewModel
 
                 return true;
             }
+            catch(Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(LoadAndPopulateGridAsync), ex.Message);
+                return false;
+            }
             finally
             {
                 IsBusy = false;
             }
         }
 
-        #endregion
+        #endregion Grid Population
 
-        #region PDF Export  ← MAIN NEW SECTION       
+        #region PDF Export     
         public void ExportToPdf(DateTime fromDate, DateTime toDate)
         {          
             if (GridRows == null || GridRows.Count == 0)
             {
-                MessageBox.Show("No data available to export.",
-                    "PDF Export",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
+                FileLogger.ApplicationLog("Export", "No data available to export");
                 return;
             }
 
@@ -258,10 +254,7 @@ namespace ClientDesktop.ViewModel
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"PDF export failed:\n{ex.Message}",
-                    "PDF Export Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                FileLogger.ApplicationLog(nameof(ExportToPdf), ex.Message);
             }
         }      
         private DataTable BuildPdfDataTable()
@@ -298,25 +291,22 @@ namespace ClientDesktop.ViewModel
             return dt;
         }
 
-        #endregion
+        #endregion PDF Export
 
-        #region Excel Export  ← NEW
-     
+        #region Excel Export
+
         public void ExportToExcel(DateTime fromDate, DateTime toDate)
         {
             if (GridRows == null || GridRows.Count == 0)
             {
-                MessageBox.Show("No data available to export.",
-                    "Excel Export", MessageBoxButton.OK, MessageBoxImage.Information);
+                FileLogger.ApplicationLog("Export", "No data available to export");
                 return;
             }
 
             try
-            {
-                // Same DataTable as PDF — no duplication
+            {              
                 DataTable dt = BuildExportDataTable();
-
-                // Title — exactly same format as WinForms Picexcel_Click
+                
                 string title =
                     $"Ledger History Report for User Id:{_sessionService.UserId}(Client)" +
                     $"  From: {fromDate:dd-MM-yyyy} To: {toDate:dd-MM-yyyy}";
@@ -333,20 +323,13 @@ namespace ClientDesktop.ViewModel
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Excel export failed:\n{ex.Message}",
-                    "Excel Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                FileLogger.ApplicationLog(nameof(ExportToExcel), ex.Message);
             }
         }
 
-        #endregion
+        #endregion Excel Export
 
-        #region Shared DataTable Builder
-
-        /// <summary>
-        /// Converts GridRows → DataTable.
-        /// Used by BOTH ExportToPdf and ExportToExcel — single source of truth.
-        /// Opening/Closing Amount → Opening/Closing Balance (same as WinForms Picpdf_Click).
-        /// </summary>
+        #region Shared DataTable Builder       
         private DataTable BuildExportDataTable()
         {
             var dt = new DataTable("LedgerHistory");
@@ -381,7 +364,7 @@ namespace ClientDesktop.ViewModel
             return dt;
         }
 
-        #endregion
+        #endregion Shared DataTable Builder
 
         #region INotifyPropertyChanged
 
@@ -389,6 +372,6 @@ namespace ClientDesktop.ViewModel
         protected void OnPropertyChanged([CallerMemberName] string name = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
-        #endregion
+        #endregion INotifyPropertyChanged
     }
 }

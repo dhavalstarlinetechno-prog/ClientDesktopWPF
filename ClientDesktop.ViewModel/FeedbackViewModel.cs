@@ -1,6 +1,7 @@
 ﻿using ClientDesktop.Core.Base;
 using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
+using ClientDesktop.Infrastructure.Logger;
 using ClientDesktop.Infrastructure.Services;
 using ClientDesktop.Services;
 using System;
@@ -15,7 +16,7 @@ namespace ClientDesktop.ViewModel
 {
     public class FeedbackViewModel : ViewModelBase, ICloseable
     {
-        #region Variable
+        #region Variables/Properties
 
         private readonly SessionService _sessionService;
         private readonly FeedbackService _FeedbackService;
@@ -76,7 +77,7 @@ namespace ClientDesktop.ViewModel
 
         public event Action<ChatList> OnNewReplyReceived;
 
-        #endregion Variable
+        #endregion Variables/Properties
 
         #region Constructor 
 
@@ -85,9 +86,7 @@ namespace ClientDesktop.ViewModel
             _sessionService = sessionService;
             _FeedbackService = feedbackService;
             _socketService = socketService;
-            FeedbackList = new ObservableCollection<FeedbackModel>();
-
-            //OnRecordDeletedExternally = (id) => RemoveFeedbackFromGrid(id);
+            FeedbackList = new ObservableCollection<FeedbackModel>();         
         }
 
         #endregion Constructor
@@ -133,6 +132,7 @@ namespace ClientDesktop.ViewModel
         #region Methods
         public async Task LoadFeedbackAsync()
         {
+         
             if (!_sessionService.IsInternetAvailable)
                 return;
             IsBusy = true;
@@ -148,6 +148,10 @@ namespace ClientDesktop.ViewModel
                 {
                     ErrorMessage = response?.Exception?.ToString() ?? "Failed to load feedback.";
                 }
+            }
+            catch(Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(LoadFeedbackAsync),ex.Message);
             }
             finally
             {
@@ -171,10 +175,13 @@ namespace ClientDesktop.ViewModel
                     CurrentFeedbackId = feedbackId;
                 }
                 else
-                {
-                    ErrorMessage = "Failed to load feedback details.";
+                {                    
                     CurrentFeedbackId = 0;
                 }
+            }
+            catch(Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(GetFeedbackDetailsAsync), ex.Message);
             }
             finally
             {
@@ -199,6 +206,11 @@ namespace ClientDesktop.ViewModel
 
                 return response;
             }
+            catch(Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(SubmitFeedbackAsync), ex.Message);
+                return null;
+            }
             finally
             {
                 IsBusy = false;
@@ -221,6 +233,11 @@ namespace ClientDesktop.ViewModel
                     ErrorMessage = response?.SuccessMessage ?? "Failed to send reply.";
 
                 return response;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(SubmitFeedbackReplyAsync), ex.Message);
+                return null;
             }
             finally
             {

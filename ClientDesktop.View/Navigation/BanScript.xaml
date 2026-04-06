@@ -16,14 +16,9 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-
-            <!-- Header -->
+         
             <StackPanel Orientation="Horizontal"
                      Margin="0,0,0,8">
-                <!--<Image x:Name="Banscriptimage"
-                    Width="24"
-                    Height="24"
-                    Stretch="Uniform"/>-->
 
                 <Viewbox Width="24" Height="24">
                     <Canvas Width="100" Height="100">
@@ -50,8 +45,7 @@
                         VerticalAlignment="Center"
                         Margin="8,0,0,0"/>
             </StackPanel>
-
-            <!-- Date -->
+           
             <WrapPanel Grid.Row="1"
                     Margin="0,0,0,6">
                 <TextBlock Text="Today's Banscripts Data"
@@ -61,8 +55,7 @@
                         FontSize="12"
                         Margin="5,0,0,0"/>
             </WrapPanel>
-
-            <!-- Grid -->
+            
             <Grid Grid.Row="2">
                 <DataGrid x:Name="DgvBanScript"
                        ItemsSource="{Binding GridRows}"
@@ -87,28 +80,11 @@
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="VerticalAlignment" Value="Center"/>
-                                    <!--<Setter Property="VerticalAlignment" Value="Center"/>-->
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
                     </DataGrid.Columns>
-
-                    <!--<DataGrid.RowStyle>
-                        <Style TargetType="DataGridRow">
-                            <Setter Property="Background" Value="Transparent"/>
-                            <Style.Triggers>
-                                <Trigger Property="IsSelected" Value="True">
-                                    <Setter Property="Background" Value="Transparent"/>
-                                    <Setter Property="BorderBrush" Value="Transparent"/>
-                                </Trigger>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="Transparent"/>
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </DataGrid.RowStyle>-->
-
-                    <!-- ✅ FIX: Cell selection color hatane ke liye -->
+                  
                     <DataGrid.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="BorderThickness" Value="0"/>
@@ -134,8 +110,7 @@
                         </Style>
                     </DataGrid.ColumnHeaderStyle>
                 </DataGrid>
-
-                <!-- No Data -->
+              
                 <TextBlock x:Name="LblNoData"
                         Text="No Data Available"
                         FontSize="15"                                   
@@ -144,24 +119,7 @@
                         VerticalAlignment="Top" 
                         FontFamily="Microsoft Sans Serif" Margin="0,34,0,0"
                         Visibility="Collapsed">
-
-                    <!--<TextBlock.Style>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="Visibility" Value="Collapsed"/>
-                            <Style.Triggers>
-
-                                --><!-- Show only after data loaded AND no rows --><!--
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding IsDataLoaded}" Value="True"/>
-                                        <Condition Binding="{Binding GridRows.Count}" Value="0"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Visibility" Value="Visible"/>
-                                </MultiDataTrigger>
-
-                            </Style.Triggers>
-                        </Style>
-                    </TextBlock.Style>-->
+                  
                 </TextBlock>
 
             </Grid>

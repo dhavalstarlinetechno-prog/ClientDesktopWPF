@@ -1,5 +1,6 @@
 ﻿using ClientDesktop.Core.Base;
 using ClientDesktop.Core.Models;
+using ClientDesktop.Infrastructure.Logger;
 using ClientDesktop.Infrastructure.Services;
 using DocumentFormat.OpenXml.Drawing.Charts;
 using System;
@@ -13,6 +14,8 @@ namespace ClientDesktop.ViewModel
 {
     public class SymbolSpecificationViewModel : ViewModelBase
     {
+        #region Variables / Properties
+
         public readonly SessionService _sessionService;
         private readonly SymbolSpecificationService _symbolSpecificationService;       
         public Action CloseAction { get; set; }
@@ -40,6 +43,9 @@ namespace ClientDesktop.ViewModel
             set => SetProperty(ref _symbolData, value);
         }
 
+        #endregion Variables / Properties
+
+        #region Constructor
         public SymbolSpecificationViewModel(SessionService sessionService, SymbolSpecificationService symbolSpecificationService)
         {
             _sessionService = sessionService;
@@ -47,20 +53,34 @@ namespace ClientDesktop.ViewModel
             CloseCommand = new RelayCommand(_ => CloseAction?.Invoke());
         }
 
+        #endregion Constructor
+
+        #region Method
+
         public async Task LoadSymbolData()
         {
-            if (!_sessionService.IsInternetAvailable)
-                return;
+            try
+            {
+                if (!_sessionService.IsInternetAvailable)
+                    return;
 
-            if (SymbolId <= 0)
-                return;
+                if (SymbolId <= 0)
+                    return;
 
-            var response = await _symbolSpecificationService.GetSymbolAsync(SymbolId);
+                var response = await _symbolSpecificationService.GetSymbolAsync(SymbolId);
 
-            if (response == null)
-                return;
+                if (response == null)
+                    return;
 
-            SymbolData = response;
+                SymbolData = response;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(LoadSymbolData), $"Error occurred: {ex.Message}");
+            }
+            
         }
+
+        #endregion Method
     }
 }

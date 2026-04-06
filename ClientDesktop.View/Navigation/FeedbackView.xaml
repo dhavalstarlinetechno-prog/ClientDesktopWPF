@@ -8,7 +8,7 @@
              Height="600" Width="1080" Loaded="UserControl_Loaded">
 
     <UserControl.Resources>
-        <!-- Styles for toolbar buttons -->
+        
         <Style x:Key="ToolbarButtonStyle" TargetType="Button">
             <Setter Property="Width" Value="40"/>
             <Setter Property="Height" Value="34"/>
@@ -32,7 +32,7 @@
             </Setter>
         </Style>
 
-        <!-- Style for action buttons (Submit, Reply, New Feedback) -->
+       
         <Style x:Key="ActionButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="#6495ED"/>
             <Setter Property="Foreground" Value="White"/>
@@ -53,7 +53,7 @@
             </Setter>
         </Style>
 
-        <!-- Style for back button -->
+       
         <Style x:Key="BackButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="#708090"/>
             <Setter Property="Foreground" Value="White"/>
@@ -74,7 +74,7 @@
             </Setter>
         </Style>
 
-        <!-- DataGrid Style -->
+       
         <Style x:Key="FeedbackDataGridStyle" TargetType="DataGrid">
             <Setter Property="AutoGenerateColumns" Value="False"/>
             <Setter Property="IsReadOnly" Value="True"/>
@@ -157,21 +157,21 @@
     </UserControl.Resources>
 
     <Grid>
-        <!-- Main Feedback Panel -->
+       
         <Border x:Name="FeedbackPanel" 
               BorderBrush="#CCCCCC" 
               BorderThickness="1" 
               Background="White">
 
             <Grid>
-                <!-- DataGrid Panel (initially visible) -->
+               
                 <Grid x:Name="DataGridPanel" Visibility="Visible">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Add Feedback Button -->
+                    
                     <Button x:Name="BtnAddFeedback" 
                           Content="New Feedback" 
                           Style="{StaticResource ActionButtonStyle}"
@@ -180,7 +180,7 @@
                           Width="150"
                           Height="37" Click="BtnAddFeedback_Click"/>
 
-                    <!-- DataGrid for Feedback Records -->
+                    
                     <DataGrid x:Name="DgvFeedbackRecord" 
                             Grid.Row="1"
                             Style="{StaticResource CustomDataGrid}"   
@@ -299,7 +299,7 @@
                     </DataGrid>
                 </Grid>
 
-                <!-- Feedback Form Panel (for adding new feedback) -->
+               
                 <Grid x:Name="FeedbackFormPanel" Visibility="Collapsed" Margin="10">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -316,7 +316,7 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Subject -->
+                    
                     <Label Grid.Row="0" Grid.Column="0" 
                          Content="Subject:" 
                          FontWeight="Bold" 
@@ -331,7 +331,7 @@
                            VerticalContentAlignment ="Center"
                            Margin="5,10,10,5"/>
 
-                    <!-- Message -->
+                   
                     <Label Grid.Row="1" Grid.Column="0" 
                          Content="Message:" 
                          FontWeight="Bold" 
@@ -339,14 +339,14 @@
                          Margin="68,5,5,5"
                          VerticalAlignment="Top"/>
 
-                    <!-- Message with Toolbar -->
+                   
                     <Grid Grid.Row="1" Grid.Column="1" Margin="5,5,10,5">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
-                        <!-- Panel1 - Formatting Toolbar -->
+                       
                         <WrapPanel Grid.Row="0" Background="#F0F0F0" Margin="0,0,0,5">
                             <Button x:Name="BtnBold" Content="B" Style="{StaticResource ToolbarButtonStyle}" Click="BtnBold_Click"/>
                             <Button x:Name="BtnItalic" Content="I" Style="{StaticResource ToolbarButtonStyle}" Click="BtnItalic_Click"/>
@@ -378,13 +378,13 @@
                                             <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
 
-                                        <!-- Close Button -->
+                                        
                                         <Button Content="X" Width="20" Height="20" HorizontalAlignment="Right" Background="Transparent" BorderThickness="0"  Click="BtnCloseEmoji_Click"/>
 
-                                        <!-- Emojis Container with ScrollViewer -->
+                                       
                                         <ScrollViewer Grid.Row="1" Width="240" Height="150" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                                             <WrapPanel x:Name="EmojiWrapPanel">
-                                                <!-- Emojis will be added from C# code -->
+                                                
                                             </WrapPanel>
                                         </ScrollViewer>
                                     </Grid>
@@ -395,7 +395,7 @@
                             <Button x:Name="BtnRedo" Content="↷" Style="{StaticResource ToolbarButtonStyle}" Click="BtnRedo_Click"/>
                         </WrapPanel>
 
-                        <!-- Message RichTextBox -->
+                       
                         <RichTextBox x:Name="TxtMessage" 
                                    Grid.Row="1" 
                                    Height="117"
@@ -406,7 +406,7 @@
                                    VerticalScrollBarVisibility="Auto"/>
                     </Grid>
 
-                    <!-- Attachment -->
+                   
                     <Label x:Name="LabelChosenFile" Grid.Row="2" Grid.Column="0" 
                          Content="Attachment:" 
                          FontWeight="Bold" 
@@ -426,7 +426,7 @@
                              VerticalAlignment="Center"/>
                     </StackPanel>
 
-                    <!-- Picture Preview -->
+                   
                     <Image x:Name="ImgPreview" 
                          Grid.Row="3" Grid.Column="1" 
                          Width="270" 
@@ -435,13 +435,13 @@
                          HorizontalAlignment="Left"
                          Stretch="Uniform"/>
 
-                    <!-- Error Message -->
+                   
                     <TextBlock x:Name="TxtErrorMessage" 
                              Grid.Row="4" Grid.Column="1" 
                              Foreground="Red"
                              Margin="550,5,10,5"/>
 
-                    <!-- Submit Button -->
+                    
                     <Button x:Name="BtnSubmit" 
                           Grid.Row="5" Grid.Column="1" 
                           Content="Submit" 
@@ -452,7 +452,7 @@
                           Margin="5,10,10,10" Click="BtnSubmit_Click"/>
                 </Grid>
 
-                <!-- Reply Panel -->
+                
                 <ScrollViewer x:Name="ReplyPanel"
                             VerticalScrollBarVisibility="Auto"
                             HorizontalScrollBarVisibility="Disabled"
@@ -461,16 +461,16 @@
                     <Grid Margin="10">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
-                            <!-- Back Button -->
+                           
                             <RowDefinition Height="Auto"/>
-                            <!-- Details -->
+                            
                             <RowDefinition Height="Auto"/>
-                            <!-- Hidden ID -->
+                           
                             <RowDefinition Height="Auto"/>
-                            <!-- Chat + Reply -->
+                           
                         </Grid.RowDefinitions>
 
-                        <!-- Back Button -->
+                       
                         <Button x:Name="BtnBack"
                               Grid.Row="0"
                               Content="Back"
@@ -479,7 +479,7 @@
                               Height="40"
                               HorizontalAlignment="Right" Click="BtnBack_Click"/>
 
-                        <!-- Feedback Details -->
+                        
                         <Grid Grid.Row="1" Margin="20,10,20,10">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -551,12 +551,12 @@
                                  Grid.Row="2"
                                  Visibility="Collapsed"/>
 
-                        <!-- Feedback Chat Panel -->
+                        
                         <StackPanel x:Name="FeedbackChatPanel"
                                   Grid.Row="3"
                                   Margin="141,10,0,0">
 
-                            <!-- Chat Panel -->
+                            
                             <ListBox x:Name="ChatPanel"
                                    Margin="0,0,0,10"
                                    Background="Transparent"
@@ -576,7 +576,7 @@
                                 </ListBox.ItemContainerStyle>
                             </ListBox>
 
-                            <!-- Reply Button -->
+                           
                             <Button x:Name="BtnReply"
                                   Content="Reply"
                                   Style="{StaticResource ActionButtonStyle}"
@@ -585,7 +585,7 @@
                                   HorizontalAlignment="Right"
                                   Margin="0,0,10,10" Click="BtnReply_Click"/>
 
-                            <!-- GroupBox Panel -->
+                            
                             <Grid x:Name="GroupBoxPanel" Visibility="Collapsed" Width="850" HorizontalAlignment="Right">
                                 <Border x:Name="GrpBoxReply"
                                       BorderBrush="#CCCCCC"
@@ -602,7 +602,7 @@
                                             <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
 
-                                        <!-- Toolbar -->
+                                        
                                         <WrapPanel Grid.Row="0"
                                                  Background="#F0F0F0"
                                                  Margin="0,0,0,5">
@@ -637,7 +637,7 @@
                                             <Button x:Name="ButtonReplayRedo" Content="↷" Style="{StaticResource ToolbarButtonStyle}" Click="ButtonReplayRedo_Click"/>
                                         </WrapPanel>
 
-                                        <!-- Reply Text -->
+                                        
                                         <RichTextBox x:Name="TxtReply"
                                                    Grid.Row="1"
                                                    Height="80"
@@ -646,7 +646,7 @@
                                                    Margin="0,0,0,5"
                                                    VerticalScrollBarVisibility="Auto" TextChanged="TxtReply_TextChanged"/>
 
-                                        <!-- Emoji Popup -->
+                                       
                                         <Popup x:Name="ReplayeEmojiPopup" 
                                              StaysOpen="False" 
                                              PlacementTarget="{Binding ElementName=ButtonReplayemoji}" 
@@ -693,7 +693,7 @@
                                             </Border>
                                         </Popup>
 
-                                        <!-- File Upload -->
+                                      
                                         <StackPanel Grid.Row="2" Orientation="Vertical" Margin="0,0,0,0">
                                             <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
                                                 <Button x:Name="BtnFileUpload" 
@@ -707,7 +707,7 @@
                                                      VerticalAlignment="Center"/>
                                             </StackPanel>
 
-                                            <!-- Image -->
+                                            
                                             <Image x:Name="ReplayPicturebox" 
                                                  Width="123" 
                                                  Height="84"
@@ -715,7 +715,7 @@
                                                  HorizontalAlignment="Left"/>
                                         </StackPanel>
 
-                                        <!-- Submit -->
+                                        
                                         <Button x:Name="BtnReplySubmit"
                                               Grid.Row="4"
                                               Content="Submit"

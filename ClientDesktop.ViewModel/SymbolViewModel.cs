@@ -1,5 +1,6 @@
 ﻿using ClientDesktop.Core.Base;
 using ClientDesktop.Core.Models;
+using ClientDesktop.Infrastructure.Logger;
 using ClientDesktop.Infrastructure.Services;
 using DocumentFormat.OpenXml.Drawing.Charts;
 using System;
@@ -15,9 +16,10 @@ namespace ClientDesktop.ViewModel
 {
     public class SymbolViewModel : ViewModelBase
     {
+        #region Variables/Properties
+
         private readonly SessionService _sessionService;
         private readonly SymbolService _symbolService;
-
         public Action CloseAction { get; set; }
         public ICommand CloseCommand { get; }
 
@@ -38,6 +40,7 @@ namespace ClientDesktop.ViewModel
                 OnPropertyChanged(nameof(Folders));
             }
         }
+
         private ObservableCollection<SubSymbolModel> _subSymbols;
 
         private ObservableCollection<SymbolModel> _symbolData;
@@ -75,6 +78,9 @@ namespace ClientDesktop.ViewModel
             }
         }
 
+        #endregion Variables/Properties
+
+        #region Constructor
         public SymbolViewModel(SessionService sessionService, SymbolService symbolService)
         {
             _sessionService = sessionService;
@@ -85,6 +91,9 @@ namespace ClientDesktop.ViewModel
             CloseCommand = new RelayCommand(_ => CloseAction?.Invoke());
         }
 
+        #endregion Constructor
+
+        #region Methods
         public async Task<string> LoadSymbolsAsync()
         {
             try
@@ -102,14 +111,13 @@ namespace ClientDesktop.ViewModel
                     {
                         Folders.Add(item);
                     }
-                }
-                // Return the serialized result so Window_Loaded can use it
+                }                
                 return Newtonsoft.Json.JsonConvert.SerializeObject(result);
             }
             catch (Exception ex)
-            {
-                MessageBox.Show("Error loading symbols: " + ex.Message);
-                return string.Empty; // Return empty string on error to satisfy the return type
+            {              
+                FileLogger.ApplicationLog(nameof(LoadSymbolsAsync), $"Error loading symbols: {ex.Message}");
+                return string.Empty; 
             }
             finally
             {
@@ -133,14 +141,13 @@ namespace ClientDesktop.ViewModel
                         SubSymbols.Add(item);
                     }
                 }
-
-                // Return the serialized result
+                
                 return Newtonsoft.Json.JsonConvert.SerializeObject(result);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error loading sub-symbols: " + ex.Message);
-                return string.Empty; // Return empty string on error
+                FileLogger.ApplicationLog(nameof(LoadSubSymbolsAsync), $"Error loading sub-symbols: {ex.Message}");
+                return string.Empty;
             }
         }
 
@@ -152,28 +159,23 @@ namespace ClientDesktop.ViewModel
                     return null;
 
                 IsBusy = true;
-
-                // 1. Call the service method we created earlier
+                
                 var result = await _symbolService.Getsymbolsbyrouteforclient(routeId);
-
-                // 2. Clear existing data
+               
                 Loadsymbolsbyroute.Clear();
 
                 if (result != null && result.Data != null)
-                {
-                    // 3. Fill the ObservableCollection for the UI
+                {                   
                     foreach (var item in result.Data)
                     {
                         Loadsymbolsbyroute.Add(item);
                     }
-                }
-
-                // 4. Return the serialized JSON as per your other methods' pattern
+                }                
                 return Newtonsoft.Json.JsonConvert.SerializeObject(result);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error loading symbols by route: " + ex.Message);
+                FileLogger.ApplicationLog(nameof(LoadSubSymbolsAsync), "Error loading symbols by route: " + ex.Message);
                 return string.Empty;
             }
             finally
@@ -190,28 +192,24 @@ namespace ClientDesktop.ViewModel
                     return null;
 
                 IsBusy = true;
-
-                // 1. Call the service method we created earlier
+                
                 var result = await _symbolService.GetDolorSignTree(symbolId);
-
-                // 2. Clear existing data
+                
                 Loaddolorsymbols.Clear();
 
                 if (result != null && result.Data != null)
-                {
-                    // 3. Fill the ObservableCollection for the UI
+                {                   
                     foreach (var item in result.Data)
                     {
                         Loaddolorsymbols.Add(item);
                     }
                 }
-
-                // 4. Return the serialized JSON as per your other methods' pattern
+                
                 return Newtonsoft.Json.JsonConvert.SerializeObject(result);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error loading symbols by route: " + ex.Message);
+                FileLogger.ApplicationLog(nameof(LoadDolorSignTree),"Error loading symbols by route: " + ex.Message);
                 return string.Empty;
             }
             finally
@@ -228,8 +226,7 @@ namespace ClientDesktop.ViewModel
                     return null;
 
                 IsBusy = true;
-
-                // 1. Call the service method we created earlier
+                
                 var result = await _symbolService.GetSymbolDetailsAsync(symbolId);
 
                 if (result != null && result != null)
@@ -237,13 +234,12 @@ namespace ClientDesktop.ViewModel
                     SymbolData.Clear();
                     SymbolData.Add(result);
                 }
-
-                // 4. Return the serialized JSON as per your other methods' pattern
+                
                 return Newtonsoft.Json.JsonConvert.SerializeObject(result);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error loading symbols by route: " + ex.Message);
+                FileLogger.ApplicationLog(nameof(LoadSymbolDetailsAsync),"Error loading symbols by route: " + ex.Message);
                 return string.Empty;
             }
             finally
@@ -251,5 +247,7 @@ namespace ClientDesktop.ViewModel
                 IsBusy = false;
             }
         }
+
+        #endregion Methods
     }
 }

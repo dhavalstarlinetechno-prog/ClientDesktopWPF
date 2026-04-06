@@ -7,10 +7,10 @@
              mc:Ignorable="d" 
              Height="600" Width="1000" Loaded="UserControl_Loaded">
 
-    <!-- ================= BUTTON STYLE (NO HOVER CHANGE) ================= -->
+  
     <UserControl.Resources>
         <Style x:Key="FixedBlueButtonStyle" TargetType="Button">
-            <!-- Default (Enabled State) -->
+          
             <Setter Property="Background" Value="CornflowerBlue"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="FontWeight" Value="Bold"/>
@@ -18,7 +18,7 @@
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Cursor" Value="Hand"/>
 
-            <!-- Custom Template -->
+           
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -35,7 +35,7 @@
                         </Border>
 
                         <ControlTemplate.Triggers>
-                            <!-- When Disabled -->
+                           
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Foreground" Value="Black"/>
                                 <Setter TargetName="border" Property="Opacity" Value="0.7"/>
@@ -53,7 +53,7 @@
 
 
     <Grid>
-        <!-- ================= PASSWORD / INFO PANEL ================= -->
+        
         <Border x:Name="Mainpanel"
          BorderBrush="Gray"
          BorderThickness="1"
@@ -109,7 +109,7 @@
             </Grid>
         </Border>
 
-        <!-- ================= LEDGER / CHILD PANEL ================= -->
+       
         <Border x:Name="ChildPanel"
          BorderBrush="Gray"
          BorderThickness="1"
@@ -117,7 +117,7 @@
 
             <Grid>
 
-                <!-- Top Controls -->
+                
                 <Grid Height="45" VerticalAlignment="Top">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -128,7 +128,7 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <!-- Start Date Label -->
+                  
                     <TextBlock Text="Start Date:"
                                FontWeight="Bold"
                                FontSize="13"
@@ -136,7 +136,7 @@
                                VerticalAlignment="Center"
                                FontFamily="Microsoft Sans Serif"/>
 
-                    <!-- Start Date Picker -->
+                  
                     <DatePicker x:Name="Dtpstartdate"
                                 Style="{StaticResource CustomDatePickerStyle}"
                                 Grid.Column="1"
@@ -144,7 +144,7 @@
                                 Height="26"
                                 VerticalAlignment="Center"/>
 
-                    <!-- End Date Label -->
+                  
                     <TextBlock Grid.Column="2"
                                Text="End Date:"
                                FontWeight="Bold"
@@ -153,7 +153,7 @@
                                VerticalAlignment="Center"
                                FontFamily="Microsoft Sans Serif"/>
 
-                    <!-- End Date Picker -->
+                   
                     <DatePicker x:Name="Dtpenddate"
                                 Style="{StaticResource CustomDatePickerStyle}"
                                 Grid.Column="3"
@@ -222,7 +222,7 @@
                     </StackPanel>
                 </Grid>
 
-                <!-- DataGrid -->
+                
                 <DataGrid x:Name="DgvLedgerRecord"
                    Style="{StaticResource CustomDataGrid}"       
                    Margin="3,62,3,3"

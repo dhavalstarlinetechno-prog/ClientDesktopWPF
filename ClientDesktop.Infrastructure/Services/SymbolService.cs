@@ -2,6 +2,7 @@
 using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Helpers;
+using ClientDesktop.Infrastructure.Logger;
 using DocumentFormat.OpenXml.Drawing.Charts;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -18,10 +19,15 @@ namespace ClientDesktop.Infrastructure.Services
 {
     public class SymbolService
     {
+        #region Variables
+
         private readonly IApiService _apiService;
         private readonly SessionService _sessionService;
         private readonly IRepository<List<Symbolmodel>> _symbolModel;
 
+        #endregion Variables
+
+        #region Constructor
         public SymbolService(IApiService apiService, SessionService sessionService)
         {
             _apiService = apiService;
@@ -29,6 +35,9 @@ namespace ClientDesktop.Infrastructure.Services
 
         }
 
+        #endregion Constructor
+
+        #region Methods
         public async Task<Symbolmodel> GetSymbolsAsync()
         {
             try
@@ -40,8 +49,7 @@ namespace ClientDesktop.Infrastructure.Services
                 var jsonResponse = await _apiService.GetAsync<object>(url);
 
                 if (jsonResponse == null)
-                {
-                    MessageBox.Show("No data received.");
+                {                   
                     return null;
                 }
 
@@ -49,12 +57,11 @@ namespace ClientDesktop.Infrastructure.Services
                 var parsed = JsonConvert.DeserializeObject<dynamic>(jsonString);
 
                 if (parsed?.data == null)
-                {
-                    MessageBox.Show("No data found.");
+                {                   
                     return null;
                 }
 
-                // Deserialize only Folder list
+                
                 var folderList = JsonConvert.DeserializeObject<List<Folder>>(
                     parsed.data.ToString());
 
@@ -65,11 +72,10 @@ namespace ClientDesktop.Infrastructure.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Request failed: {ex.Message}");
+                FileLogger.ApplicationLog(nameof(GetSymbolsAsync), $"Request failed: {ex.Message}");
                 return null;
             }
         }
-
         public async Task<SubSymbolRoot> GetSubSymbolsAsync()
         {
             try
@@ -81,8 +87,7 @@ namespace ClientDesktop.Infrastructure.Services
                 var jsonResponse = await _apiService.GetAsync<object>(url);
 
                 if (jsonResponse == null)
-                {
-                    MessageBox.Show("No data received.");
+                {                   
                     return null;
                 }
 
@@ -90,12 +95,10 @@ namespace ClientDesktop.Infrastructure.Services
                 var parsed = JsonConvert.DeserializeObject<dynamic>(jsonString);
 
                 if (parsed?.data == null)
-                {
-                    MessageBox.Show("No data found.");
+                {                   
                     return null;
                 }
-
-                // ✅ Correct deserialization
+              
                 var dataList = JsonConvert.DeserializeObject<List<SubSymbolModel>>(
                     parsed.data.ToString());
 
@@ -106,11 +109,10 @@ namespace ClientDesktop.Infrastructure.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Request failed: {ex.Message}");
+                FileLogger.ApplicationLog(nameof(GetSubSymbolsAsync), $"Request failed: {ex.Message}");
                 return null;
             }
         }
-
         public async Task<SubSymbolRoot> Getsymbolsbyrouteforclient(int routeId)
         {
             try
@@ -120,8 +122,7 @@ namespace ClientDesktop.Infrastructure.Services
                 var jsonResponse = await _apiService.GetAsync<object>(url);
 
                 if (jsonResponse == null)
-                {
-                    MessageBox.Show("No data received.");
+                {                   
                     return null;
                 }
 
@@ -129,12 +130,10 @@ namespace ClientDesktop.Infrastructure.Services
                 var parsed = JsonConvert.DeserializeObject<dynamic>(jsonString);
 
                 if (parsed?.data == null)
-                {
-                    MessageBox.Show("No data found.");
+                {                    
                     return null;
                 }
-
-                // ✅ Correct deserialization
+               
                 var dataList = JsonConvert.DeserializeObject<List<SubSymbolModel>>(
                     parsed.data.ToString());
 
@@ -145,11 +144,10 @@ namespace ClientDesktop.Infrastructure.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Request failed: {ex.Message}");
+                FileLogger.ApplicationLog(nameof(Getsymbolsbyrouteforclient), $"Request failed: {ex.Message}");
                 return null;
             }
         }
-
         public async Task<SubSymbolRoot> GetDolorSignTree(string symbolId)
         {
             try
@@ -159,8 +157,7 @@ namespace ClientDesktop.Infrastructure.Services
                 var jsonResponse = await _apiService.GetAsync<object>(url);
 
                 if (jsonResponse == null)
-                {
-                    MessageBox.Show("No data received.");
+                {                    
                     return null;
                 }
 
@@ -168,12 +165,10 @@ namespace ClientDesktop.Infrastructure.Services
                 var parsed = JsonConvert.DeserializeObject<dynamic>(jsonString);
 
                 if (parsed?.data == null)
-                {
-                    MessageBox.Show("No data found.");
+                {                    
                     return null;
                 }
-
-                // ✅ Correct deserialization
+               
                 var dataList = JsonConvert.DeserializeObject<List<SubSymbolModel>>(
                     parsed.data.ToString());
 
@@ -184,11 +179,10 @@ namespace ClientDesktop.Infrastructure.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Request failed: {ex.Message}");
+                FileLogger.ApplicationLog(nameof(GetDolorSignTree), $"Request failed: {ex.Message}");
                 return null;
             }
         }
-
         public async Task<SymbolModel?> GetSymbolDetailsAsync(int symbolId)
         {
             try
@@ -203,8 +197,7 @@ namespace ClientDesktop.Infrastructure.Services
                 var response = await _apiService.GetAsync<ApiResponse<SymbolModel>>(url);
 
                 if (response?.Data == null)
-                {
-                    MessageBox.Show("No data received.");
+                {                    
                     return null;
                 }
 
@@ -212,9 +205,11 @@ namespace ClientDesktop.Infrastructure.Services
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error fetching symbol: " + ex.Message);
+                FileLogger.ApplicationLog(nameof(GetSymbolDetailsAsync), "Error fetching symbol: " + ex.Message);
                 return null;
             }
         }
+
+        #endregion Methods
     }
 }

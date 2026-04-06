@@ -8,7 +8,6 @@
              Height="600" Width="1000">
 
     <UserControl.Resources>
-        <!-- Button Style -->
         <Style x:Key="FixedBlueButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="CornflowerBlue"/>
             <Setter Property="Foreground" Value="White"/>
@@ -39,8 +38,7 @@
                 </Setter.Value>
             </Setter>
         </Style>
-
-        <!-- DataGrid Header Style -->
+       
         <Style x:Key="DataGridHeaderStyle" TargetType="DataGridColumnHeader">
             <Setter Property="FontWeight" Value="Regular"/>
             <Setter Property="BorderBrush" Value="LightGray"/>
@@ -48,8 +46,7 @@
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="Padding" Value="5"/>
         </Style>
-
-        <!-- Column Alignment Styles -->
+      
         <Style x:Key="LeftAlignedCellStyle" TargetType="TextBlock">
             <Setter Property="TextAlignment" Value="Left"/>
             <Setter Property="HorizontalAlignment" Value="Left"/>
@@ -67,7 +64,6 @@
     </UserControl.Resources>
 
     <Grid>
-        <!-- Password Panel -->
         <Grid x:Name="Mainpanel" Visibility="Visible">
             <Border BorderBrush="Gray" BorderThickness="1">
                 <Grid>
@@ -104,8 +100,7 @@
                 </Grid>
             </Border>
         </Grid>
-
-        <!-- Main Content Panel -->
+       
         <Grid x:Name="Childpanel" Background="White" Visibility="Hidden">
             <Border BorderBrush="Gray" BorderThickness="1">
                 <Grid Margin="10">
@@ -168,8 +163,7 @@
                     <Border x:Name="Gridpanel" Grid.Row="1" BorderBrush="LightGray" BorderThickness="1" Margin="10">
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel x:Name="GridpanelContent" Margin="10">
-
-                                <!-- 1. Security Grids (Dynamic list bound from Code) -->
+                              
                                 <ItemsControl x:Name="SecurityGridsList">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
@@ -210,8 +204,7 @@
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
-
-                                <!-- 2. Summary Grid -->
+                               
                                 <StackPanel x:Name="SummaryPanel" Visibility="Collapsed">
                                     <TextBlock Text="SUMMARY" FontWeight="Bold" FontSize="15" HorizontalAlignment="Center" Margin="0,20,0,10" />
                                     <DataGrid x:Name="SummaryDataGrid"
@@ -246,7 +239,6 @@
                                     </DataGrid>
                                 </StackPanel>
 
-                                <!-- 3. Carry Forward Grid -->
                                 <StackPanel x:Name="CarryForwardPanel" Visibility="Collapsed">
                                     <TextBlock Text="CARRY FORWARD" FontWeight="Bold" FontSize="15" HorizontalAlignment="Center" Margin="0,20,0,10" />
                                     <DataGrid x:Name="CarryForwardDataGrid"
@@ -263,7 +255,7 @@
                                             <DataGridTextColumn Header="Quantity" Binding="{Binding Quantity}" ElementStyle="{StaticResource RightAlignedCellStyle}" HeaderStyle="{StaticResource RightAlignedHeaderStyle}"/>
                                             <DataGridTextColumn Header="Net" Binding="{Binding Net}" ElementStyle="{StaticResource RightAlignedCellStyle}" HeaderStyle="{StaticResource RightAlignedHeaderStyle}"/>
                                         </DataGrid.Columns>
-                                        
+
                                         <DataGrid.CellStyle>
                                             <Style TargetType="DataGridCell">
                                                 <Setter Property="BorderThickness" Value="0"/>
@@ -277,10 +269,9 @@
                                                 </Style.Triggers>
                                             </Style>
                                         </DataGrid.CellStyle>
-                                        
+
                                     </DataGrid>
                                 </StackPanel>
-
                             </StackPanel>
                         </ScrollViewer>
                     </Border>
