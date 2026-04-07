@@ -7,6 +7,7 @@ using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Helpers;
 using ClientDesktop.Infrastructure.Logger;
 using ClientDesktop.Infrastructure.Services;
+using ClientDesktop.Services;
 using CommunityToolkit.Mvvm.Messaging;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -28,6 +29,7 @@ namespace ClientDesktop.ViewModel
         private readonly SessionService _sessionService;
         private readonly IDialogService _dialogService;
         private readonly LiveTickService _liveTickService;
+        private readonly ISocketService _socketService;
 
         private readonly SemaphoreSlim _syncLock = new SemaphoreSlim(1, 1);
         private readonly HashSet<string> _nativeVisibleSymbols = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -152,16 +154,20 @@ namespace ClientDesktop.ViewModel
         /// <summary>
         /// Initializes a new instance of the MarketWatchViewModel class.
         /// </summary>
-        public MarketWatchViewModel(MarketWatchService marketWatchService, SessionService sessionService, IDialogService dialogService, LiveTickService liveTickService)
+        public MarketWatchViewModel(MarketWatchService marketWatchService, SessionService sessionService, IDialogService dialogService, LiveTickService liveTickService, ISocketService socketService)
         {
             _marketWatchService = marketWatchService;
             _sessionService = sessionService;
             _dialogService = dialogService;
+            _socketService = socketService;
 
             _liveTickService = liveTickService;
             _liveTickService.OnTickReceived += HandleLiveTick;
             _liveTickService.OnReconnected += HandleLiveReconnected;
             _liveTickService.OnConnected += () => { _isSignalRConnected = true; };
+
+            _socketService.OnPositionUpdated += HandlePositionUpdated;
+            _socketService.OnSocketReconnected += HandleSocketReconnection;
 
             MarketWatchSymbolsCollection = new ObservableCollection<MarketWatchSymbols>();
             HiddenSymbolsCollection = new ObservableCollection<MarketWatchSymbols>();
@@ -497,6 +503,49 @@ namespace ClientDesktop.ViewModel
             catch (Exception ex)
             {
                 FileLogger.ApplicationLog(nameof(HandleLiveReconnected), ex);
+            }
+        }
+
+        #endregion
+
+        #region Handles Socket Events
+
+        /// <summary>
+        /// Handles socket position update to show a symbol if it was hidden.
+        /// </summary>
+        private async void HandlePositionUpdated(Position position, bool isDeleted)
+        {
+            try
+            {
+                if (position != null && !isDeleted)
+                {
+                    var symbol = HiddenSymbolsCollection.FirstOrDefault(s =>
+                        s.SymbolName != null && s.SymbolName.Equals(position.SymbolName, StringComparison.OrdinalIgnoreCase));
+
+                    if (symbol != null)
+                    {
+                        await AddSymbolAsync(symbol);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(HandlePositionUpdated), ex);
+            }
+        }
+
+        /// <summary>
+        /// Handles socket reconnect by fetching fresh data.
+        /// </summary>
+        private async void HandleSocketReconnection()
+        {
+            try
+            {
+                LoadData(forceSync: true);
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(HandleSocketReconnection), ex);
             }
         }
 
