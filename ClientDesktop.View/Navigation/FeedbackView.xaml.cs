@@ -5,6 +5,7 @@ using ClientDesktop.Infrastructure.Logger;
 using ClientDesktop.Infrastructure.Services;
 using ClientDesktop.Services;
 using ClientDesktop.ViewModel;
+using Microsoft.Win32;
 using RtfPipe;
 using System;
 using System.Collections.Generic;
@@ -46,7 +47,8 @@ namespace ClientDesktop.View.Navigation
         private int _currentFeedbackId = 0;
         private DispatcherTimer _scrollTimer;
         private double _scrollTarget;
-        private const double ScrollEasingFactor = 0.15;
+        private bool _isManualScroll = false;
+        private const double ScrollEasingFactor = 0.12;
 
         #endregion Variable
 
@@ -88,6 +90,8 @@ namespace ClientDesktop.View.Navigation
 
             _scrollTimer.Tick += (s, e) =>
             {
+                if (_isManualScroll) return;
+
                 double current = ReplyPanel.VerticalOffset;
                 double diff = _scrollTarget - current;
 
@@ -102,9 +106,31 @@ namespace ClientDesktop.View.Navigation
                 }
             };
             ReplyPanel.PreviewMouseWheel += ReplyPanel_PreviewMouseWheel;
+            ReplyPanel.ScrollChanged += ReplyPanel_ScrollChanged;
+
+            ReplyPanel.PreviewMouseDown += (s, e) =>
+            {
+                _isManualScroll = true;
+                _scrollTimer.Stop();
+            };
+            ReplyPanel.PreviewMouseUp += (s, e) =>
+            {
+                _isManualScroll = false;
+            };
         }
+
+        private void ReplyPanel_ScrollChanged(object sender, ScrollChangedEventArgs e)
+        {
+            if (_isManualScroll)
+            {
+                _scrollTarget = ReplyPanel.VerticalOffset; // sync target
+            }
+        }
+
         private void ReplyPanel_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
+            _isManualScroll = false;
+
             SmoothScrollBy(e.Delta < 0 ? 150 : -150);
             e.Handled = true;
         }
@@ -243,10 +269,11 @@ namespace ClientDesktop.View.Navigation
         }}
     </style>
     <script>      
-        window.addEventListener('wheel', function(e) {{
+       window.addEventListener('wheel', function(e) {{
+             if (Math.abs(e.deltaY) > 0) {{
             window.chrome.webview.postMessage('scroll_wheel:' + e.deltaY);
-            e.preventDefault();
-        }}, {{ passive: false }});
+            }}
+        }}, {{ passive: true }});
     </script>
 </head>
 <body><p>{chat.feedbackMessage}</p></body>
@@ -304,18 +331,40 @@ namespace ClientDesktop.View.Navigation
                 }
                 catch { }
             }
-
-
+        
             DateTime msgTime = CommonHelper.ConvertUtcToIst(chat.createdOn);
-            messageLayout.Children.Add(new TextBlock
+            StackPanel timeContainer = new StackPanel
             {
-                Text = msgTime.ToString("dd/MM/yy HH:mm") + " ✔✔",
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 10, 0, 0),
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+
+            timeContainer.Children.Add(new TextBlock
+            {
+                Text = msgTime.ToString("dd/MM/yy HH:mm "),
                 FontSize = 13,
                 Foreground = Brushes.Gray,
-                Margin = new Thickness(0),
-                HorizontalAlignment = HorizontalAlignment.Left
+                VerticalAlignment = System.Windows.VerticalAlignment.Center
             });
 
+            System.Windows.Shapes.Path doubleCheckIcon = new System.Windows.Shapes.Path
+            {
+                Data = Geometry.Parse("M2,13L7,18L18,7M7,18L12,23L23,12"),
+                Stroke = Brushes.Gray,
+                StrokeThickness = 2,
+                StrokeStartLineCap = PenLineCap.Round,
+                StrokeEndLineCap = PenLineCap.Round,
+                StrokeLineJoin = PenLineJoin.Round,
+                Width = 14,
+                Height = 14,
+                Stretch = Stretch.Uniform,
+                VerticalAlignment = System.Windows.VerticalAlignment.Center,
+                Margin = new Thickness(2, 0, 0, 0)
+            };
+
+            timeContainer.Children.Add(doubleCheckIcon);
+            messageLayout.Children.Add(timeContainer);
             outerBorder.Child = messageLayout;
 
             var listItem = new ListBoxItem
@@ -796,14 +845,21 @@ namespace ClientDesktop.View.Navigation
             }
             else
             {
+                var errorBg = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#fce4e4"));
+                var errorBorder = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#c03"));
+
                 if (string.IsNullOrEmpty(subject))
                 {
-                    TxtSubject.Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 255, 102, 102));
+                    TxtSubject.Background = errorBg;
+                    TxtSubject.BorderBrush = errorBorder;
+                    TxtSubject.BorderThickness = new Thickness(1);
                     isValid = false;
                 }
                 if (string.IsNullOrEmpty(plainText))
                 {
-                    TxtMessage.Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 255, 102, 102));
+                    TxtMessage.Background = errorBg;
+                    TxtMessage.BorderBrush = errorBorder;
+                    TxtMessage.BorderThickness = new Thickness(1);
                     isValid = false;
                 }
 
@@ -1070,6 +1126,28 @@ namespace ClientDesktop.View.Navigation
                 TxtMessage.Redo();
             }
         }
+        private void BtnChooseFile_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                OpenFileDialog openFileDialog = new OpenFileDialog();
+                openFileDialog.Title = "Select Image File";
+                openFileDialog.Filter = "Image Files|*.jpg;*.jpeg;*.png;*.gif;*.bmp";
+
+                if (openFileDialog.ShowDialog() == true)
+                {
+                    string selectedImagePath = openFileDialog.FileName;
+
+                    LblChosenFile.Content = System.IO.Path.GetFileName(selectedImagePath);
+
+                    BitmapImage bitmapImage = new BitmapImage(new Uri(selectedImagePath));
+                    ImgPreview.Source = bitmapImage;
+
+                    this.ImagePath = selectedImagePath;
+                }
+            }
+            catch { }
+        }
 
         #endregion  Events — New Feedback Formatting
 
@@ -1226,6 +1304,28 @@ namespace ClientDesktop.View.Navigation
                 TxtReply.Focus();
                 ReplayeEmojiPopup.IsOpen = false;
             }
+        }
+        private void BtnFileUpload_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                OpenFileDialog openFileDialog = new OpenFileDialog();
+                openFileDialog.Title = "Select Image File";
+                openFileDialog.Filter = "Image Files|*.jpg;*.jpeg;*.png;*.gif;*.bmp";
+
+                if (openFileDialog.ShowDialog() == true)
+                {
+                    string selectedImagePath = openFileDialog.FileName;
+
+                    LableReplayFileName.Content = System.IO.Path.GetFileName(selectedImagePath);
+
+                    BitmapImage bitmapImage = new BitmapImage(new Uri(selectedImagePath));
+                    ReplayPicturebox.Source = bitmapImage;
+
+                    this.ReplayImagePath = selectedImagePath;
+                }
+            }
+            catch { }
         }
 
         #endregion Events — Reply Formatting

@@ -192,8 +192,8 @@
                             FontSize="13"       
                             Margin="0,0,15,0"/>
 
-                        <Button x:Name="ExcelExportBtn" ToolTip="Export to Excel" Width="40" Height="40" Background="Transparent" BorderThickness="0" Cursor="Hand" Margin="5,0" Visibility="Collapsed" Click="ExcelExportBtn_Click">
-                            <Viewbox Width="30" Height="30">
+                        <Button x:Name="ExcelExportBtn" ToolTip="Export to Excel" Width="32" Height="32" Background="Transparent" BorderThickness="0" Cursor="Hand" Margin="0" Padding="0" Visibility="Collapsed" Click="ExcelExportBtn_Click">
+                            <Viewbox Width="24" Height="24">
                                 <Grid>
                                     <Path Fill="#217346" Data="M4,4 H20 A2,2 0 0 1 22,6 V26 A2,2 0 0 1 20,28 H4 A2,2 0 0 1 2,26 V6 A2,2 0 0 1 4,4 Z" />
                                     <Path Fill="#107C41" Opacity="0.5" Data="M22,15 V26 A2,2 0 0 1 20,28 H12 L22,15 Z" />
@@ -207,8 +207,8 @@
                                 </Grid>
                             </Viewbox>
                         </Button>
-                        <Button x:Name="PdfExportBtn" ToolTip="Export to PDF" Width="40" Height="40" Background="Transparent" BorderThickness="0" Cursor="Hand" Margin="5,0" Click="PdfExportBtn_Click" Visibility="Collapsed">
-                            <Viewbox Width="30" Height="30">
+                        <Button x:Name="PdfExportBtn" ToolTip="Export to PDF" Width="32" Height="32" Background="Transparent" BorderThickness="0" Cursor="Hand" Margin="0" Padding="0" Click="PdfExportBtn_Click" Visibility="Collapsed">
+                            <Viewbox Width="24" Height="24">
                                 <Grid>
                                     <Path Fill="#B30B00" Data="M4,4 H20 A2,2 0 0 1 22,6 V26 A2,2 0 0 1 20,28 H4 A2,2 0 0 1 2,26 V6 A2,2 0 0 1 4,4 Z" />
                                     <Path Fill="#7A0800" Opacity="0.4" Data="M22,15 V26 A2,2 0 0 1 20,28 H12 L22,15 Z" />
@@ -238,8 +238,17 @@
                    VerticalScrollBarVisibility="Auto"                  
                    BorderThickness="0">
 
+                    <DataGrid.Resources>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Margin" Value="5,0,0,0"/>
+                            <Setter Property="VerticalAlignment" Value="Center"/>
+                        </Style>
+                    </DataGrid.Resources>
+
+
                     <DataGrid.CellStyle>
                         <Style TargetType="DataGridCell">
+                            <Setter Property="Padding" Value="5,2"/>
                             <Setter Property="BorderThickness" Value="0"/>
                             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
                             <Style.Triggers>

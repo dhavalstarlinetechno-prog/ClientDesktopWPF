@@ -177,18 +177,19 @@
                           Style="{StaticResource ActionButtonStyle}"
                           HorizontalAlignment="Right"
                           Margin="10"
-                          Width="150"
+                          Width="100"
                           Height="37" Click="BtnAddFeedback_Click"/>
 
                     
                     <DataGrid x:Name="DgvFeedbackRecord" 
                             Grid.Row="1"
                             Style="{StaticResource CustomDataGrid}"   
-                            Margin="0"                        
+                            Margin="10,5,10,10"                        
                             AutoGenerateColumns="False"
                             BorderThickness="0,1,0,0"
                             FontFamily="Microsoft Sans Serif"
-                            FontSize="13" MouseLeftButtonUp="DgvFeedbackRecord_MouseLeftButtonUp">
+                            FontSize="13" 
+                            MouseLeftButtonUp="DgvFeedbackRecord_MouseLeftButtonUp">
 
                         <DataGrid.Resources>
                             <Style TargetType="DataGridCell">
@@ -419,7 +420,7 @@
                               Content="Choose File" 
                               Width="156" 
                               Height="35"
-                              Margin="0,0,10,0"/>
+                              Margin="0,0,10,0" Click="BtnChooseFile_Click"/>
 
                         <Label x:Name="LblChosenFile" 
                              Content="No file chosen" 
@@ -446,7 +447,7 @@
                           Grid.Row="5" Grid.Column="1" 
                           Content="Submit" 
                           Style="{StaticResource ActionButtonStyle}"
-                          Width="118" 
+                          Width="110" 
                           Height="38"
                           HorizontalAlignment="Right"
                           Margin="5,10,10,10" Click="BtnSubmit_Click"/>
@@ -475,7 +476,7 @@
                               Grid.Row="0"
                               Content="Back"
                               Style="{StaticResource BackButtonStyle}"
-                              Width="80"
+                              Width="60"
                               Height="40"
                               HorizontalAlignment="Right" Click="BtnBack_Click"/>
 
@@ -580,7 +581,7 @@
                             <Button x:Name="BtnReply"
                                   Content="Reply"
                                   Style="{StaticResource ActionButtonStyle}"
-                                  Width="90"
+                                  Width="60"
                                   Height="40"
                                   HorizontalAlignment="Right"
                                   Margin="0,0,10,10" Click="BtnReply_Click"/>
@@ -700,7 +701,7 @@
                                                       Content="Choose File"
                                                       Width="156"
                                                       Height="32"
-                                                      Margin="0,0,10,0"/>
+                                                      Margin="0,0,10,0" Click="BtnFileUpload_Click"/>
 
                                                 <Label x:Name="LableReplayFileName" 
                                                      Content="No file chosen" 
@@ -720,7 +721,7 @@
                                               Grid.Row="4"
                                               Content="Submit"
                                               Style="{StaticResource ActionButtonStyle}"
-                                              Width="92"
+                                              Width="90"
                                               Height="40"
                                               HorizontalAlignment="Right"
                                               Margin="0,10,10,10" Click="BtnReplySubmit_Click"/>

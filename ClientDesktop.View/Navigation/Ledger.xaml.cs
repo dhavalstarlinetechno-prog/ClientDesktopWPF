@@ -11,14 +11,14 @@ using System.Xml;
 
 namespace ClientDesktop.View.Navigation
 {
-  
+
     public partial class Ledger : UserControl
     {
         #region Fields
 
         private readonly LedgerViewModel _viewModel;
         private readonly SessionService _sessionService;
-        public static string LblAmountFormatted;    
+        public static string LblAmountFormatted;
         private DateTime _currentFromDate = DateTime.Today;
         private DateTime _currentToDate = DateTime.Today;
 
@@ -37,7 +37,7 @@ namespace ClientDesktop.View.Navigation
             {
                 _sessionService = AppServiceLocator.GetService<SessionService>();
                 _viewModel = AppServiceLocator.GetService<LedgerViewModel>();
-                
+
                 DgvLedgerRecord.ItemsSource = _viewModel.GridRows;
 
                 this.DataContext = _viewModel;
@@ -48,14 +48,14 @@ namespace ClientDesktop.View.Navigation
             this.Loaded += Ledger_Loaded;
 
             this.Unloaded += Ledger_Unloaded;
-           
+
         }
 
         #endregion Constructor
 
         #region Loaded / Unloaded
         private void Ledger_Loaded(object sender, RoutedEventArgs e)
-        {           
+        {
             ApplyViewLockUI(_viewModel?.IsViewLocked ?? MainWindowViewModel.isViewLocked);
         }
         private void Ledger_Unloaded(object sender, RoutedEventArgs e)
@@ -63,7 +63,7 @@ namespace ClientDesktop.View.Navigation
             if (_viewModel != null)
             {
                 _viewModel.PropertyChanged -= ViewModel_PropertyChanged;
-                _viewModel.Cleanup(); 
+                _viewModel.Cleanup();
             }
         }
 
@@ -89,7 +89,7 @@ namespace ClientDesktop.View.Navigation
                 Btngo.Visibility = System.Windows.Visibility.Collapsed;
             }
             else
-            {               
+            {
                 Lbldetails.Text = "This report represents sample ledger format. It contains sample data only for education purpose. Ledger can be displayed in below structure.";
                 Lbldetails.FontFamily = new System.Windows.Media.FontFamily("Microsoft Sans Serif");
                 Lbldetails.Foreground = System.Windows.Media.Brushes.Black;
@@ -142,22 +142,28 @@ namespace ClientDesktop.View.Navigation
                 TxtNoData.Visibility = Visibility.Visible;
                 Mainpanel.Visibility = Visibility.Collapsed;
                 ChildPanel.Visibility = Visibility.Visible;
-                Lblprintamount.Visibility = Visibility.Visible;                
+                Lblprintamount.Visibility = Visibility.Visible;
                 DgvLedgerRecord.ColumnHeaderHeight = 35;
                 _viewModel.GridRows.Clear();
-               
+
                 DgvLedgerRecord.Columns.Add(new DataGridTextColumn
                 {
                     Header = "Sr",
                     Width = 40,
                     Binding = new Binding("Sr")
                 });
+            
+                Style dateStyle = new Style(typeof(TextBlock));
+                DataTrigger dateTrigger = new DataTrigger { Binding = new Binding("IsSummaryRow"), Value = true };
+                dateTrigger.Setters.Add(new Setter(TextBlock.FontWeightProperty, FontWeights.Bold));
+                dateStyle.Triggers.Add(dateTrigger);
 
                 DgvLedgerRecord.Columns.Add(new DataGridTextColumn
                 {
                     Header = "Date",
                     Width = 240,
-                    Binding = new Binding("Date")
+                    Binding = new Binding("Date"),
+                    ElementStyle = dateStyle
                 });
 
                 DgvLedgerRecord.Columns.Add(new DataGridTextColumn
@@ -167,20 +173,20 @@ namespace ClientDesktop.View.Navigation
                     Binding = new Binding("Type")
                 });
 
+                Style amountStyle = new Style(typeof(TextBlock));
+                amountStyle.Setters.Add(new Setter(TextBlock.TextAlignmentProperty, TextAlignment.Right));
+                DataTrigger amountTrigger = new DataTrigger { Binding = new Binding("IsSummaryRow"), Value = true };
+                amountTrigger.Setters.Add(new Setter(TextBlock.FontWeightProperty, FontWeights.Bold));
+                amountStyle.Triggers.Add(amountTrigger);
+
                 DgvLedgerRecord.Columns.Add(new DataGridTextColumn
                 {
                     Header = "Amount",
                     Width = 240,
                     Binding = new Binding("Amount"),
-                    ElementStyle = new Style(typeof(TextBlock))
-                    {
-                        Setters =
-                        {
-                            new Setter(TextBlock.TextAlignmentProperty, TextAlignment.Right)
-                        }
-                    }
+                    ElementStyle = amountStyle
                 });
-
+                
                 DgvLedgerRecord.Columns.Add(new DataGridTextColumn
                 {
                     Header = "Remarks",
@@ -200,62 +206,88 @@ namespace ClientDesktop.View.Navigation
 
         private async void Btngetdata_Click(object sender, RoutedEventArgs e)
         {
-            DgvLedgerRecord.Columns.Clear();            
+            DgvLedgerRecord.Columns.Clear();
 
             _viewModel.GridRows.Clear();
-           
+
+            Style leftSpacingStyle = new Style(typeof(TextBlock));
+            leftSpacingStyle.Setters.Add(new Setter(TextBlock.MarginProperty, new Thickness(8, 0, 0, 0)));
+            leftSpacingStyle.Setters.Add(new Setter(TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center));
+
             DgvLedgerRecord.Columns.Add(new DataGridTextColumn
             {
                 Header = "Sr",
                 Width = 40,
-                Binding = new Binding("Sr")
+                Binding = new Binding("Sr"),
+                ElementStyle = leftSpacingStyle
             });
+
+            Style dateStyle = new Style(typeof(TextBlock), leftSpacingStyle);
+            DataTrigger dateTrigger = new DataTrigger
+            {
+                Binding = new Binding("IsSummaryRow"),
+                Value = true
+            };
+            dateTrigger.Setters.Add(new Setter(TextBlock.FontWeightProperty, FontWeights.Bold));
+            dateStyle.Triggers.Add(dateTrigger);
 
             DgvLedgerRecord.Columns.Add(new DataGridTextColumn
             {
                 Header = "Date",
                 Width = 240,
-                Binding = new Binding("Date")
-            });
+                Binding = new Binding("Date"),
+                ElementStyle = dateStyle
+            });        
 
             DgvLedgerRecord.Columns.Add(new DataGridTextColumn
             {
                 Header = "Type",
                 Width = 215,
-                Binding = new Binding("Type")
+                Binding = new Binding("Type"),
+                ElementStyle = leftSpacingStyle
             });
+
+            Style amountStyle = new Style(typeof(TextBlock));
+
+            amountStyle.Setters.Add(new Setter(TextBlock.PaddingProperty, new Thickness(0, 0, 5, 0)));
+            amountStyle.Setters.Add(new Setter(TextBlock.TextAlignmentProperty, TextAlignment.Right));
+            amountStyle.Setters.Add(new Setter(TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center));
+            
+            DataTrigger amountTrigger = new DataTrigger
+            {
+                Binding = new Binding("IsSummaryRow"),
+                Value = true
+            };
+            amountTrigger.Setters.Add(new Setter(TextBlock.FontWeightProperty, FontWeights.Bold));
+
+            amountStyle.Triggers.Add(amountTrigger);
 
             DgvLedgerRecord.Columns.Add(new DataGridTextColumn
             {
                 Header = "Amount",
                 Width = 240,
                 Binding = new Binding("Amount"),
-                ElementStyle = new Style(typeof(TextBlock))
-                {
-                    Setters =
-                    {
-                        new Setter(TextBlock.TextAlignmentProperty, TextAlignment.Right)
-                    }
-                }
+                ElementStyle = amountStyle
             });
 
             DgvLedgerRecord.Columns.Add(new DataGridTextColumn
             {
                 Header = "Remarks",
                 Width = 240,
-                Binding = new Binding("Remarks")
+                Binding = new Binding("Remarks"),
+                ElementStyle = leftSpacingStyle
             });
 
             if (!Dtpstartdate.SelectedDate.HasValue || !Dtpenddate.SelectedDate.HasValue)
                 return;
-          
+
             _currentFromDate = Dtpstartdate.SelectedDate.Value.Date;
             _currentToDate = Dtpenddate.SelectedDate.Value.Date;
-            
+
             bool hasData = await _viewModel.LoadAndPopulateGridAsync(
                 _currentFromDate,
                 _currentToDate);
-            
+
             TxtNoData.Visibility = hasData ? Visibility.Collapsed : Visibility.Visible;
             PdfExportBtn.Visibility = hasData ? Visibility.Visible : Visibility.Collapsed;
             ExcelExportBtn.Visibility = hasData ? Visibility.Visible : Visibility.Collapsed;
@@ -264,7 +296,7 @@ namespace ClientDesktop.View.Navigation
         #endregion Get Data
 
         #region Export — PDF
-       
+
         private void PdfExportBtn_Click(object sender, RoutedEventArgs e)
         {
             _viewModel.ExportToPdf(_currentFromDate, _currentToDate);
