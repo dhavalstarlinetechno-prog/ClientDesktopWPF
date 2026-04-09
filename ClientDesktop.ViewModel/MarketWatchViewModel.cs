@@ -334,11 +334,6 @@ namespace ClientDesktop.ViewModel
 
                 if (_sessionService.IsLoggedIn && _sessionService.IsInternetAvailable)
                 {
-                    if (selectedSymbol.IsBanned)
-                    {
-                        FileLogger.Log("MarketWatch", CommonMessages.SymbolBanned);
-                    }
-
                     _dialogService.ShowDialog<TradeViewModel>(
                         "New Trade Order",
                         configureViewModel: vm =>
@@ -348,7 +343,7 @@ namespace ClientDesktop.ViewModel
                             vm.CurrentOrderTypeEnum = EnumTradeOrderType.Market;
                             vm.CurrentWindowModeEnum = EnumTradeWindowMode.FromMarketWatch;
                             vm.SelectedSymbol = selectedSymbol.SymbolName;
-
+                            vm.IsSymbolBanned = selectedSymbol.IsBanned;
                         }
                     );
                 }

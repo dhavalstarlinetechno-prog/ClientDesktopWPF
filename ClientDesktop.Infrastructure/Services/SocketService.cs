@@ -619,7 +619,8 @@ namespace ClientDesktop.Services
                     UplineAmount = (double)(play["uplineAmount"] ?? 0),
                     Balance = (double)(play["balance"] ?? 0),
                     OccupiedMarginAmount = (double)(play["occupiedMargin"] ?? 0),
-                    UplineCommission = (double)(play["uplineCommission"] ?? 0)
+                    UplineCommission = (double)(play["uplineCommission"] ?? 0),
+                    FreeMarginAmount = (double)(play["uplineAmount"] ?? 0) + (double)(play["creditAmount"] ?? 0) + (double)(play["uplineCommission"] ?? 0) + (double)(play["pnl"] ?? 0) - (double)(play["occupiedMargin"] ?? 0)
                 };
                 OnUpdateUserBalance?.Invoke(client);
             }

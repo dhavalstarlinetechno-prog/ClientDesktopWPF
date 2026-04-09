@@ -9,6 +9,7 @@ namespace ClientDesktop.ViewModel
         #region Position & Order Context
 
         private PositionGridRow _positionGridRow;
+        private bool _isSymbolBanned;
 
         /// <summary>
         /// The grid row that opened this window.
@@ -35,6 +36,26 @@ namespace ClientDesktop.ViewModel
                 catch (Exception ex)
                 {
                     FileLogger.ApplicationLog(nameof(positionGridRow), ex);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Indicates whether the selected symbol is banned.
+        /// </summary>
+        public bool IsSymbolBanned
+        {
+            get => _isSymbolBanned; set
+            {
+                try
+                {
+                    if (SetProperty(ref _isSymbolBanned, value))
+                        if (_isSymbolBanned) FileLogger.Log("Trade" , $"{_selectedSymbol} is banned");
+
+                }
+                catch (Exception ex)
+                {
+                    FileLogger.ApplicationLog(nameof(OriginalOrderType), ex);
                 }
             }
         }

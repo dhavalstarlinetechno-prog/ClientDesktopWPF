@@ -59,7 +59,9 @@ namespace ClientDesktop.ViewModel
                 {
                     FileLogger.ApplicationLog(nameof(BuyCommand), ex);
                 }
-            });
+            },
+            _ => CanBuyEnabled());
+
 
         /// <summary>
         /// In normal mode: places a SELL order.
@@ -80,7 +82,8 @@ namespace ClientDesktop.ViewModel
                 {
                     FileLogger.ApplicationLog(nameof(SellCommand), ex);
                 }
-            });
+            },
+                 _ => CanModifyButton());
 
         /// <summary>Closes an open position. Only enabled when quantity matches the position volume exactly.</summary>
         public ICommand ClosePositionCommand
@@ -205,6 +208,37 @@ namespace ClientDesktop.ViewModel
                 if (positionGridRow == null) return false;
                 if (!double.TryParse(Quantity, out double qty)) return false;
                 return qty == positionGridRow.Volume;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(CanClosePosition), ex);
+                return false;
+            }
+        }
+
+        private bool CanBuyEnabled()
+        {
+            try
+            {
+                if (IsSymbolBanned) return false;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(CanBuyEnabled), ex);
+                return false;
+            }
+        }
+
+        private bool CanModifyButton()
+        {
+            try
+            {
+                if (IsSymbolBanned) return false;
+                if (positionGridRow == null) return true;
+                if (IsModifyDeleteMode && positionGridRow.IsOrder && double.TryParse(Quantity, out double qty))
+                    return (qty != positionGridRow.Volume || LimitRate != positionGridRow.AveragePrice.ToString());
+                return true;
             }
             catch (Exception ex)
             {

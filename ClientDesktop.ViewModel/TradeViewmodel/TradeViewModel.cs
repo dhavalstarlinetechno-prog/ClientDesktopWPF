@@ -100,9 +100,18 @@ namespace ClientDesktop.ViewModel
                 TotalValue = result.SymbolData.SymbolTotalValue.ToString("0.##");
                 LimitStopValue = result.SymbolData.SymbolLimitstoplevel.ToString("0.##");
 
-                Quantity = positionGridRow != null
-                    ? positionGridRow.Volume?.ToString()
-                    : MinValue;
+                if (positionGridRow != null)
+                {
+                    double d;
+                    if (!double.TryParse(positionGridRow.Volume.ToString(), out d)) Quantity = positionGridRow.Volume.ToString();
+
+                    Quantity = Math.Floor(d) == d ? d.ToString("F0") : d.ToString("F2");
+                }
+                else
+                {
+                    Quantity = MinValue;
+                }
+
             }
             catch (Exception ex)
             {
@@ -186,7 +195,7 @@ namespace ClientDesktop.ViewModel
                     ? "#" + positionGridRow.Id.Substring(0, 6) + "..."
                     : "#" + positionGridRow.Id;
 
-                string orderDirection = positionGridRow.Side?.ToLower() == "ask" ? "BUY" : "SELL";
+                string orderDirection = positionGridRow.Side?.ToUpper();
 
                 double.TryParse(LiveBid, out double currentBid);
                 double.TryParse(LiveAsk, out double currentAsk);

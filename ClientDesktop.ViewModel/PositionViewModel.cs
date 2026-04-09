@@ -638,6 +638,7 @@ namespace ClientDesktop.ViewModel
                         _sessionService.CurrentClient.Balance = details.Balance;
                         _sessionService.CurrentClient.OccupiedMarginAmount = details.OccupiedMarginAmount;
                         _sessionService.CurrentClient.UplineCommission = details.UplineCommission;
+                        _sessionService.CurrentClient.FreeMarginAmount = details.FreeMarginAmount;
                     }
 
                     UpdateFooterPnl();
