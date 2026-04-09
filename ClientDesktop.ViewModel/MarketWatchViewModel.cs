@@ -1083,7 +1083,7 @@ namespace ClientDesktop.ViewModel
         /// </summary>
         private string ConvertToTime(long timestamp)
         {
-            if (timestamp <= 0) return "--:--:--";
+            //if (timestamp <= 0) return "--:--:--";
             try
             {
                 return timestamp > 10000000000

@@ -189,14 +189,14 @@
                     <Path Data="M4,2H20A2,2 0 0,1 22,4V20A2,2 0 0,1 20,22H4A2,2 0 0,1 2,20V4A2,2 0 0,1 4,2M4,4V20H8V4H4M10,4V20H20V4H10Z" Fill="#555" Stretch="Uniform" Width="12"/>
                 </MenuItem.Icon>
 
-                <MenuItem Header="LTP" IsCheckable="True" IsChecked="{Binding Data.ShowLtp, Source={StaticResource Proxy}}"/>
+                <MenuItem Header="Time" IsCheckable="True" IsChecked="{Binding Data.ShowTime, Source={StaticResource Proxy}}"/>
                 <MenuItem Header="High/Low" IsCheckable="True" IsChecked="{Binding Data.ShowHighLow, Source={StaticResource Proxy}}"/>
+                <MenuItem Header="LTP" IsCheckable="True" IsChecked="{Binding Data.ShowLtp, Source={StaticResource Proxy}}"/>
                 <MenuItem Header="Open" IsCheckable="True" IsChecked="{Binding Data.ShowOpen, Source={StaticResource Proxy}}"/>
                 <MenuItem Header="Close" IsCheckable="True" IsChecked="{Binding Data.ShowClose, Source={StaticResource Proxy}}"/>
                 <MenuItem Header="Spread" IsCheckable="True" IsChecked="{Binding Data.ShowSpread, Source={StaticResource Proxy}}"/>
                 <MenuItem Header="Daily Change %" IsCheckable="True" IsChecked="{Binding Data.ShowDcp, Source={StaticResource Proxy}}"/>
                 <MenuItem Header="Daily Change Value" IsCheckable="True" IsChecked="{Binding Data.ShowDcv, Source={StaticResource Proxy}}"/>
-                <MenuItem Header="Time" IsCheckable="True" IsChecked="{Binding Data.ShowTime, Source={StaticResource Proxy}}"/>
             </MenuItem>
         </ContextMenu>
 
