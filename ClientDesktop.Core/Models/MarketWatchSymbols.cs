@@ -5,6 +5,7 @@ namespace ClientDesktop.Core.Models
 {
     public class MarketWatchSymbols : ViewModelBase
     {
+        private bool _isBanned;
         private double _bid;
         private int _bidDir;
         private double _ask;
@@ -24,7 +25,8 @@ namespace ClientDesktop.Core.Models
         public int SymbolId { get; set; }
         public int SymbolDigit { get; set; }
         public string SymbolName { get; set; }
-        public bool IsUp { get; set; }
+        public string MasterSymbolName { get; set; }
+        public bool IsBanned { get => _isBanned; set => SetProperty(ref _isBanned, value); }
 
         public double Bid { get => _bid; set { if (SetProperty(ref _bid, value)) OnPropertyChanged(nameof(DisplayBid)); } }
         public int BidDir { get => _bidDir; set => SetProperty(ref _bidDir, value); }

@@ -26,6 +26,7 @@ namespace ClientDesktop.ViewModel
         #region Fields
 
         private readonly MarketWatchService _marketWatchService;
+        private readonly BanScriptService _banScriptService;
         private readonly SessionService _sessionService;
         private readonly IDialogService _dialogService;
         private readonly LiveTickService _liveTickService;
@@ -34,6 +35,7 @@ namespace ClientDesktop.ViewModel
         private readonly SemaphoreSlim _syncLock = new SemaphoreSlim(1, 1);
         private readonly HashSet<string> _nativeVisibleSymbols = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private readonly HashSet<string> _currentlySubscribed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private HashSet<string> _bannedMasterSymbols = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         private int _debounceId = 0;
         private string _currentTime;
@@ -154,9 +156,10 @@ namespace ClientDesktop.ViewModel
         /// <summary>
         /// Initializes a new instance of the MarketWatchViewModel class.
         /// </summary>
-        public MarketWatchViewModel(MarketWatchService marketWatchService, SessionService sessionService, IDialogService dialogService, LiveTickService liveTickService, ISocketService socketService)
+        public MarketWatchViewModel(MarketWatchService marketWatchService, BanScriptService banScriptService, SessionService sessionService, IDialogService dialogService, LiveTickService liveTickService, ISocketService socketService)
         {
             _marketWatchService = marketWatchService;
+            _banScriptService = banScriptService;
             _sessionService = sessionService;
             _dialogService = dialogService;
             _socketService = socketService;
@@ -197,7 +200,6 @@ namespace ClientDesktop.ViewModel
             timer.Start();
             CurrentTime = DateTime.Now.ToString("HH:mm:ss");
 
-            _marketWatchService.OnDataUpdated += UpdateMarketData;
             RegisterMessenger();
         }
 
@@ -300,7 +302,7 @@ namespace ClientDesktop.ViewModel
                             await _liveTickService.InitializeAndStartAsync(url);
                         }
 
-                        LoadData(forceSync: true);
+                        await LoadData(forceSync: true);
                     }
                     else
                     {
@@ -332,6 +334,11 @@ namespace ClientDesktop.ViewModel
 
                 if (_sessionService.IsLoggedIn && _sessionService.IsInternetAvailable)
                 {
+                    if (selectedSymbol.IsBanned)
+                    {
+                        FileLogger.Log("MarketWatch", CommonMessages.SymbolBanned);
+                    }
+
                     _dialogService.ShowDialog<TradeViewModel>(
                         "New Trade Order",
                         configureViewModel: vm =>
@@ -541,7 +548,7 @@ namespace ClientDesktop.ViewModel
         {
             try
             {
-                LoadData(forceSync: true);
+                await LoadData(forceSync: true);
             }
             catch (Exception ex)
             {
@@ -554,12 +561,44 @@ namespace ClientDesktop.ViewModel
         #region API & Data Loading
 
         /// <summary>
-        /// Fetches market data from the service.
+        /// Fetches ban script data from the service.
         /// </summary>
-        private async void LoadData(bool forceSync)
+        private async Task LoadBanScriptData(bool forceSync)
         {
             try
             {
+                var banData = await _banScriptService.GetBanScript(forceSync);
+                _bannedMasterSymbols.Clear();
+
+                if (banData?.BanScripts != null)
+                {
+                    foreach (var banItem in banData.BanScripts)
+                    {
+                        if (!string.IsNullOrEmpty(banItem.MasterSymbolName))
+                        {
+                            _bannedMasterSymbols.Add(banItem.MasterSymbolName);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(LoadBanScriptData), ex);
+            }
+        }
+
+        /// <summary>
+        /// Fetches market data from the service.
+        /// </summary>
+        private async Task LoadData(bool forceSync)
+        {
+            try
+            {
+                if (forceSync)
+                {
+                    await LoadBanScriptData(forceSync);
+                }
+
                 var data = await _marketWatchService.GetMarketWatchDataAsync(forceSync);
 
                 if (data != null && data.symbols != null && data.symbols.Any())
@@ -610,9 +649,12 @@ namespace ClientDesktop.ViewModel
                             }
                             else
                             {
-                                if (!HiddenSymbolsCollection.Any(r => r.SymbolName == symbolModel.SymbolName))
+                                var existingItem = HiddenSymbolsCollection.FirstOrDefault(r => r.SymbolName == symbolModel.SymbolName);
+
+                                if (existingItem == null || existingItem.IsBanned != symbolModel.IsBanned)
                                 {
-                                    HiddenSymbolsCollection.Add(symbolModel);
+                                    if (existingItem != null) HiddenSymbolsCollection.Remove(existingItem); 
+                                    HiddenSymbolsCollection.Add(symbolModel); 
                                 }
                             }
                         }
@@ -944,6 +986,14 @@ namespace ClientDesktop.ViewModel
             }
         }
 
+        /// <summary>
+        /// Displays the details of the specified market watch symbol in a dialog window.
+        /// </summary>
+        /// <remarks>The dialog is only shown if the symbol exists in the market watch symbols collection.
+        /// If the parameter is not a MarketWatchSymbols instance, the method uses the SelectedMarketItem
+        /// property.</remarks>
+        /// <param name="parameter">An object representing the market watch symbol to display. If not of type MarketWatchSymbols, the currently
+        /// selected market item is used instead.</param>
         private void ShowMarketwatchSymbol(object parameter)
         {
             try
@@ -980,12 +1030,15 @@ namespace ClientDesktop.ViewModel
                 decimal close = book?.previousClose ?? 0;
                 decimal ltp = book?.ltp ?? 0;
                 long updateTime = book?.updateTime ?? 0;
+                bool isSymbolBanned = _bannedMasterSymbols.Contains(apiSymbol.masterSymbolName ?? "");
 
                 return new MarketWatchSymbols
                 {
                     SymbolId = apiSymbol.symbolId,
                     SymbolDigit = apiSymbol.symbolDigits,
                     SymbolName = apiSymbol.symbolName,
+                    MasterSymbolName = apiSymbol.masterSymbolName ?? "",
+                    IsBanned = isSymbolBanned,
                     Bid = (double)bid,
                     Ask = (double)ask,
                     Ltp = (double)ltp,

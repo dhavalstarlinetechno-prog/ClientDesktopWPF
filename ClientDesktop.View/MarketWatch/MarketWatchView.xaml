@@ -102,6 +102,9 @@
                 <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridCell}, Path=IsSelected}" Value="True">
                     <Setter Property="Foreground" Value="White"/>
                 </DataTrigger>
+                <DataTrigger Binding="{Binding IsBanned}" Value="True">
+                    <Setter Property="Foreground" Value="White"/>
+                </DataTrigger>
             </Style.Triggers>
         </Style>
 
@@ -112,6 +115,9 @@
                 <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridCell}, Path=IsSelected}" Value="True">
                     <Setter Property="Foreground" Value="White"/>
                 </DataTrigger>
+                <DataTrigger Binding="{Binding IsBanned}" Value="True">
+                    <Setter Property="Foreground" Value="White"/>
+                </DataTrigger>
             </Style.Triggers>
         </Style>
 
@@ -120,6 +126,9 @@
             <Setter Property="Foreground" Value="{Binding Dcv, Converter={StaticResource PriceChangeColorConverter}}"/>
             <Style.Triggers>
                 <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridCell}, Path=IsSelected}" Value="True">
+                    <Setter Property="Foreground" Value="White"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsBanned}" Value="True">
                     <Setter Property="Foreground" Value="White"/>
                 </DataTrigger>
             </Style.Triggers>
@@ -369,6 +378,11 @@
                             <Setter Property="Focusable" Value="False"/>
                             <Setter Property="Template" Value="{StaticResource EmptyRowControlTemplate}"/>
                         </DataTrigger>
+
+                        <DataTrigger Binding="{Binding IsBanned}" Value="True">
+                            <Setter Property="Background" Value="#cb0707"/>
+                            <Setter Property="Foreground" Value="White"/>
+                        </DataTrigger>
                     </Style.Triggers>
                 </Style>
             </DataGrid.RowStyle>
@@ -419,6 +433,9 @@
                                                 <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridCell}, Path=IsSelected}" Value="True">
                                                     <Setter Property="Fill" Value="White"/>
                                                 </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsBanned}" Value="True">
+                                                    <Setter Property="Fill" Value="White"/>
+                                                </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
                                     </Path.Style>
@@ -429,6 +446,9 @@
                                             <Setter Property="Foreground" Value="Black"/>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridCell}, Path=IsSelected}" Value="True">
+                                                    <Setter Property="Foreground" Value="White"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsBanned}" Value="True">
                                                     <Setter Property="Foreground" Value="White"/>
                                                 </DataTrigger>
                                             </Style.Triggers>

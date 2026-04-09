@@ -51,7 +51,7 @@ namespace ClientDesktop.View.MarketWatch
         {
             try
             {
-                if (e.Row.DataContext is MarketWatchSymbols symbol)
+                if (e.Row.DataContext is MarketWatchSymbols symbol && !symbol.IsBanned)
                 {
                     (this.DataContext as MarketWatchViewModel)?.SetSymbolVisibility(symbol.SymbolName, true);
                 }

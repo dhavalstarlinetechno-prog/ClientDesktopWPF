@@ -53,6 +53,7 @@
         public static readonly string NoSymbolSave = "No symbols to save.";
         public static readonly string ProfileSaved = "Profile Saved Successfully!";
         public static readonly string ProfileFailedToSaved = "Failed to save profile. Please try again.";
+        public static readonly string SymbolBanned = "This symbol is banned.";
         public static readonly string OrderPlaceedInQueue = "Please Wait...\nOrder has been placed in queue.";
         public static readonly string FeedbackReplaySubmited = "Feedback Reply Submited!!";
         public static readonly string Loginfaild = "Login failed. Please check your credentials.";

@@ -19,15 +19,6 @@ namespace ClientDesktop.Infrastructure.Services
 
         #endregion
 
-        #region Events
-
-        /// <summary>
-        /// Event triggered when the market watch data is successfully updated from the API.
-        /// </summary>
-        public event Action<MarketWatchData> OnDataUpdated;
-
-        #endregion
-
         #region Constructor
 
         /// <summary>
@@ -77,12 +68,6 @@ namespace ClientDesktop.Infrastructure.Services
                     if (apiData != null && apiData.data != null)
                     {
                         Task.Run(() => _repo.Save(relativePath, apiData.data, "marketwatch"));
-
-                        if (forceApiSync)
-                        {
-                            OnDataUpdated?.Invoke(apiData.data);
-                        }
-
                         return apiData.data;
                     }
                 }
