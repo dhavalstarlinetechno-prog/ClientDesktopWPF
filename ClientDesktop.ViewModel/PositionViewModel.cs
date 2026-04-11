@@ -109,12 +109,12 @@ namespace ClientDesktop.ViewModel
                     var localOrd = _positionService.GetCachedOrders();
 
                     var list = BuildGridRows(localPos, localOrd);
-                    Application.Current.Dispatcher.Invoke(() =>
+                    SafeUIInvoke(() =>
                     {
                         _rawPositions = localPos;
                         _rawOrders = localOrd;
                         UpdateGridSilently(list);
-                    });
+                    }, System.Windows.Threading.DispatcherPriority.Background);
                 });
             }
             catch (Exception ex)
@@ -150,7 +150,7 @@ namespace ClientDesktop.ViewModel
 
                     var list = BuildGridRows(apiPos, apiOrd);
 
-                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    await SafeUIInvokeAsync(() =>
                     {
                         _rawPositions = apiPos;
                         _rawOrders = apiOrd;
@@ -186,7 +186,7 @@ namespace ClientDesktop.ViewModel
                 Task.Run(() => _positionService.UpdateLocalOrder(order, isDeleted));
 
 
-                Application.Current.Dispatcher.InvokeAsync(() =>
+                SafeUIInvoke(() =>
                 {
                     if (isDeleted)
                     {
@@ -245,7 +245,7 @@ namespace ClientDesktop.ViewModel
                     }
 
                     _ = SubscribeToSymbolAsync();
-                });
+                }, System.Windows.Threading.DispatcherPriority.DataBind);
             }
             catch (Exception ex)
             {
@@ -404,6 +404,16 @@ namespace ClientDesktop.ViewModel
                 {
                     if (message.IsLoggedIn)
                     {
+                        if (message.IsDifferentUser)
+                        {
+                            SafeUIInvoke(() =>
+                            {
+                                _rawPositions.Clear();
+                                _rawOrders.Clear();
+                                GridRows.Clear();
+                            });
+                        }
+
                         LoadCachedDataAsync();
                         _currentLoadId = Guid.Empty;
                         _subscribedSymbols.Clear();
@@ -535,7 +545,7 @@ namespace ClientDesktop.ViewModel
         {
             try
             {
-                Application.Current.Dispatcher.InvokeAsync(() => LoadDataAsync());
+                SafeUIInvoke(() => LoadDataAsync());
             }
             catch (Exception ex)
             {
@@ -554,7 +564,7 @@ namespace ClientDesktop.ViewModel
             {
                 Task.Run(() => _positionService.UpdateLocalPosition(updatedPosition, isDeleted));
 
-                Application.Current.Dispatcher.InvokeAsync(() =>
+                SafeUIInvoke(() =>
                 {
                     if (isDeleted)
                     {
@@ -612,7 +622,7 @@ namespace ClientDesktop.ViewModel
 
                     UpdateFooterPnl();
                     _ = SubscribeToSymbolAsync();
-                });
+                }, System.Windows.Threading.DispatcherPriority.DataBind);
             }
             catch (Exception ex)
             {
@@ -629,7 +639,7 @@ namespace ClientDesktop.ViewModel
 
             try
             {
-                Application.Current.Dispatcher.InvokeAsync(() =>
+                SafeUIInvoke(() =>
                 {
                     if (_sessionService.CurrentClient != null)
                     {
@@ -749,7 +759,7 @@ namespace ClientDesktop.ViewModel
 
             try
             {
-                Application.Current.Dispatcher.InvokeAsync(() =>
+                SafeUIInvoke(() =>
                 {
                     var rowsToUpdate = GridRows.Where(r =>
                         (r.Type == RowType.Position || r.Type == RowType.Order)

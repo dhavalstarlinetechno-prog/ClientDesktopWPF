@@ -57,19 +57,26 @@ namespace ClientDesktop.ViewModel
 
         #region Properties
 
-        public ObservableCollection<HistoryModel> HistoryItems { get; } = new ObservableCollection<HistoryModel>();
+        private ObservableCollection<HistoryModel> _historyItems = new ObservableCollection<HistoryModel>();
+        public ObservableCollection<HistoryModel> HistoryItems { get => _historyItems; set => SetProperty(ref _historyItems, value); }
 
-        public ObservableCollection<PositionHistoryModel> PositionHistoryItems { get; } = new ObservableCollection<PositionHistoryModel>();
+        private ObservableCollection<PositionHistoryModel> _positionHistoryItems = new ObservableCollection<PositionHistoryModel>();
+        public ObservableCollection<PositionHistoryModel> PositionHistoryItems { get => _positionHistoryItems; set => SetProperty(ref _positionHistoryItems, value); }
 
-        public ObservableCollection<string> AvailableSymbols { get; } = new ObservableCollection<string> { "All" };
+        private ObservableCollection<string> _availableSymbols = new ObservableCollection<string> { "All" };
+        public ObservableCollection<string> AvailableSymbols { get => _availableSymbols; set => SetProperty(ref _availableSymbols, value); }
 
-        public ObservableCollection<string> AvailableExecutions { get; } = new ObservableCollection<string> { "All" };
+        private ObservableCollection<string> _availableExecutions = new ObservableCollection<string> { "All" };
+        public ObservableCollection<string> AvailableExecutions { get => _availableExecutions; set => SetProperty(ref _availableExecutions, value); }
 
-        public ObservableCollection<string> AvailableTypes { get; } = new ObservableCollection<string> { "All" };
+        private ObservableCollection<string> _availableTypes = new ObservableCollection<string> { "All" };
+        public ObservableCollection<string> AvailableTypes { get => _availableTypes; set => SetProperty(ref _availableTypes, value); }
 
-        public ObservableCollection<string> AvailableEntries { get; } = new ObservableCollection<string> { "All" };
+        private ObservableCollection<string> _availableEntries = new ObservableCollection<string> { "All" };
+        public ObservableCollection<string> AvailableEntries { get => _availableEntries; set => SetProperty(ref _availableEntries, value); }
 
-        public ObservableCollection<string> AvailablePosSymbols { get; } = new ObservableCollection<string> { "All" };
+        private ObservableCollection<string> _availablePosSymbols = new ObservableCollection<string> { "All" };
+        public ObservableCollection<string> AvailablePosSymbols { get => _availablePosSymbols; set => SetProperty(ref _availablePosSymbols, value); }
 
         public bool IsLoading
         {
@@ -135,6 +142,7 @@ namespace ClientDesktop.ViewModel
             get => _selectedSymbol;
             set
             {
+                if (string.IsNullOrEmpty(value)) return;
                 if (SetProperty(ref _selectedSymbol, value) && !_isUpdatingFilters) ApplyFilters();
             }
         }
@@ -144,6 +152,7 @@ namespace ClientDesktop.ViewModel
             get => _selectedExecution;
             set
             {
+                if (string.IsNullOrEmpty(value)) return;
                 if (SetProperty(ref _selectedExecution, value) && !_isUpdatingFilters) ApplyFilters();
             }
         }
@@ -153,6 +162,7 @@ namespace ClientDesktop.ViewModel
             get => _selectedType;
             set
             {
+                if (string.IsNullOrEmpty(value)) return;
                 if (SetProperty(ref _selectedType, value) && !_isUpdatingFilters) ApplyFilters();
             }
         }
@@ -162,6 +172,7 @@ namespace ClientDesktop.ViewModel
             get => _selectedEntry;
             set
             {
+                if (string.IsNullOrEmpty(value)) return;
                 if (SetProperty(ref _selectedEntry, value) && !_isUpdatingFilters) ApplyFilters();
             }
         }
@@ -171,6 +182,7 @@ namespace ClientDesktop.ViewModel
             get => _selectedPosSymbol;
             set
             {
+                if (string.IsNullOrEmpty(value)) return;
                 if (SetProperty(ref _selectedPosSymbol, value) && !_isUpdatingFilters) ApplyFilters();
             }
         }
@@ -247,13 +259,13 @@ namespace ClientDesktop.ViewModel
                 var fromDate = _sessionService.LicenseId == "1" ? new DateTime(2025, 6, 1) : new DateTime(1970, 1, 1);
                 var toDate = DateTime.Now;
 
-                var historyResult = await Task.Run(async () => await _historyService.FetchHistoryFromApiAsync(fromDate, toDate));
-                var positionResult = await Task.Run(async () => await _historyService.FetchPositionHistoryFromApiAsync(fromDate, toDate));
+                var historyTask = _historyService.FetchHistoryFromApiAsync(fromDate, toDate);
+                var positionTask = _historyService.FetchPositionHistoryFromApiAsync(fromDate, toDate);
 
-                _allHistoryItems = historyResult.Data ?? new List<HistoryModel>();
-                _allPositionItems = positionResult.Data ?? new List<PositionHistoryModel>();
+                await Task.WhenAll(historyTask, positionTask);
 
-                ApplyFilters();
+                _allHistoryItems = historyTask.Result?.Data ?? new List<HistoryModel>();
+                _allPositionItems = positionTask.Result?.Data ?? new List<PositionHistoryModel>();
             }
             catch (Exception ex)
             {
@@ -293,7 +305,7 @@ namespace ClientDesktop.ViewModel
         /// <summary>
         /// Sorts the deals history items based on a given property name and direction.
         /// </summary>
-        public void SortDeals(string propertyName, ListSortDirection newDir)
+        public async Task SortDeals(string propertyName, ListSortDirection newDir)
         {
             try
             {
@@ -303,13 +315,18 @@ namespace ClientDesktop.ViewModel
                 var prop = typeof(HistoryModel).GetProperty(propertyName);
                 if (prop == null) return;
 
-                var sorted = newDir == ListSortDirection.Ascending
-                    ? dataRows.OrderBy(r => prop.GetValue(r)).ToList()
-                    : dataRows.OrderByDescending(r => prop.GetValue(r)).ToList();
+                var sorted = await Task.Run(() =>
+                     newDir == ListSortDirection.Ascending
+                         ? dataRows.OrderBy(r => prop.GetValue(r)).ToList()
+                         : dataRows.OrderByDescending(r => prop.GetValue(r)).ToList()
+                 );
 
-                HistoryItems.Clear();
-                foreach (var item in sorted) HistoryItems.Add(item);
-                if (footer != null) HistoryItems.Add(footer);
+                await SafeUIInvokeAsync(() =>
+                {
+                    var newList = new ObservableCollection<HistoryModel>(sorted);
+                    if (footer != null) newList.Add(footer);
+                    HistoryItems = newList;
+                });
             }
             catch (Exception ex)
             {
@@ -320,7 +337,7 @@ namespace ClientDesktop.ViewModel
         /// <summary>
         /// Sorts the positions history items based on a given property name and direction.
         /// </summary>
-        public void SortPositions(string propertyName, ListSortDirection newDir)
+        public async Task SortPositions(string propertyName, ListSortDirection newDir)
         {
             try
             {
@@ -330,13 +347,18 @@ namespace ClientDesktop.ViewModel
                 var prop = typeof(PositionHistoryModel).GetProperty(propertyName);
                 if (prop == null) return;
 
-                var sorted = newDir == ListSortDirection.Ascending
-                    ? dataRows.OrderBy(r => prop.GetValue(r)).ToList()
-                    : dataRows.OrderByDescending(r => prop.GetValue(r)).ToList();
+                var sorted = await Task.Run(() =>
+                    newDir == ListSortDirection.Ascending
+                        ? dataRows.OrderBy(r => prop.GetValue(r)).ToList()
+                        : dataRows.OrderByDescending(r => prop.GetValue(r)).ToList()
+                );
 
-                PositionHistoryItems.Clear();
-                foreach (var item in sorted) PositionHistoryItems.Add(item);
-                if (footer != null) PositionHistoryItems.Add(footer);
+                await SafeUIInvokeAsync(() =>
+                {
+                    var newList = new ObservableCollection<PositionHistoryModel>(sorted);
+                    if (footer != null) newList.Add(footer);
+                    PositionHistoryItems = newList;
+                });
             }
             catch (Exception ex)
             {
@@ -379,17 +401,23 @@ namespace ClientDesktop.ViewModel
                     }
                 }
 
-                SaveFileDialog saveDialog = new SaveFileDialog
+                bool? dialogResult = false;
+                string filePath = string.Empty;
+
+                SafeUIInvokeSync(() =>
                 {
-                    Filter = "Excel Workbook|*.xlsx",
-                    Title = "Export to Excel",
-                    FileName = $"{gridType}_History_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
-                };
+                    SaveFileDialog saveDialog = new SaveFileDialog
+                    {
+                        Filter = "Excel Workbook|*.xlsx",
+                        Title = "Export to Excel",
+                        FileName = $"{gridType}_History_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
+                    };
+                    dialogResult = saveDialog.ShowDialog();
+                    filePath = saveDialog.FileName;
+                });
 
-                if (saveDialog.ShowDialog() != true)
+                if (dialogResult != true)
                     return;
-
-                string filePath = saveDialog.FileName;
 
                 using (var workbook = new XLWorkbook())
                 {
@@ -498,17 +526,23 @@ namespace ClientDesktop.ViewModel
                     }
                 }
 
-                SaveFileDialog saveDialog = new SaveFileDialog
+                bool? dialogResult = false;
+                string filePath = string.Empty;
+
+                SafeUIInvokeSync(() =>
                 {
-                    Filter = "Excel Workbook|*.xlsx",
-                    Title = "Export to Excel",
-                    FileName = $"Position_History_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
-                };
+                    SaveFileDialog saveDialog = new SaveFileDialog
+                    {
+                        Filter = "Excel Workbook|*.xlsx",
+                        Title = "Export to Excel",
+                        FileName = $"Position_History_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
+                    };
+                    dialogResult = saveDialog.ShowDialog();
+                    filePath = saveDialog.FileName;
+                });
 
-                if (saveDialog.ShowDialog() != true)
+                if (dialogResult != true)
                     return;
-
-                string filePath = saveDialog.FileName;
 
                 using (var workbook = new XLWorkbook())
                 {
@@ -843,6 +877,25 @@ namespace ClientDesktop.ViewModel
                 {
                     if (message.IsLoggedIn)
                     {
+                        if (message.IsDifferentUser)
+                        {
+                            SafeUIInvoke(() =>
+                            {
+                                _allHistoryItems?.Clear();
+                                _allPositionItems?.Clear();
+                                HistoryItems?.Clear();
+                                PositionHistoryItems?.Clear();
+
+                                _isDealsRequested = false;
+                                _isOrdersRequested = false;
+                                _isPositionRequested = false;
+                                HasData = false;
+
+                                ClientCredit = 0;
+                                ClientBalance = 0;
+                            });
+                        }
+
                         await LoadFullDataAsync();
                     }
                 }
@@ -908,12 +961,15 @@ namespace ClientDesktop.ViewModel
                 {
                     CurrentViewType = mode;
 
+                    _isUpdatingFilters = true;
+
                     SelectedSymbol = "All";
                     SelectedExecution = "All";
                     SelectedType = "All";
                     SelectedEntry = "All";
                     SelectedPosSymbol = "All";
 
+                    _isUpdatingFilters = false;
                     ApplyFilters();
                 }
             }
@@ -986,105 +1042,130 @@ namespace ClientDesktop.ViewModel
 
                 if (CurrentViewType == EnumHistoryType.Position)
                 {
-                    PositionHistoryItems.Clear();
-
-                    if (!_isPositionRequested)
+                    SafeUIInvoke(() =>
                     {
-                        HasData = false;
-                        return;
-                    }
-
-                    var basePos = _allPositionItems.Where(h =>
-                        h.LastOutAt == null ||
-                        (CommonHelper.ConvertUtcToIst(h.UpdatedAt) >= start.Date &&
-                         CommonHelper.ConvertUtcToIst(h.UpdatedAt) <= end))
-                        .ToList();
-
-                    UpdatePositionDropdowns(basePos);
-
-                    var filteredPos = basePos;
-                    if (SelectedPosSymbol != "All")
-                        filteredPos = filteredPos.Where(x => x.SymbolName == SelectedPosSymbol).ToList();
-
-                    var finalData = filteredPos.OrderBy(s => s.UpdatedAt).ToList();
-
-                    if (finalData.Any())
-                    {
-                        double totalProfit = finalData.Sum(x => x.Pnl);
-
-                        finalData.Add(new PositionHistoryModel
+                        try
                         {
-                            RefId = "FOOTER",
-                            UpdatedAt = DateTime.MaxValue,
-                            SymbolName = "",
-                            Side = "",
-                            Comment = $"Profit: {CommonHelper.FormatAmount((decimal)totalProfit):N2}  Credit: {CommonHelper.FormatAmount((decimal)ClientCredit):N2}  Balance: {CommonHelper.FormatAmount((decimal)ClientBalance):N2} INR",
-                            Pnl = totalProfit
-                        });
-                    }
+                            if (!_isPositionRequested)
+                            {
+                                PositionHistoryItems = new ObservableCollection<PositionHistoryModel>();
+                                HasData = false;
+                                return;
+                            }
 
-                    foreach (var item in finalData) PositionHistoryItems.Add(item);
-                    HasData = PositionHistoryItems.Any(x => x.RefId != "FOOTER");
+                            var basePos = _allPositionItems.Where(h =>
+                                h.LastOutAt == null ||
+                                (CommonHelper.ConvertUtcToIst(h.UpdatedAt) >= start.Date &&
+                                 CommonHelper.ConvertUtcToIst(h.UpdatedAt) <= end))
+                                .ToList();
+
+                            UpdatePositionDropdowns(basePos);
+
+                            var filteredPos = basePos;
+                            if (SelectedPosSymbol != "All")
+                                filteredPos = filteredPos.Where(x => x.SymbolName == SelectedPosSymbol).ToList();
+
+                            var finalData = filteredPos.OrderBy(s => s.UpdatedAt).ToList();
+
+                            if (finalData.Any())
+                            {
+                                double totalProfit = finalData.Sum(x => x.Pnl);
+
+                                finalData.Add(new PositionHistoryModel
+                                {
+                                    RefId = "FOOTER",
+                                    UpdatedAt = DateTime.MaxValue,
+                                    SymbolName = "",
+                                    Side = "",
+                                    Comment = $"Profit: {CommonHelper.FormatAmount((decimal)totalProfit):N2}  Credit: {CommonHelper.FormatAmount((decimal)ClientCredit):N2}  Balance: {CommonHelper.FormatAmount((decimal)ClientBalance):N2} INR",
+                                    Pnl = totalProfit
+                                });
+                            }
+
+                            PositionHistoryItems = new ObservableCollection<PositionHistoryModel>(finalData);
+                            HasData = PositionHistoryItems.Any(x => x.RefId != "FOOTER");
+                        }
+                        finally
+                        {
+                            _isUpdatingFilters = false;
+                        }
+                    }, System.Windows.Threading.DispatcherPriority.Background);
                 }
                 else
                 {
-                    HistoryItems.Clear();
-
-                    if (CurrentViewType == EnumHistoryType.Deals && !_isDealsRequested) { HasData = false; return; }
-                    if (CurrentViewType == EnumHistoryType.Orders && !_isOrdersRequested) { HasData = false; return; }
-
-                    HashSet<string> orderTypeFilter = CurrentViewType == EnumHistoryType.Deals ? new HashSet<string> { "BuyLimit", "SellLimit", "BuyStop", "SellStop" } : new HashSet<string>();
-                    HashSet<string> symbolNameFilter = CurrentViewType == EnumHistoryType.Deals ? new HashSet<string> { "Credit", "Balance" } : new HashSet<string>();
-
-                    var baseHist = _allHistoryItems.Where(h =>
+                    SafeUIInvoke(() =>
                     {
-                        if (orderTypeFilter.Contains(h.OrderType) || symbolNameFilter.Contains(h.SymbolName)) return false;
-                        var istTime = CommonHelper.ConvertUtcToIst(h.CreatedOn);
-                        return istTime >= start && istTime <= end;
-                    }).ToList();
-
-                    UpdateHistoryDropdowns(baseHist);
-
-                    var filteredHistory = baseHist.AsEnumerable();
-                    if (SelectedSymbol != "All") filteredHistory = filteredHistory.Where(x => x.SymbolName == SelectedSymbol);
-                    if (SelectedExecution != "All") filteredHistory = filteredHistory.Where(x => x.OrderType == SelectedExecution);
-                    if (SelectedType != "All") filteredHistory = filteredHistory.Where(x => x.Side == SelectedType);
-                    if (SelectedEntry != "All") filteredHistory = filteredHistory.Where(x => x.DealType == SelectedEntry);
-
-                    var finalData = filteredHistory.OrderBy(s => s.CreatedOn).ToList();
-
-                    if (finalData.Any())
-                    {
-                        var validDataForSum = finalData.Where(x => x.OrderType != "Bill" && x.SymbolName != "Credit").ToList();
-
-                        decimal totalProfit = validDataForSum.Sum(x => x.Pnl);
-                        decimal totalComm = validDataForSum.Sum(x => x.UplineCommission);
-
-                        decimal displayProfit = (totalProfit + totalComm) > 0 ? (totalProfit + totalComm) : 0.00m;
-
-                        finalData.Add(new HistoryModel
+                        try
                         {
-                            RefId = "FOOTER",
-                            CreatedOn = DateTime.MaxValue,
-                            SymbolName = "",
-                            OrderType = "",
-                            Side = "",
-                            Comment = $"Profit: {CommonHelper.FormatAmount(displayProfit):N2}  Credit: {CommonHelper.FormatAmount((decimal)ClientCredit):N2}  Balance: {CommonHelper.FormatAmount((decimal)ClientBalance):N2} INR",
-                            UplineCommission = totalComm,
-                            Pnl = totalProfit
-                        });
-                    }
+                            if (CurrentViewType == EnumHistoryType.Deals && !_isDealsRequested)
+                            {
+                                HistoryItems = new ObservableCollection<HistoryModel>();
+                                HasData = false;
+                                return;
+                            }
 
-                    foreach (var item in finalData) HistoryItems.Add(item);
-                    HasData = HistoryItems.Any(x => x.RefId != "FOOTER");
+                            if (CurrentViewType == EnumHistoryType.Orders && !_isOrdersRequested)
+                            {
+                                HistoryItems = new ObservableCollection<HistoryModel>();
+                                HasData = false;
+                                return;
+                            }
+
+                            HashSet<string> orderTypeFilter = CurrentViewType == EnumHistoryType.Deals ? new HashSet<string> { "BuyLimit", "SellLimit", "BuyStop", "SellStop" } : new HashSet<string>();
+                            HashSet<string> symbolNameFilter = CurrentViewType == EnumHistoryType.Deals ? new HashSet<string> { "Credit", "Balance" } : new HashSet<string>();
+
+                            var baseHist = _allHistoryItems.Where(h =>
+                            {
+                                if (orderTypeFilter.Contains(h.OrderType) || symbolNameFilter.Contains(h.SymbolName)) return false;
+                                var istTime = CommonHelper.ConvertUtcToIst(h.CreatedOn);
+                                return istTime >= start && istTime <= end;
+                            }).ToList();
+
+                            UpdateHistoryDropdowns(baseHist);
+
+                            var filteredHistory = baseHist.AsEnumerable();
+                            if (SelectedSymbol != "All") filteredHistory = filteredHistory.Where(x => x.SymbolName == SelectedSymbol);
+                            if (SelectedExecution != "All") filteredHistory = filteredHistory.Where(x => x.OrderType == SelectedExecution);
+                            if (SelectedType != "All") filteredHistory = filteredHistory.Where(x => x.Side == SelectedType);
+                            if (SelectedEntry != "All") filteredHistory = filteredHistory.Where(x => x.DealType == SelectedEntry);
+
+                            var finalData = filteredHistory.OrderBy(s => s.CreatedOn).ToList();
+
+                            if (finalData.Any())
+                            {
+                                var validDataForSum = finalData.Where(x => x.OrderType != "Bill" && x.SymbolName != "Credit").ToList();
+
+                                decimal totalProfit = validDataForSum.Sum(x => x.Pnl);
+                                decimal totalComm = validDataForSum.Sum(x => x.UplineCommission);
+
+                                decimal displayProfit = (totalProfit + totalComm) > 0 ? (totalProfit + totalComm) : 0.00m;
+
+                                finalData.Add(new HistoryModel
+                                {
+                                    RefId = "FOOTER",
+                                    CreatedOn = DateTime.MaxValue,
+                                    SymbolName = "",
+                                    OrderType = "",
+                                    Side = "",
+                                    Comment = $"Profit: {CommonHelper.FormatAmount(displayProfit):N2}  Credit: {CommonHelper.FormatAmount((decimal)ClientCredit):N2}  Balance: {CommonHelper.FormatAmount((decimal)ClientBalance):N2} INR",
+                                    UplineCommission = totalComm,
+                                    Pnl = totalProfit
+                                });
+                            }
+
+                            HistoryItems = new ObservableCollection<HistoryModel>(finalData);
+                            HasData = HistoryItems.Any(x => x.RefId != "FOOTER");
+                        }
+                        finally
+                        {
+                            _isUpdatingFilters = false;
+                        }
+                    }, System.Windows.Threading.DispatcherPriority.Background);
                 }
             }
             catch (Exception ex)
             {
                 FileLogger.ApplicationLog(nameof(ApplyFilters), ex);
-            }
-            finally
-            {
                 _isUpdatingFilters = false;
             }
         }
@@ -1097,19 +1178,17 @@ namespace ClientDesktop.ViewModel
             try
             {
                 var oldPos = SelectedPosSymbol;
-                AvailablePosSymbols.Clear();
-                AvailablePosSymbols.Add("All");
+                var newSymbols = new ObservableCollection<string> { "All" };
+                foreach (var s in baseData.Where(x => !string.IsNullOrEmpty(x.SymbolName)).Select(x => x.SymbolName).Distinct().OrderBy(x => x)) newSymbols.Add(s);
 
-                var posSymbols = baseData.Where(x => !string.IsNullOrEmpty(x.SymbolName)).Select(x => x.SymbolName).Distinct().OrderBy(x => x);
-                foreach (var s in posSymbols) AvailablePosSymbols.Add(s);
-
-                _selectedPosSymbol = AvailablePosSymbols.Contains(oldPos) ? oldPos : "All";
-                OnPropertyChanged(nameof(SelectedPosSymbol));
+                SafeUIInvoke(() =>
+                {
+                    AvailablePosSymbols = newSymbols;
+                    _selectedPosSymbol = AvailablePosSymbols.Contains(oldPos) ? oldPos : "All";
+                    OnPropertyChanged(nameof(SelectedPosSymbol));
+                });
             }
-            catch (Exception ex)
-            {
-                FileLogger.ApplicationLog(nameof(UpdatePositionDropdowns), ex);
-            }
+            catch (Exception ex) { FileLogger.ApplicationLog(nameof(UpdatePositionDropdowns), ex); }
         }
 
         /// <summary>
@@ -1119,42 +1198,37 @@ namespace ClientDesktop.ViewModel
         {
             try
             {
-                var oldSym = SelectedSymbol;
-                var oldExec = SelectedExecution;
-                var oldType = SelectedType;
-                var oldEntry = SelectedEntry;
+                var oldSym = SelectedSymbol; var oldExec = SelectedExecution; var oldType = SelectedType; var oldEntry = SelectedEntry;
 
-                AvailableSymbols.Clear(); AvailableSymbols.Add("All");
-                AvailableExecutions.Clear(); AvailableExecutions.Add("All");
-                AvailableTypes.Clear(); AvailableTypes.Add("All");
-                AvailableEntries.Clear(); AvailableEntries.Add("All");
+                var newSymbols = new ObservableCollection<string> { "All" };
+                foreach (var s in baseData.Where(x => !string.IsNullOrEmpty(x.SymbolName)).Select(x => x.SymbolName).Distinct().OrderBy(x => x)) newSymbols.Add(s);
 
-                var symbols = baseData.Where(x => !string.IsNullOrEmpty(x.SymbolName)).Select(x => x.SymbolName).Distinct().OrderBy(x => x);
-                foreach (var s in symbols) AvailableSymbols.Add(s);
+                var newExecs = new ObservableCollection<string> { "All" };
+                foreach (var e in baseData.Where(x => !string.IsNullOrEmpty(x.OrderType)).Select(x => x.OrderType).Distinct().OrderBy(x => x)) newExecs.Add(e);
 
-                var executions = baseData.Where(x => !string.IsNullOrEmpty(x.OrderType)).Select(x => x.OrderType).Distinct().OrderBy(x => x);
-                foreach (var e in executions) AvailableExecutions.Add(e);
+                var newTypes = new ObservableCollection<string> { "All" };
+                foreach (var t in baseData.Where(x => !string.IsNullOrEmpty(x.Side)).Select(x => x.Side).Distinct().OrderBy(x => x)) newTypes.Add(t);
 
-                var types = baseData.Where(x => !string.IsNullOrEmpty(x.Side)).Select(x => x.Side).Distinct().OrderBy(x => x);
-                foreach (var t in types) AvailableTypes.Add(t);
+                var newEntries = new ObservableCollection<string> { "All" };
+                foreach (var e in baseData.Where(x => !string.IsNullOrEmpty(x.DealType)).Select(x => x.DealType).Distinct().OrderBy(x => x)) newEntries.Add(e);
 
-                var entries = baseData.Where(x => !string.IsNullOrEmpty(x.DealType)).Select(x => x.DealType).Distinct().OrderBy(x => x);
-                foreach (var e in entries) AvailableEntries.Add(e);
+                SafeUIInvoke(() =>
+                {
+                    AvailableSymbols = newSymbols;
+                    AvailableExecutions = newExecs;
+                    AvailableTypes = newTypes;
+                    AvailableEntries = newEntries;
 
-                _selectedSymbol = AvailableSymbols.Contains(oldSym) ? oldSym : "All";
-                _selectedExecution = AvailableExecutions.Contains(oldExec) ? oldExec : "All";
-                _selectedType = AvailableTypes.Contains(oldType) ? oldType : "All";
-                _selectedEntry = AvailableEntries.Contains(oldEntry) ? oldEntry : "All";
+                    _selectedSymbol = AvailableSymbols.Contains(oldSym) ? oldSym : "All";
+                    _selectedExecution = AvailableExecutions.Contains(oldExec) ? oldExec : "All";
+                    _selectedType = AvailableTypes.Contains(oldType) ? oldType : "All";
+                    _selectedEntry = AvailableEntries.Contains(oldEntry) ? oldEntry : "All";
 
-                OnPropertyChanged(nameof(SelectedSymbol));
-                OnPropertyChanged(nameof(SelectedExecution));
-                OnPropertyChanged(nameof(SelectedType));
-                OnPropertyChanged(nameof(SelectedEntry));
+                    OnPropertyChanged(nameof(SelectedSymbol)); OnPropertyChanged(nameof(SelectedExecution));
+                    OnPropertyChanged(nameof(SelectedType)); OnPropertyChanged(nameof(SelectedEntry));
+                });
             }
-            catch (Exception ex)
-            {
-                FileLogger.ApplicationLog(nameof(UpdateHistoryDropdowns), ex);
-            }
+            catch (Exception ex) { FileLogger.ApplicationLog(nameof(UpdateHistoryDropdowns), ex); }
         }
 
         /// <summary>

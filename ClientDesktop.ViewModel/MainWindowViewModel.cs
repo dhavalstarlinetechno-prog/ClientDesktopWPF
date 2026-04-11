@@ -28,6 +28,7 @@ namespace ClientDesktop.ViewModel
         private string _userId;
         private bool _isLoggedIn;
         private bool _isPasswordReadOnly;
+        private string _lastLoggedUserKey = string.Empty;
         public static bool isViewLocked = false;
 
         #endregion
@@ -159,12 +160,15 @@ namespace ClientDesktop.ViewModel
         {
             try
             {
-                _dialogService.ShowDialog<LoginPageViewModel>("Login", (vm) =>
+                SafeUIInvoke(() =>
                 {
-                    if (_sessionService.IsLoggedIn)
+                    _dialogService.ShowDialog<LoginPageViewModel>("Login", (vm) =>
                     {
-                        _ = PerformPostLoginSetup();
-                    }
+                        if (_sessionService.IsLoggedIn)
+                        {
+                            _ = PerformPostLoginSetup();
+                        }
+                    });
                 });
             }
             catch (Exception ex)
@@ -226,7 +230,10 @@ namespace ClientDesktop.ViewModel
                     }
 
                     InitializeAfterLogin();
-                    WeakReferenceMessenger.Default.Send(new UserAuthEvent(true, _sessionService.UserId));
+                    string currentUserKey = $"{_sessionService.UserId}_{_sessionService.LicenseId}";
+                    bool isDifferentUser = !string.IsNullOrEmpty(_lastLoggedUserKey) && _lastLoggedUserKey != currentUserKey;
+                    _lastLoggedUserKey = currentUserKey;
+                    WeakReferenceMessenger.Default.Send(new UserAuthEvent(true, _sessionService.UserId, isDifferentUser));
                     _socketService.Start();
                 }
                 else
@@ -251,7 +258,7 @@ namespace ClientDesktop.ViewModel
 
             try
             {
-                Application.Current.Dispatcher.Invoke(() =>
+                SafeUIInvokeSync(() =>
                 {
                     DisclaimerViewModel disclaimerVM = null;
 
@@ -317,17 +324,19 @@ namespace ClientDesktop.ViewModel
         {
             try
             {
-                _dialogService.ShowDialog<TradeViewModel>(
-                    "New Trade Order",
-                    configureViewModel: vm =>
-                    {
-                        vm.CurrentOrderTypeEnum = EnumTradeOrderType.Market;
-                        vm.CurrentWindowModeEnum = EnumTradeWindowMode.FromTradeButton;
-                        vm.positionGridRow = null;
-
-                        _ = vm.LoadSymbolListAsync();
-                    }
-                );
+                SafeUIInvoke(() =>
+                {
+                    _dialogService.ShowDialog<TradeViewModel>(
+                        "New Trade Order",
+                        configureViewModel: vm =>
+                        {
+                            vm.CurrentOrderTypeEnum = EnumTradeOrderType.Market;
+                            vm.CurrentWindowModeEnum = EnumTradeWindowMode.FromTradeButton;
+                            vm.positionGridRow = null;
+                            _ = vm.LoadSymbolListAsync();
+                        }
+                    );
+                });
             }
             catch (Exception ex)
             {
@@ -345,9 +354,10 @@ namespace ClientDesktop.ViewModel
         {
             try
             {
-                _dialogService.ShowDialog<ChangePasswordViewModel>(
-                    "Change Password"
-                );
+                SafeUIInvoke(() =>
+                {
+                    _dialogService.ShowDialog<ChangePasswordViewModel>("Change Password");
+                });
             }
             catch (Exception ex)
             {
@@ -379,13 +389,13 @@ namespace ClientDesktop.ViewModel
             try
             {
                 _sessionService.ClearSession();
-                SetRestrictedMode();
-
                 FileLogger.Log("Auth", "User logged out and session disconnected.");
 
-                await Application.Current.Dispatcher.InvokeAsync(() => { });
-
-                ShowLoginWindow();
+                SafeUIInvoke(() =>
+                {
+                    SetRestrictedMode();
+                    ShowLoginWindow();
+                });
             }
             catch (Exception ex)
             {

@@ -143,31 +143,32 @@ namespace ClientDesktop.Infrastructure.Services
                         return TryLoadFromCache(response.ReasonPhrase);
                     }
 
-                    var result = JsonConvert.DeserializeObject<HistoryResponse>(responseString);
-
-                    if (result == null || !result.IsSuccess || result.Data == null)
+                    return await Task.Run(() =>
                     {
-                        FileLogger.ApplicationLog(nameof(FetchHistoryFromApiAsync), "Invalid response structure.");
-                        return TryLoadFromCache("Invalid response structure");
-                    }
+                        var result = JsonConvert.DeserializeObject<HistoryResponse>(responseString);
 
-                    var newApiData = result.Data;
-                    var localCache = GetStoredHistory() ?? new List<HistoryModel>();
+                        if (result == null || !result.IsSuccess || result.Data == null)
+                        {
+                            FileLogger.ApplicationLog(nameof(FetchHistoryFromApiAsync), "Invalid response structure.");
+                            return TryLoadFromCache("Invalid response structure");
+                        }
 
-                    localCache.RemoveAll(x => x.CreatedOn.Date >= fromDate.Date && x.CreatedOn.Date <= toDate.Date);
+                        var newApiData = result.Data;
+                        var localCache = GetStoredHistory() ?? new List<HistoryModel>();
 
-                    localCache.AddRange(newApiData);
+                        localCache.RemoveAll(x => x.CreatedOn.Date >= fromDate.Date && x.CreatedOn.Date <= toDate.Date);
+                        localCache.AddRange(newApiData);
+                        localCache = localCache.OrderByDescending(x => x.CreatedOn).ToList();
 
-                    localCache = localCache.OrderByDescending(x => x.CreatedOn).ToList();
+                        SaveStoredHistory(localCache);
 
-                    SaveStoredHistory(localCache);
-
-                    return new HistoryFetchResult
-                    {
-                        IsSuccess = true,
-                        IsFromCache = false,
-                        Data = localCache
-                    };
+                        return new HistoryFetchResult
+                        {
+                            IsSuccess = true,
+                            IsFromCache = false,
+                            Data = localCache
+                        };
+                    });
                 }
             }
             catch (Exception ex)
@@ -253,29 +254,32 @@ namespace ClientDesktop.Infrastructure.Services
                         return TryLoadPositionHistoryFromCache(response.ReasonPhrase);
                     }
 
-                    var result = JsonConvert.DeserializeObject<PositionHistoryResponse>(responseString);
-
-                    if (result == null || !result.IsSuccess || result.Data == null)
+                    return await Task.Run(() =>
                     {
-                        FileLogger.ApplicationLog(nameof(FetchPositionHistoryFromApiAsync), "Invalid response structure.");
-                        return TryLoadPositionHistoryFromCache("Invalid response structure");
-                    }
+                        var result = JsonConvert.DeserializeObject<PositionHistoryResponse>(responseString);
 
-                    var newApiData = result.Data;
-                    var localCache = GetStoredPositionHistory() ?? new List<PositionHistoryModel>();
+                        if (result == null || !result.IsSuccess || result.Data == null)
+                        {
+                            FileLogger.ApplicationLog(nameof(FetchPositionHistoryFromApiAsync), "Invalid response structure.");
+                            return TryLoadPositionHistoryFromCache("Invalid response structure");
+                        }
 
-                    localCache.RemoveAll(x => x.UpdatedAt.Date >= fromDate.Date && x.UpdatedAt.Date <= toDate.Date);
-                    localCache.AddRange(newApiData);
-                    localCache = localCache.OrderByDescending(x => x.UpdatedAt).ToList();
+                        var newApiData = result.Data;
+                        var localCache = GetStoredPositionHistory() ?? new List<PositionHistoryModel>();
 
-                    SaveStoredPositionHistory(localCache);
+                        localCache.RemoveAll(x => x.UpdatedAt.Date >= fromDate.Date && x.UpdatedAt.Date <= toDate.Date);
+                        localCache.AddRange(newApiData);
+                        localCache = localCache.OrderByDescending(x => x.UpdatedAt).ToList();
 
-                    return new PositionHistoryFetchResult
-                    {
-                        IsSuccess = true,
-                        IsFromCache = false,
-                        Data = localCache
-                    };
+                        SaveStoredPositionHistory(localCache);
+
+                        return new PositionHistoryFetchResult
+                        {
+                            IsSuccess = true,
+                            IsFromCache = false,
+                            Data = localCache
+                        };
+                    });
                 }
             }
             catch (Exception ex)

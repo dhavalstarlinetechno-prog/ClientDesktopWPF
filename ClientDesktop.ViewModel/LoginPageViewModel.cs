@@ -121,28 +121,31 @@ namespace ClientDesktop.ViewModel
                 AllServers = serverList ?? new List<ServerList>();
                 _sessionService.SetServerList(AllServers);
 
-                FilteredServers.Clear();
-
-                string cLic = _sessionService.LastSelectedLogin.LicenseId;
-                string cUser = _sessionService.LastSelectedLogin.UserId;
-
-                if (string.IsNullOrEmpty(cLic)) cLic = _sessionService.LicenseId;
-                if (string.IsNullOrEmpty(cUser)) cUser = _sessionService.UserId;
-
-                if (!string.IsNullOrEmpty(cLic))
+                SafeUIInvoke(() =>
                 {
-                    var server = AllServers.FirstOrDefault(s => s.licenseId.ToString() == cLic);
-                    if (server != null)
+                    FilteredServers.Clear();
+
+                    string cLic = _sessionService.LastSelectedLogin.LicenseId;
+                    string cUser = _sessionService.LastSelectedLogin.UserId;
+
+                    if (string.IsNullOrEmpty(cLic)) cLic = _sessionService.LicenseId;
+                    if (string.IsNullOrEmpty(cUser)) cUser = _sessionService.UserId;
+
+                    if (!string.IsNullOrEmpty(cLic))
                     {
-                        if (!FilteredServers.Contains(server)) FilteredServers.Add(server);
-                        SelectedServer = server;
+                        var server = AllServers.FirstOrDefault(s => s.licenseId.ToString() == cLic);
+                        if (server != null)
+                        {
+                            if (!FilteredServers.Contains(server)) FilteredServers.Add(server);
+                            SelectedServer = server;
+                        }
                     }
-                }
 
-                if (!string.IsNullOrEmpty(cUser))
-                {
-                    Username = cUser;
-                }
+                    if (!string.IsNullOrEmpty(cUser))
+                    {
+                        Username = cUser;
+                    }
+                });
             }
             catch (Exception ex)
             {
@@ -263,7 +266,10 @@ namespace ClientDesktop.ViewModel
             }
             finally
             {
-                CloseAction?.Invoke();
+                SafeUIInvoke(() =>
+                {
+                    CloseAction?.Invoke();
+                });
             }
         }
 
@@ -298,7 +304,10 @@ namespace ClientDesktop.ViewModel
         {
             try
             {
-                _dialogService.ShowDialog<DisclaimerViewModel>(string.Empty);
+                SafeUIInvokeSync(() =>
+                {
+                    _dialogService.ShowDialog<DisclaimerViewModel>(string.Empty);
+                });
             }
             catch (Exception ex)
             {

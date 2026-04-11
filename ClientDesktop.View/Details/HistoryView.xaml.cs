@@ -67,7 +67,7 @@ namespace ClientDesktop.View.Details
         /// <summary>
         /// Handles custom sorting logic for the Deals and Orders data grid.
         /// </summary>
-        private void GridDealsOrders_Sorting(object sender, DataGridSortingEventArgs e)
+        private async void GridDealsOrders_Sorting(object sender, DataGridSortingEventArgs e)
         {
             try
             {
@@ -82,10 +82,10 @@ namespace ClientDesktop.View.Details
                 var newDir = currentDir == ListSortDirection.Ascending ? ListSortDirection.Descending : ListSortDirection.Ascending;
                 _dealsSortState[propName] = newDir;
 
+                await vm.SortDeals(propName, newDir);
+
                 foreach (var col in GridDealsOrders.Columns) col.SortDirection = null;
                 e.Column.SortDirection = newDir;
-
-                vm.SortDeals(propName, newDir);
             }
             catch (Exception ex)
             {
@@ -96,7 +96,7 @@ namespace ClientDesktop.View.Details
         /// <summary>
         /// Handles custom sorting logic for the Position data grid.
         /// </summary>
-        private void GridPosition_Sorting(object sender, DataGridSortingEventArgs e)
+        private async void GridPosition_Sorting(object sender, DataGridSortingEventArgs e)
         {
             try
             {
@@ -111,10 +111,10 @@ namespace ClientDesktop.View.Details
                 var newDir = currentDir == ListSortDirection.Ascending ? ListSortDirection.Descending : ListSortDirection.Ascending;
                 _positionSortState[propName] = newDir;
 
+                await vm.SortPositions(propName, newDir);
+
                 foreach (var col in GridPosition.Columns) col.SortDirection = null;
                 e.Column.SortDirection = newDir;
-
-                vm.SortPositions(propName, newDir);
             }
             catch (Exception ex)
             {

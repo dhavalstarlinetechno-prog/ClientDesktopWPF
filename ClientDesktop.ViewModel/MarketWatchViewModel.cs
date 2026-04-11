@@ -11,7 +11,6 @@ using ClientDesktop.Services;
 using CommunityToolkit.Mvvm.Messaging;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -191,11 +190,13 @@ namespace ClientDesktop.ViewModel
             AddSymbolCommand = new AsyncRelayCommand(async (param) => await AddSymbolAsync(param as MarketWatchSymbols));
             ItemDoubleClickCommand = new RelayCommand(param => OpenTradeWindowFromGrid(param as MarketWatchSymbols ?? SelectedMarketItem));
 
-            DispatcherTimer timer = new DispatcherTimer();
-            timer.Interval = TimeSpan.FromSeconds(1);
-            timer.Tick += (s, e) =>
+            var timer = new System.Timers.Timer(1000); // 1 second
+            timer.Elapsed += (s, e) =>
             {
-                CurrentTime = DateTime.Now.ToString("HH:mm:ss");
+                SafeUIInvoke(() =>
+                {
+                    CurrentTime = DateTime.Now.ToString("HH:mm:ss");
+                });
             };
             timer.Start();
             CurrentTime = DateTime.Now.ToString("HH:mm:ss");
@@ -229,7 +230,7 @@ namespace ClientDesktop.ViewModel
         {
             try
             {
-                Application.Current.Dispatcher.Invoke(() =>
+                SafeUIInvokeSync(() =>
                 {
                     if (MarketWatchSymbolsCollection == null) return;
 
@@ -293,6 +294,18 @@ namespace ClientDesktop.ViewModel
                 {
                     if (message.IsLoggedIn)
                     {
+                        if (message.IsDifferentUser)
+                        {
+                            SafeUIInvoke(() =>
+                            {
+                                MarketWatchSymbolsCollection.Clear();
+                                HiddenSymbolsCollection.Clear();
+                                SuggestedSymbols.Clear();
+                                SymbolCountText = "0 / 0";
+                                SelectedMarketItem = null;
+                            });
+                        }
+
                         lock (_currentlySubscribed) _currentlySubscribed.Clear();
 
                         string url = CommonHelper.ToReplaceUrl(AppConfig.MarketWatchSignalRUrl, _sessionService.PrimaryDomain, "sglr");
@@ -444,7 +457,7 @@ namespace ClientDesktop.ViewModel
         {
             try
             {
-                Application.Current.Dispatcher.InvokeAsync(() =>
+                SafeUIInvoke(() =>
                 {
                     var existing = MarketWatchSymbolsCollection.FirstOrDefault(x => x.SymbolName == tick.SymbolName);
                     if (existing != null)
@@ -478,7 +491,7 @@ namespace ClientDesktop.ViewModel
                         existing.Dcv = (double)GetDailyChangeValue((decimal)tick.Bid, (decimal)tick.PreviousClose);
                         existing.Time = ConvertToTime(tick.UpdateTime);
                     }
-                });
+                }, DispatcherPriority.DataBind);
             }
             catch (Exception ex)
             {
@@ -493,7 +506,7 @@ namespace ClientDesktop.ViewModel
         {
             try
             {
-                Application.Current.Dispatcher.InvokeAsync(() =>
+                SafeUIInvoke(() =>
                 {
                     lock (_currentlySubscribed)
                     {
@@ -543,7 +556,7 @@ namespace ClientDesktop.ViewModel
         {
             try
             {
-                await LoadData(forceSync: true);
+                await LoadData(forceSync: true, isOverwrite: false);
             }
             catch (Exception ex)
             {
@@ -585,7 +598,7 @@ namespace ClientDesktop.ViewModel
         /// <summary>
         /// Fetches market data from the service.
         /// </summary>
-        private async Task LoadData(bool forceSync)
+        private async Task LoadData(bool forceSync, bool isOverwrite = true)
         {
             try
             {
@@ -598,11 +611,11 @@ namespace ClientDesktop.ViewModel
 
                 if (data != null && data.symbols != null && data.symbols.Any())
                 {
-                    Application.Current.Dispatcher.Invoke(() =>
+                    await SafeUIInvokeAsync(() =>
                     {
-                        UpdateMarketData(data);
+                        UpdateMarketData(data, isOverwrite);
                         _isMarketWatchDataUpdated = forceSync;
-                    });
+                    }, DispatcherPriority.Background);
                 }
             }
             catch (Exception ex)
@@ -614,7 +627,7 @@ namespace ClientDesktop.ViewModel
         /// <summary>
         /// Updates the market data collections based on API response.
         /// </summary>
-        private void UpdateMarketData(MarketWatchData marketWatchData)
+        private void UpdateMarketData(MarketWatchData marketWatchData, bool isOverwrite)
         {
             try
             {
@@ -625,8 +638,17 @@ namespace ClientDesktop.ViewModel
 
                 if (marketWatchData.symbols != null)
                 {
-                    Application.Current.Dispatcher.Invoke(() =>
+                    SafeUIInvokeSync(() =>
                     {
+                        var currentVisibleIds = new HashSet<int>();
+                        if (!isOverwrite)
+                        {
+                            currentVisibleIds = MarketWatchSymbolsCollection
+                                .Where(s => !string.IsNullOrWhiteSpace(s.SymbolName))
+                                .Select(s => s.SymbolId)
+                                .ToHashSet();
+                        }
+
                         MarketWatchSymbolsCollection.Clear();
 
                         var validSymbols = marketWatchData.symbols
@@ -638,9 +660,23 @@ namespace ClientDesktop.ViewModel
                         {
                             var symbolModel = CreateMarketItem(apiSymbol);
 
-                            if (!apiSymbol.symbolHide)
+                            bool shouldBeVisible = false;
+
+                            if (isOverwrite)
+                            {
+                                shouldBeVisible = !apiSymbol.symbolHide;
+                            }
+                            else
+                            {
+                                shouldBeVisible = !apiSymbol.symbolHide || currentVisibleIds.Contains(apiSymbol.symbolId);
+                            }
+
+                            if (shouldBeVisible)
                             {
                                 MarketWatchSymbolsCollection.Add(symbolModel);
+
+                                var hiddenToRemove = HiddenSymbolsCollection.FirstOrDefault(r => r.SymbolId == symbolModel.SymbolId);
+                                if (hiddenToRemove != null) HiddenSymbolsCollection.Remove(hiddenToRemove);
                             }
                             else
                             {
@@ -648,8 +684,8 @@ namespace ClientDesktop.ViewModel
 
                                 if (existingItem == null || existingItem.IsBanned != symbolModel.IsBanned)
                                 {
-                                    if (existingItem != null) HiddenSymbolsCollection.Remove(existingItem); 
-                                    HiddenSymbolsCollection.Add(symbolModel); 
+                                    if (existingItem != null) HiddenSymbolsCollection.Remove(existingItem);
+                                    HiddenSymbolsCollection.Add(symbolModel);
                                 }
                             }
                         }
@@ -787,7 +823,7 @@ namespace ClientDesktop.ViewModel
 
                 if (response != null && response.data != null && response.data.symbolId != null)
                 {
-                    Application.Current.Dispatcher.Invoke(() =>
+                    await SafeUIInvokeAsync(() =>
                     {
                         var symbolsToRemove = MarketWatchSymbolsCollection
                             .Where(s => response.data.symbolId.Contains(s.SymbolId))
@@ -832,7 +868,7 @@ namespace ClientDesktop.ViewModel
                 int restoredCount = 0;
                 var symbolsToRestore = HiddenSymbolsCollection.ToList();
 
-                Application.Current.Dispatcher.Invoke(() =>
+                await SafeUIInvokeAsync(() =>
                 {
                     foreach (var symbol in symbolsToRestore)
                     {
@@ -904,7 +940,7 @@ namespace ClientDesktop.ViewModel
 
             try
             {
-                Application.Current.Dispatcher.Invoke(() =>
+                await SafeUIInvokeAsync(() =>
                 {
                     HiddenSymbolsCollection.Remove(symbol);
                     MarketWatchSymbolsCollection.Add(symbol);
@@ -1172,7 +1208,7 @@ namespace ClientDesktop.ViewModel
             {
                 if (isShow) // Symbol show (Unhide)
                 {
-                    await Application.Current.Dispatcher.InvokeAsync(async () =>
+                    await SafeUIInvokeAsync(async () =>
                     {
 
                         var symbol = HiddenSymbolsCollection.FirstOrDefault(s => s.SymbolId == symbolId);

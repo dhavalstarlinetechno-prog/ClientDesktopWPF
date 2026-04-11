@@ -1,4 +1,5 @@
-﻿using ClientDesktop.Core.Config; // Assuming AppConfig is here
+﻿using ClientDesktop.Core.Base;
+using ClientDesktop.Core.Config; // Assuming AppConfig is here
 using ClientDesktop.Infrastructure.Logger; // Your Logger Namespace
 using System.Collections.ObjectModel;
 using System.Windows;
@@ -6,7 +7,7 @@ using System.Windows.Data;
 
 namespace ClientDesktop.ViewModel
 {
-    public class JournalViewModel
+    public class JournalViewModel : ViewModelBase
     {
         // Collection that notifies the UI when items are added
         public ObservableCollection<JournalLogModel> Journals { get; set; }
@@ -70,14 +71,13 @@ namespace ClientDesktop.ViewModel
                     // Reverse to put newest on top
                     tempList.Reverse();
 
-                    // Now safely update the ObservableCollection on the UI Dispatcher ONLY ONCE
-                    Application.Current.Dispatcher.Invoke(() =>
+                    SafeUIInvoke(() =>
                     {
                         foreach (var log in tempList)
                         {
                             Journals.Add(log);
                         }
-                    });
+                    }, System.Windows.Threading.DispatcherPriority.Background);
                 }
             }
             catch (Exception ex)
@@ -91,7 +91,7 @@ namespace ClientDesktop.ViewModel
             try
             {
                 // UI must be updated on the Main Thread
-                Application.Current.Dispatcher.Invoke(() =>
+                SafeUIInvoke(() =>
                 {
                     Journals.Insert(0, new JournalLogModel
                     {
@@ -99,7 +99,7 @@ namespace ClientDesktop.ViewModel
                         Source = source,
                         Message = message
                     });
-                });
+                }, System.Windows.Threading.DispatcherPriority.Background);
             }
             catch (Exception ex)
             {
@@ -118,13 +118,15 @@ namespace ClientDesktop.ViewModel
 
                 if (parts.Length >= 3)
                 {
-                    // Add to the START of the list (Insert 0) so newest is top
-                    Journals.Insert(0, new JournalLogModel
+                    SafeUIInvoke(() =>
                     {
-                        Time = parts[0],
-                        Source = parts[1],
-                        Message = parts[2]
-                    });
+                        Journals.Insert(0, new JournalLogModel
+                        {
+                            Time = parts[0],
+                            Source = parts[1],
+                            Message = parts[2]
+                        });
+                    }, System.Windows.Threading.DispatcherPriority.Background);
                 }
             }
             catch (Exception ex)
