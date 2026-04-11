@@ -186,7 +186,7 @@
                             Style="{StaticResource CustomDataGrid}"   
                             Margin="10,5,10,10"                        
                             AutoGenerateColumns="False"
-                            BorderThickness="0,1,0,0"
+                            BorderThickness="1,1,1,1"
                             FontFamily="Microsoft Sans Serif"
                             FontSize="13" 
                             MouseLeftButtonUp="DgvFeedbackRecord_MouseLeftButtonUp">
@@ -213,7 +213,7 @@
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="VerticalAlignment" Value="Center"/>
-                                        <Setter Property="HorizontalAlignment" Value="Left"/>
+                                        <Setter Property="HorizontalAlignment" Value="Center"/>
                                         <Setter Property="TextAlignment" Value="Center"/>
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>

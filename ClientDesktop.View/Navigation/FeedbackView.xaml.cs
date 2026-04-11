@@ -5,6 +5,7 @@ using ClientDesktop.Infrastructure.Logger;
 using ClientDesktop.Infrastructure.Services;
 using ClientDesktop.Services;
 using ClientDesktop.ViewModel;
+using Microsoft.Web.WebView2.Core;
 using Microsoft.Win32;
 using RtfPipe;
 using System;
@@ -49,6 +50,9 @@ namespace ClientDesktop.View.Navigation
         private double _scrollTarget;
         private bool _isManualScroll = false;
         private const double ScrollEasingFactor = 0.12;
+        private Microsoft.Web.WebView2.Wpf.WebView2 _chatWebView;
+        private bool _chatWebViewReady = false;
+        private List<ChatList> _pendingChatData = null;
 
         #endregion Variable
 
@@ -75,12 +79,17 @@ namespace ClientDesktop.View.Navigation
                 };
             }
             InitSmoothScroll();
+            this.Loaded += FeedbackView_FirstLoaded;
+        }
+        private void FeedbackView_FirstLoaded(object sender, RoutedEventArgs e)
+        {
+            this.Loaded -= FeedbackView_FirstLoaded;
+            InitChatWebView();
         }
 
         #endregion Constructor
 
         #region SmoothScroll
-
         private void InitSmoothScroll()
         {
             _scrollTimer = new DispatcherTimer
@@ -118,15 +127,13 @@ namespace ClientDesktop.View.Navigation
                 _isManualScroll = false;
             };
         }
-
         private void ReplyPanel_ScrollChanged(object sender, ScrollChangedEventArgs e)
         {
             if (_isManualScroll)
             {
-                _scrollTarget = ReplyPanel.VerticalOffset; // sync target
+                _scrollTarget = ReplyPanel.VerticalOffset;
             }
         }
-
         private void ReplyPanel_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
             _isManualScroll = false;
@@ -134,7 +141,6 @@ namespace ClientDesktop.View.Navigation
             SmoothScrollBy(e.Delta < 0 ? 150 : -150);
             e.Handled = true;
         }
-
         private void SmoothScrollBy(double pixelDelta)
         {
             double startFrom = _scrollTimer.IsEnabled ? _scrollTarget : ReplyPanel.VerticalOffset;
@@ -173,8 +179,330 @@ namespace ClientDesktop.View.Navigation
             _viewModel.SubscribeToFeedbackSocket();
         }
 
-
         #endregion PanelNavigation
+
+        #region Single-WebView2 Chat
+        private void InitChatWebView()
+        {
+            try
+            {
+                ChatPanel.Visibility = Visibility.Collapsed;
+
+                _chatWebView = new Microsoft.Web.WebView2.Wpf.WebView2
+                {
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    Height = 40,
+                    MinHeight = 40,
+                    Margin = new Thickness(0, 0, 0, 0),
+                    Visibility = Visibility.Hidden
+                };
+
+                _chatWebView.PreviewMouseWheel += (s, e) =>
+                {
+                    SmoothScrollBy(e.Delta < 0 ? 150 : -150);
+                    e.Handled = true;
+                };
+
+                FeedbackChatPanel.Children.Insert(0, _chatWebView);
+
+                _ = InitChatWebViewCoreAsync();
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(InitChatWebView), $"InitChatWebView error: {ex.Message}");
+                ChatPanel.Visibility = Visibility.Visible;
+            }
+        }
+        private async Task InitChatWebViewCoreAsync()
+        {
+            try
+            {
+                await _chatWebView.EnsureCoreWebView2Async();
+
+                _chatWebView.CoreWebView2.Settings.IsStatusBarEnabled = false;
+                _chatWebView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
+                _chatWebView.CoreWebView2.Settings.IsZoomControlEnabled = false;
+                _chatWebView.CoreWebView2.Settings.AreBrowserAcceleratorKeysEnabled = false;
+
+                _chatWebView.CoreWebView2.WebMessageReceived += (wvSender, wvArgs) =>
+                {
+                    try
+                    {
+                        string msg = wvArgs.TryGetWebMessageAsString();
+
+                        if (msg != null && msg.StartsWith("scroll_wheel:"))
+                        {
+                            string deltaStr = msg.Substring("scroll_wheel:".Length);
+                            if (double.TryParse(deltaStr,
+                                System.Globalization.NumberStyles.Float,
+                                System.Globalization.CultureInfo.InvariantCulture,
+                                out double delta))
+                            {
+                                Application.Current.Dispatcher.InvokeAsync(() =>
+                                    SmoothScrollBy(delta * 0.5));
+                            }
+                        }
+                        else if (msg != null && msg.StartsWith("content_height:"))
+                        {
+                            string hStr = msg.Substring("content_height:".Length);
+                            if (double.TryParse(hStr,
+                                System.Globalization.NumberStyles.Float,
+                                System.Globalization.CultureInfo.InvariantCulture,
+                                out double h) && h > 10)
+                            {
+                                Application.Current.Dispatcher.InvokeAsync(() =>
+                                {
+                                    _chatWebView.Height = h + 10;
+
+                                    if (_chatWebView.Visibility != Visibility.Visible)
+                                        _chatWebView.Visibility = Visibility.Visible;
+
+                                    ReplyPanel.ScrollToEnd();
+                                });
+                            }
+                        }
+                    }
+                    catch { }
+                };
+
+                _chatWebViewReady = true;
+
+                if (_pendingChatData != null)
+                {
+                    var data = _pendingChatData;
+                    _pendingChatData = null;
+                    await RenderAllMessagesAsync(data);
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(InitChatWebViewCoreAsync), $"WebView2 core init error: {ex.Message}");
+                _ = Application.Current.Dispatcher.InvokeAsync(() =>
+                    ChatPanel.Visibility = Visibility.Visible);
+            }
+        }
+        private async Task RenderAllMessagesAsync(List<ChatList> chatItems)
+        {
+            if (!_chatWebViewReady) return;
+
+            if (chatItems == null || chatItems.Count == 0)
+            {
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    _chatWebView.Height = 40;
+                    _chatWebView.Visibility = Visibility.Hidden; 
+                    _chatWebView.NavigateToString(
+                        "<html><body style='margin:0;background:#f5f5f5'></body></html>");
+                });
+                return;
+            }
+
+            var imageMap = new Dictionary<int, string>();
+
+            var imageTasks = chatItems
+                .Select((c, i) => new { c, i })
+                .Where(x => x.c.filePath != null
+                         && x.c.filePath.Count > 0
+                         && !string.IsNullOrEmpty(x.c.filePath[0]))
+                .Select(async x =>
+                {
+                    try
+                    {
+                        using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+                        var bytes = await http.GetByteArrayAsync(x.c.filePath[0]);
+                        string ext = System.IO.Path.GetExtension(
+                            new Uri(x.c.filePath[0]).LocalPath).ToLowerInvariant();
+                        string mime = ext == ".png" ? "image/png"
+                                    : ext == ".gif" ? "image/gif"
+                                    : "image/jpeg";
+                        return (x.i, uri: $"data:{mime};base64,{Convert.ToBase64String(bytes)}");
+                    }
+                    catch
+                    {
+                        return (x.i, uri: string.Empty);
+                    }
+                });
+
+            var results = await Task.WhenAll(imageTasks);
+            foreach (var r in results)
+                if (!string.IsNullOrEmpty(r.uri))
+                    imageMap[r.i] = r.uri;
+
+            var sb = new StringBuilder();
+            sb.Append(@"<!DOCTYPE html>
+                            <html>
+                            <head>
+                            <meta charset='utf-8'>
+                            <style>
+                            *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+                            html, body {
+                                overflow: hidden;
+                                width: 100%;
+                                font-family: 'Segoe UI', Arial, sans-serif;
+                                font-size: 13px;
+                            }
+                            #chat {
+                                padding-bottom: 0px;
+                            }
+                            .bubble {
+                                background: #fff;
+                                border: 1px solid #ccc;
+                                border-radius: 6px;
+                                padding: 8px 8px 6px 8px;
+                                margin: 0 0 8px 0;
+                                width: 100%;
+                            }
+                            .body {
+                                word-break: break-word;
+                                overflow-wrap: break-word;
+                                white-space: pre-wrap;
+                            }
+                            .body p { margin: 0; padding: 0; }
+                            .img {
+                                width: 80px;
+                                height: 80px;
+                                object-fit: contain;
+                                margin-top: 6px;
+                                cursor: pointer;
+                                display: block;
+                            }
+                            .footer {
+                                display: flex;
+                                align-items: center;
+                                margin-top: 8px;
+                            }
+                            .time { font-size: 12px; color: #888; }
+                            .tick { width: 13px; height: 13px; margin-left: 4px; }
+                            #overlay {
+                                display: none;
+                                position: fixed;
+                                top: 0; left: 0;
+                                width: 100%; height: 100%;
+                                background: rgba(0,0,0,0.78);
+                                z-index: 9999;
+                                align-items: center;
+                                justify-content: center;
+                                cursor: zoom-out;
+                            }
+                            #overlay.on { display: flex; }
+                            #overlay img { max-width: 92%; max-height: 92%; object-fit: contain; }
+                            </style>
+                            </head>
+                            <body>
+                            <div id='chat'>
+                            ");
+
+            for (int i = 0; i < chatItems.Count; i++)
+            {
+                var c = chatItems[i];
+                bool hasMessage = !string.IsNullOrWhiteSpace(c.feedbackMessage);
+                bool hasImage = imageMap.ContainsKey(i);
+                if (!hasMessage && !hasImage) continue;
+
+                DateTime msgTime = CommonHelper.ConvertUtcToIst(c.createdOn);
+                string timeStr = msgTime.ToString("dd/MM/yy HH:mm");
+                string body = hasMessage ? c.feedbackMessage : "";
+               
+                bool isLast = (i == chatItems.Count - 1);
+                string bubbleMargin = isLast ? "margin: 0 0 0 0" : "margin: 0 0 8px 0";
+
+                sb.Append($"<div class='bubble' style='{bubbleMargin}'>");
+
+                if (hasMessage)
+                    sb.Append($"<div class='body'>{body}</div>");
+
+                if (hasImage)
+                    sb.Append($"<img class='img' src='{imageMap[i]}' onclick='showImg(this.src)'/>");
+
+                sb.Append($@"<div class='footer'>
+    <span class='time'>{timeStr}</span>
+    <svg class='tick' viewBox='0 0 24 24' fill='none' stroke='#888'
+         stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'>
+      <polyline points='2,13 7,18 18,7'/>
+      <polyline points='7,18 12,23 23,12'/>
+    </svg>
+</div>");
+                sb.Append("</div>");
+            }
+
+            sb.Append(@"
+</div>
+ 
+<div id='overlay' onclick='hideImg()'><img id='oImg' src=''/></div>
+ 
+<script>
+// Forward scroll to WPF
+window.addEventListener('wheel', function(e) {
+    window.chrome.webview.postMessage('scroll_wheel:' + e.deltaY);
+    e.preventDefault();
+}, { passive: false });
+ 
+function showImg(src) {
+    document.getElementById('oImg').src = src;
+    document.getElementById('overlay').classList.add('on');
+}
+function hideImg() {
+    document.getElementById('overlay').classList.remove('on');
+}
+ 
+// ✅ FIX: ResizeObserver — Collapsed hoy to JS run nahi thatu
+//    Hidden use karyo etle ResizeObserver properly fire thase
+//    Debounce 60ms — rapid updates spam nahi kare WPF ne
+var _timer = null;
+var _lastH  = 0;
+var chatEl  = document.getElementById('chat');
+ 
+function reportHeight() {
+    var h = chatEl.scrollHeight;
+    if (h === _lastH) return;
+    _lastH = h;
+    window.chrome.webview.postMessage('content_height:' + h);
+}
+ 
+var ro = new ResizeObserver(function() {
+    clearTimeout(_timer);
+    _timer = setTimeout(reportHeight, 60);
+});
+ro.observe(chatEl);
+ 
+// Immediate first report
+reportHeight();
+</script>
+</body>
+</html>");
+
+            string finalHtml = sb.ToString();
+            var tcs = new TaskCompletionSource<bool>();
+
+            await Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                _chatWebView.Visibility = Visibility.Hidden;
+
+                EventHandler<CoreWebView2NavigationCompletedEventArgs> handler = null;
+                handler = (s, navArgs) =>
+                {
+                    _chatWebView.CoreWebView2.NavigationCompleted -= handler;
+                 
+                    _ = Task.Run(async () =>
+                    {
+                        await Task.Delay(3000);
+                        await Application.Current.Dispatcher.InvokeAsync(() =>
+                        {
+                            if (_chatWebView.Visibility != Visibility.Visible)
+                                _chatWebView.Visibility = Visibility.Visible;
+                        });
+                        tcs.TrySetResult(true);
+                    });
+                };
+
+                _chatWebView.CoreWebView2.NavigationCompleted += handler;
+                _chatWebView.NavigateToString(finalHtml);
+            });
+
+            await Task.WhenAny(tcs.Task, Task.Delay(5000));          
+        }
+
+        #endregion Single-WebView2 Chat
 
         #region Methods
         private void ScrollChatToBottom()
@@ -331,7 +659,7 @@ namespace ClientDesktop.View.Navigation
                 }
                 catch { }
             }
-        
+
             DateTime msgTime = CommonHelper.ConvertUtcToIst(chat.createdOn);
             StackPanel timeContainer = new StackPanel
             {
@@ -507,17 +835,33 @@ namespace ClientDesktop.View.Navigation
                 ChatPanel.Items.Clear();
 
                 if (feedback?.ChatList == null || feedback.ChatList.Count == 0)
-                    return;
-
-                foreach (var chat in feedback.ChatList)
                 {
-                    var listItem = await CreateChatListBoxItemAsync(chat);
-                    ChatPanel.Items.Add(listItem);
+                    if (_chatWebViewReady)
+                    {
+                        await Application.Current.Dispatcher.InvokeAsync(() =>
+                        {
+                            _chatWebView.Height = 40;
+                            _chatWebView.Visibility = Visibility.Hidden;
+                            _chatWebView.NavigateToString(
+                                "<html><body style='margin:0;background:#f5f5f5'></body></html>");
+                        });
+                    }
+                    return;
                 }
-                await Task.Delay(300);
-                ScrollChatToBottom();
+
+                if (_chatWebViewReady)
+                {
+                    await RenderAllMessagesAsync(feedback.ChatList);
+                }
+                else
+                {
+                    _pendingChatData = feedback.ChatList;
+                }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(LoadChatPanel), $"error: {ex.Message}");
+            }
         }
         private async Task RefreshFeedbackGrid()
         {
@@ -697,7 +1041,6 @@ namespace ClientDesktop.View.Navigation
         #endregion FormattingHelpers
 
         #region Events — UserControl / Grid
-
         private async void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
             if (!_sessionService.IsLoggedIn || !_sessionService.IsInternetAvailable)
@@ -768,10 +1111,9 @@ namespace ClientDesktop.View.Navigation
                         }
                     }
 
-                    await LoadChatPanel(feedback);
-
                     ShowReplyPanel();
                     GroupBoxPanel.Visibility = Visibility.Collapsed;
+                    await LoadChatPanel(feedback);
                 }
             }
         }
@@ -935,6 +1277,7 @@ namespace ClientDesktop.View.Navigation
             var result = await _viewModel.SubmitFeedbackReplyAsync(feedbackid, html, file);
 
             GroupBoxPanel.Visibility = Visibility.Collapsed;
+            ChatPanel.Visibility = Visibility.Visible;
             TxtReply.Document.Blocks.Clear();
             this.ReplayImagePath = string.Empty;
 
