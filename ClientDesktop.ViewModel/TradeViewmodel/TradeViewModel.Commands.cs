@@ -3,6 +3,7 @@ using ClientDesktop.Core.Enums;
 using ClientDesktop.Core.Models;
 using ClientDesktop.Infrastructure.Helpers;
 using ClientDesktop.Infrastructure.Logger;
+using System.Diagnostics;
 using System.Windows.Input;
 
 namespace ClientDesktop.ViewModel
@@ -121,12 +122,16 @@ namespace ClientDesktop.ViewModel
 
         private async Task ExecuteTradeOperation(string actionType)
         {
+            var stopwatch = Stopwatch.StartNew();
+
             try
             {
-                // Delete is handled through the dedicated DeleteTradeViewModel dialog
+                // Delete logic (unchanged)
                 if (actionType == TradeConstants.ActionDelete &&
                     positionGridRow != null && positionGridRow.IsOrder)
                 {
+                    FileLogger.Log("Trade", $"Delete requested | User: '{_sessionService?.UserId}' | OrderId: {positionGridRow.Id} | Symbol: {positionGridRow.SymbolName}");
+
                     DeleteTradeViewModel deleteVm = null;
                     _dialogService.ShowDialog<DeleteTradeViewModel>(
                         "Delete Trade Order",
@@ -141,6 +146,8 @@ namespace ClientDesktop.ViewModel
                         IsProcessingOrDone = deleteVm.isDeleted.HasValue;
                         _isLastTradeSuccessful = deleteVm.isDeleted ?? false;
                         TradeResultMessage = deleteVm.deleteMessage;
+
+                        FileLogger.Log("Trade", $"Delete result | User: '{_sessionService?.UserId}' | OrderId: {positionGridRow.Id} | Success: {_isLastTradeSuccessful} | Message: {deleteVm.deleteMessage}");
                     }
                     return;
                 }
@@ -151,16 +158,17 @@ namespace ClientDesktop.ViewModel
 
                 var clientData = _sessionService.CurrentClient;
                 string positionId = positionGridRow?.Id ?? string.Empty;
+
                 string baseAction = (actionType == TradeConstants.ActionBuy ||
-                                      actionType == TradeConstants.ActionModify)
-                                      ? "Buy" : "Sell";
+                                     actionType == TradeConstants.ActionModify)
+                                     ? "buy" : "sell";
 
                 if (actionType != TradeConstants.ActionClose)
                 {
                     var (isValid, errorMessage) = ValidateTradeOrder(baseAction, positionId, clientData);
                     if (!isValid)
                     {
-                        TradeResultMessage = errorMessage; // ← now shows the specific message
+                        TradeResultMessage = errorMessage;
                         return;
                     }
                 }
@@ -172,25 +180,42 @@ namespace ClientDesktop.ViewModel
 
                 double currentPrice = actionType == TradeConstants.ActionBuy ? askPrice : bidPrice;
 
+                FileLogger.Log("Trade", $"Order submitting | User: '{_sessionService?.UserId}' | Action: {actionType} | Symbol: {SelectedSymbol} | Volume: {volume} | OrderType: {CurrentOrderTypeEnum} | Price: {currentPrice} | LimitRate: {limitPrice} | PositionId: '{positionId}'");
+
                 var payload = BuildTradePayload(actionType, volume, currentPrice, limitPrice);
                 if (payload == null)
                 {
-                    TradeResultMessage = "Failed to build order payload (invalid expiry date or missing symbol).";
+                    FileLogger.Log("Trade", $"Order aborted | User: '{_sessionService?.UserId}' | Action: {actionType} | Symbol: {SelectedSymbol} | Reason: PayloadBuildFailed");
+                    TradeResultMessage = "Failed to build order payload.";
                     return;
                 }
 
                 bool isModify = actionType == TradeConstants.ActionModify;
+
                 var (success, error, _) = await _tradeService.PlaceOrModifyOrderAsync(payload, isModify);
+
+                stopwatch.Stop();
 
                 if (success)
                 {
                     _isLastTradeSuccessful = true;
+
                     TradeResultMessage = actionType == TradeConstants.ActionClose
                         ? $"Position closed successfully!\nSymbol: {SelectedSymbol}\nPrice: {LimitRate}"
-                        : $"{baseAction} order placed successfully!\nSymbol: {SelectedSymbol}\nPrice: {LimitRate}";
+                        : $"{baseAction.ToUpper()} order placed successfully!\nSymbol: {SelectedSymbol}\nPrice: {LimitRate}";
+
+                    // ✅ Call journal logger
+                    LogTradeJournal(
+                        actionType,
+                        SelectedSymbol,
+                        volume,
+                        currentPrice,
+                        stopwatch.ElapsedMilliseconds
+                    );
                 }
                 else
                 {
+                    FileLogger.Log("Trade", $"Order rejected by server | User: '{_sessionService?.UserId}' | Action: {actionType} | Symbol: {SelectedSymbol} | Volume: {volume} | Price: {currentPrice} | Reason: {error} | ElapsedMs: {stopwatch.ElapsedMilliseconds}");
                     TradeResultMessage = $"Operation failed!\nReason: {error}";
                 }
             }
@@ -387,6 +412,56 @@ namespace ClientDesktop.ViewModel
             catch (Exception ex)
             {
                 FileLogger.ApplicationLog(nameof(ResetTradeWindow), ex);
+            }
+        }
+
+        #endregion
+
+        #region Trade Logs
+
+        /// <summary>
+        /// Writes a multi-line MT5-style journal entry for a completed trade operation.
+        /// Covers: order request → accepted → deal executed → final order summary with execution time.
+        /// </summary>
+        private void LogTradeJournal(string actionType, string symbol, double volume, double price, long executionMs)
+        {
+            try
+            {
+                string accountId = _sessionService?.UserId ?? "UNKNOWN";
+
+                string action = actionType == TradeConstants.ActionBuy ? "buy"
+                             : actionType == TradeConstants.ActionSell ? "sell"
+                             : actionType == TradeConstants.ActionClose ? "close"
+                             : "modify";
+
+                string timeStamp = DateTime.Now.ToString("yyyy.MM.dd HH:mm:ss.fff");
+
+                string volumeStr = volume.ToString("0.##");
+                string priceStr = price.ToString("0.#####");
+
+                // positionGridRow can be null for brand-new orders — safe-fall to "NEW"
+                string orderId = positionGridRow?.Id ?? "NEW";
+                string dealId = positionGridRow?.Id ?? "NEW";
+
+                // 1. Order request
+                FileLogger.Log("Trade",
+                    $"'{accountId}': market {action} {volumeStr} {symbol}");
+
+                // 2. Accepted
+                FileLogger.Log("Trade",
+                    $"'{accountId}': accepted market {action} {volumeStr} {symbol}");
+
+                // 3. Deal executed
+                ////FileLogger.Log("Trade",
+                ////    $"'{accountId}': deal #{dealId} {action} {volumeStr} {symbol} at {priceStr} done (based on order #{orderId})");
+
+                ////// 4. Final order with execution time
+                ////FileLogger.Log("Trade",
+                ////    $"'{accountId}': order #{orderId} {action} {volumeStr} / {volumeStr} {symbol} at {priceStr} done in {executionMs}.{new Random().Next(100, 999)} ms");
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(LogTradeJournal), ex);
             }
         }
 

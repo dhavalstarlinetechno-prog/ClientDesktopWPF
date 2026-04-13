@@ -45,13 +45,13 @@ namespace ClientDesktop.ViewModel
         /// </summary>
         public bool IsSymbolBanned
         {
-            get => _isSymbolBanned; set
+            get => _isSymbolBanned;
+            set
             {
                 try
                 {
                     if (SetProperty(ref _isSymbolBanned, value))
-                        if (_isSymbolBanned) FileLogger.Log("Trade" , $"{_selectedSymbol} is banned");
-
+                        if (_isSymbolBanned) FileLogger.Log("Trade", $"{_selectedSymbol} is banned");
                 }
                 catch (Exception ex)
                 {
@@ -232,9 +232,9 @@ namespace ClientDesktop.ViewModel
             set => SetProperty(ref _liveAsk, value);
         }
 
-        private string _limitRate = "0.00";
+        private string _limitRate;
 
-        /// <summary>User-entered limit/stop price. Only relevant for Limit and StopLimit orders.</summary>
+        /// <summary>User-entered limit/stop-limit rate. Auto-populated from live ask in Market mode.</summary>
         public string LimitRate
         {
             get => _limitRate;
@@ -243,9 +243,9 @@ namespace ClientDesktop.ViewModel
 
         #endregion
 
-        #region Order Inputs
+        #region Order Sizing
 
-        private string _quantity = "0.00";
+        private string _quantity;
 
         /// <summary>Trade volume entered by the user.</summary>
         public string Quantity
@@ -256,10 +256,7 @@ namespace ClientDesktop.ViewModel
                 try
                 {
                     if (SetProperty(ref _quantity, value))
-                    {
                         UpdateCloseButtonCaption();
-                        System.Windows.Input.CommandManager.InvalidateRequerySuggested();
-                    }
                 }
                 catch (Exception ex)
                 {

@@ -275,46 +275,79 @@ namespace ClientDesktop.ViewModel
             try
             {
                 if (!double.TryParse(Quantity, out double tradeQty) || tradeQty <= 0)
+                {
+                    FileLogger.Log("Trade", $"Validation failed | User: '{_sessionService?.UserId}' | Symbol: {SelectedSymbol} | Rule: InvalidVolume | RawInput: '{Quantity}'");
                     return (false, CommonMessages.EnterVolume);
+                }
 
                 if ((CurrentOrderTypeEnum == EnumTradeOrderType.Limit ||
                      CurrentOrderTypeEnum == EnumTradeOrderType.StopLimit) &&
                     (string.IsNullOrEmpty(LimitRate) ||
                      !double.TryParse(LimitRate, out double price) || price <= 0))
+                {
+                    FileLogger.Log("Trade", $"Validation failed | User: '{_sessionService?.UserId}' | Symbol: {SelectedSymbol} | Rule: InvalidLimitPrice | OrderType: {CurrentOrderTypeEnum} | RawInput: '{LimitRate}'");
                     return (false, CommonMessages.EnterPrice);
+                }
 
                 if (CurrentSelectedSymbol == null)
+                {
+                    FileLogger.Log("Trade", $"Validation failed | User: '{_sessionService?.UserId}' | Rule: NoSymbolSelected");
                     return (false, CommonMessages.SelectSymbol);
+                }
 
                 if (!double.TryParse(LiveAsk, out _) || !double.TryParse(LiveBid, out _))
+                {
+                    FileLogger.Log("Trade", $"Validation failed | User: '{_sessionService?.UserId}' | Symbol: {SelectedSymbol} | Rule: PriceDataUnavailable | Bid: '{LiveBid}' | Ask: '{LiveAsk}'");
                     return (false, CommonMessages.PriceDataNotAvailable);
+                }
 
                 if (tradeQty > CurrentSelectedSymbol.SymbolTotalValue)
+                {
+                    FileLogger.Log("Trade", $"Validation failed | User: '{_sessionService?.UserId}' | Symbol: {SelectedSymbol} | Rule: MaxVolumeExceeded | Requested: {tradeQty} | MaxAllowed: {CurrentSelectedSymbol.SymbolTotalValue}");
                     return (false, CommonMessages.MaxLimitExceed + " " +
                                    CurrentSelectedSymbol.SymbolTotalValue.ToString("F2"));
+                }
 
                 if (clientData == null)
+                {
+                    FileLogger.Log("Trade", $"Validation failed | User: '{_sessionService?.UserId}' | Symbol: {SelectedSymbol} | Rule: ClientDataMissing");
                     return (false, CommonMessages.ClientDataNotFound);
+                }
 
                 if (!clientData.ClientStatus)
+                {
+                    FileLogger.Log("Trade", $"Validation failed | User: '{_sessionService?.UserId}' | Symbol: {SelectedSymbol} | Rule: AccountBlocked");
                     return (false, CommonMessages.AccountBlocked);
+                }
 
                 if (!clientData.EnableTrading)
+                {
+                    FileLogger.Log("Trade", $"Validation failed | User: '{_sessionService?.UserId}' | Symbol: {SelectedSymbol} | Rule: TradingDisabledOnAccount");
                     return (false, CommonMessages.TradeDisabled);
+                }
 
                 bool isNewTrade = string.IsNullOrEmpty(positionId);
                 if (clientData.CloseOnlyTradeLock && isNewTrade)
+                {
+                    FileLogger.Log("Trade", $"Validation failed | User: '{_sessionService?.UserId}' | Symbol: {SelectedSymbol} | Rule: CloseOnlyLock | IsNewTrade: {isNewTrade}");
                     return (false, CommonMessages.CloseOnly);
+                }
 
                 if (CurrentSelectedSymbol.SymbolTrade == "Disabled")
+                {
+                    FileLogger.Log("Trade", $"Validation failed | User: '{_sessionService?.UserId}' | Symbol: {SelectedSymbol} | Rule: SymbolTradingDisabled");
                     return (false, CommonMessages.TradeDisabled);
+                }
 
                 if ((CurrentOrderTypeEnum == EnumTradeOrderType.Limit ||
                      CurrentOrderTypeEnum == EnumTradeOrderType.StopLimit) &&
                      CurrentSelectedSymbol.SymbolLimitstoplevel > 0)
                 {
                     if (!double.TryParse(LimitRate, out double enteredPrice))
+                    {
+                        FileLogger.Log("Trade", $"Validation failed | User: '{_sessionService?.UserId}' | Symbol: {SelectedSymbol} | Rule: UnparsableLimitRate | RawInput: '{LimitRate}'");
                         return (false, CommonMessages.InvalidPrice);
+                    }
 
                     double currentMarketPrice = orderType == "Buy"
                         ? double.Parse(LiveAsk)
@@ -327,7 +360,10 @@ namespace ClientDesktop.ViewModel
                     double maxAllowed = currentMarketPrice + limitStopLevel;
 
                     if (enteredPrice >= minAllowed && enteredPrice <= maxAllowed)
+                    {
+                        FileLogger.Log("Trade", $"Validation failed | User: '{_sessionService?.UserId}' | Symbol: {SelectedSymbol} | Rule: LimitPriceTooCloseToMarket | Entered: {enteredPrice} | MarketPrice: {currentMarketPrice} | AllowedRange: [{minAllowed:F5} – {maxAllowed:F5}]");
                         return (false, CommonMessages.InvalidPrice);
+                    }
                 }
 
                 return (true, null);
