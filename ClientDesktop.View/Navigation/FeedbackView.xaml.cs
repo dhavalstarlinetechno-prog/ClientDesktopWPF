@@ -5,7 +5,6 @@ using ClientDesktop.Infrastructure.Logger;
 using ClientDesktop.Infrastructure.Services;
 using ClientDesktop.Services;
 using ClientDesktop.ViewModel;
-using Microsoft.Web.WebView2.Core;
 using Microsoft.Win32;
 using RtfPipe;
 using System;
@@ -15,6 +14,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -50,13 +50,11 @@ namespace ClientDesktop.View.Navigation
         private double _scrollTarget;
         private bool _isManualScroll = false;
         private const double ScrollEasingFactor = 0.12;
-        private Microsoft.Web.WebView2.Wpf.WebView2 _chatWebView;
-        private bool _chatWebViewReady = false;
-        private List<ChatList> _pendingChatData = null;
 
         #endregion Variable
 
         #region Constructor
+
         public FeedbackView()
         {
             InitializeComponent();
@@ -73,7 +71,8 @@ namespace ClientDesktop.View.Navigation
 
                 FeedbackViewModel.OnRecordDeletedExternally = (id) =>
                 {
-                    this.Dispatcher.Invoke(() => {
+                    this.Dispatcher.Invoke(() =>
+                    {
                         RefreshGridAfterDelete(id);
                     });
                 };
@@ -81,6 +80,7 @@ namespace ClientDesktop.View.Navigation
             InitSmoothScroll();
             this.Loaded += FeedbackView_FirstLoaded;
         }
+
         private void FeedbackView_FirstLoaded(object sender, RoutedEventArgs e)
         {
             this.Loaded -= FeedbackView_FirstLoaded;
@@ -114,6 +114,7 @@ namespace ClientDesktop.View.Navigation
                     ReplyPanel.ScrollToVerticalOffset(current + diff * ScrollEasingFactor);
                 }
             };
+
             ReplyPanel.PreviewMouseWheel += ReplyPanel_PreviewMouseWheel;
             ReplyPanel.ScrollChanged += ReplyPanel_ScrollChanged;
 
@@ -137,7 +138,6 @@ namespace ClientDesktop.View.Navigation
         private void ReplyPanel_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
             _isManualScroll = false;
-
             SmoothScrollBy(e.Delta < 0 ? 150 : -150);
             e.Handled = true;
         }
@@ -178,126 +178,28 @@ namespace ClientDesktop.View.Navigation
             ReplyPanel.Visibility = Visibility.Visible;
             _viewModel.SubscribeToFeedbackSocket();
         }
-
+        
         #endregion PanelNavigation
 
-        #region Single-WebView2 Chat
+        #region Single Chat
         private void InitChatWebView()
         {
-            try
-            {
-                ChatPanel.Visibility = Visibility.Collapsed;
-
-                _chatWebView = new Microsoft.Web.WebView2.Wpf.WebView2
-                {
-                    HorizontalAlignment = HorizontalAlignment.Stretch,
-                    Height = 40,
-                    MinHeight = 40,
-                    Margin = new Thickness(0, 0, 0, 0),
-                    Visibility = Visibility.Hidden
-                };
-
-                _chatWebView.PreviewMouseWheel += (s, e) =>
-                {
-                    SmoothScrollBy(e.Delta < 0 ? 150 : -150);
-                    e.Handled = true;
-                };
-
-                FeedbackChatPanel.Children.Insert(0, _chatWebView);
-
-                _ = InitChatWebViewCoreAsync();
-            }
-            catch (Exception ex)
-            {
-                FileLogger.ApplicationLog(nameof(InitChatWebView), $"InitChatWebView error: {ex.Message}");
-                ChatPanel.Visibility = Visibility.Visible;
-            }
+            ChatPanel.Visibility = Visibility.Visible;
         }
         private async Task InitChatWebViewCoreAsync()
         {
-            try
-            {
-                await _chatWebView.EnsureCoreWebView2Async();
-
-                _chatWebView.CoreWebView2.Settings.IsStatusBarEnabled = false;
-                _chatWebView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
-                _chatWebView.CoreWebView2.Settings.IsZoomControlEnabled = false;
-                _chatWebView.CoreWebView2.Settings.AreBrowserAcceleratorKeysEnabled = false;
-
-                _chatWebView.CoreWebView2.WebMessageReceived += (wvSender, wvArgs) =>
-                {
-                    try
-                    {
-                        string msg = wvArgs.TryGetWebMessageAsString();
-
-                        if (msg != null && msg.StartsWith("scroll_wheel:"))
-                        {
-                            string deltaStr = msg.Substring("scroll_wheel:".Length);
-                            if (double.TryParse(deltaStr,
-                                System.Globalization.NumberStyles.Float,
-                                System.Globalization.CultureInfo.InvariantCulture,
-                                out double delta))
-                            {
-                                Application.Current.Dispatcher.InvokeAsync(() =>
-                                    SmoothScrollBy(delta * 0.5));
-                            }
-                        }
-                        else if (msg != null && msg.StartsWith("content_height:"))
-                        {
-                            string hStr = msg.Substring("content_height:".Length);
-                            if (double.TryParse(hStr,
-                                System.Globalization.NumberStyles.Float,
-                                System.Globalization.CultureInfo.InvariantCulture,
-                                out double h) && h > 10)
-                            {
-                                Application.Current.Dispatcher.InvokeAsync(() =>
-                                {
-                                    _chatWebView.Height = h + 10;
-
-                                    if (_chatWebView.Visibility != Visibility.Visible)
-                                        _chatWebView.Visibility = Visibility.Visible;
-
-                                    ReplyPanel.ScrollToEnd();
-                                });
-                            }
-                        }
-                    }
-                    catch { }
-                };
-
-                _chatWebViewReady = true;
-
-                if (_pendingChatData != null)
-                {
-                    var data = _pendingChatData;
-                    _pendingChatData = null;
-                    await RenderAllMessagesAsync(data);
-                }
-            }
-            catch (Exception ex)
-            {
-                FileLogger.ApplicationLog(nameof(InitChatWebViewCoreAsync), $"WebView2 core init error: {ex.Message}");
-                _ = Application.Current.Dispatcher.InvokeAsync(() =>
-                    ChatPanel.Visibility = Visibility.Visible);
-            }
+            await Task.CompletedTask;
         }
         private async Task RenderAllMessagesAsync(List<ChatList> chatItems)
         {
-            if (!_chatWebViewReady) return;
+            ChatPanel.ItemsSource = null;
+            ChatPanel.Items.Clear();
+            ChatPanel.Visibility = Visibility.Visible;
 
             if (chatItems == null || chatItems.Count == 0)
-            {
-                await Application.Current.Dispatcher.InvokeAsync(() =>
-                {
-                    _chatWebView.Height = 40;
-                    _chatWebView.Visibility = Visibility.Hidden; 
-                    _chatWebView.NavigateToString(
-                        "<html><body style='margin:0;background:#f5f5f5'></body></html>");
-                });
                 return;
-            }
 
-            var imageMap = new Dictionary<int, string>();
+            var imageMap = new Dictionary<int, BitmapImage>();
 
             var imageTasks = chatItems
                 .Select((c, i) => new { c, i })
@@ -309,88 +211,29 @@ namespace ClientDesktop.View.Navigation
                     try
                     {
                         using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
-                        var bytes = await http.GetByteArrayAsync(x.c.filePath[0]);
-                        string ext = System.IO.Path.GetExtension(
-                            new Uri(x.c.filePath[0]).LocalPath).ToLowerInvariant();
-                        string mime = ext == ".png" ? "image/png"
-                                    : ext == ".gif" ? "image/gif"
-                                    : "image/jpeg";
-                        return (x.i, uri: $"data:{mime};base64,{Convert.ToBase64String(bytes)}");
+                        byte[] bytes = await http.GetByteArrayAsync(x.c.filePath[0]);
+
+                        var bmp = new BitmapImage();
+                        using (var ms = new MemoryStream(bytes))
+                        {
+                            bmp.BeginInit();
+                            bmp.CacheOption = BitmapCacheOption.OnLoad;
+                            bmp.StreamSource = ms;
+                            bmp.EndInit();
+                        }
+                        bmp.Freeze();
+                        return (x.i, bmp);
                     }
                     catch
                     {
-                        return (x.i, uri: string.Empty);
+                        return (x.i, (BitmapImage)null);
                     }
                 });
 
             var results = await Task.WhenAll(imageTasks);
             foreach (var r in results)
-                if (!string.IsNullOrEmpty(r.uri))
-                    imageMap[r.i] = r.uri;
-
-            var sb = new StringBuilder();
-            sb.Append(@"<!DOCTYPE html>
-                            <html>
-                            <head>
-                            <meta charset='utf-8'>
-                            <style>
-                            *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-                            html, body {
-                                overflow: hidden;
-                                width: 100%;
-                                font-family: 'Segoe UI', Arial, sans-serif;
-                                font-size: 13px;
-                            }
-                            #chat {
-                                padding-bottom: 0px;
-                            }
-                            .bubble {
-                                background: #fff;
-                                border: 1px solid #ccc;
-                                border-radius: 6px;
-                                padding: 8px 8px 6px 8px;
-                                margin: 0 0 8px 0;
-                                width: 100%;
-                            }
-                            .body {
-                                word-break: break-word;
-                                overflow-wrap: break-word;
-                                white-space: pre-wrap;
-                            }
-                            .body p { margin: 0; padding: 0; }
-                            .img {
-                                width: 80px;
-                                height: 80px;
-                                object-fit: contain;
-                                margin-top: 6px;
-                                cursor: pointer;
-                                display: block;
-                            }
-                            .footer {
-                                display: flex;
-                                align-items: center;
-                                margin-top: 8px;
-                            }
-                            .time { font-size: 12px; color: #888; }
-                            .tick { width: 13px; height: 13px; margin-left: 4px; }
-                            #overlay {
-                                display: none;
-                                position: fixed;
-                                top: 0; left: 0;
-                                width: 100%; height: 100%;
-                                background: rgba(0,0,0,0.78);
-                                z-index: 9999;
-                                align-items: center;
-                                justify-content: center;
-                                cursor: zoom-out;
-                            }
-                            #overlay.on { display: flex; }
-                            #overlay img { max-width: 92%; max-height: 92%; object-fit: contain; }
-                            </style>
-                            </head>
-                            <body>
-                            <div id='chat'>
-                            ");
+                if (r.Item2 != null)
+                    imageMap[r.i] = r.Item2;
 
             for (int i = 0; i < chatItems.Count; i++)
             {
@@ -399,110 +242,16 @@ namespace ClientDesktop.View.Navigation
                 bool hasImage = imageMap.ContainsKey(i);
                 if (!hasMessage && !hasImage) continue;
 
-                DateTime msgTime = CommonHelper.ConvertUtcToIst(c.createdOn);
-                string timeStr = msgTime.ToString("dd/MM/yy HH:mm");
-                string body = hasMessage ? c.feedbackMessage : "";
-               
-                bool isLast = (i == chatItems.Count - 1);
-                string bubbleMargin = isLast ? "margin: 0 0 0 0" : "margin: 0 0 8px 0";
-
-                sb.Append($"<div class='bubble' style='{bubbleMargin}'>");
-
-                if (hasMessage)
-                    sb.Append($"<div class='body'>{body}</div>");
-
-                if (hasImage)
-                    sb.Append($"<img class='img' src='{imageMap[i]}' onclick='showImg(this.src)'/>");
-
-                sb.Append($@"<div class='footer'>
-    <span class='time'>{timeStr}</span>
-    <svg class='tick' viewBox='0 0 24 24' fill='none' stroke='#888'
-         stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'>
-      <polyline points='2,13 7,18 18,7'/>
-      <polyline points='7,18 12,23 23,12'/>
-    </svg>
-</div>");
-                sb.Append("</div>");
+                BitmapImage bitmap = imageMap.TryGetValue(i, out var bm) ? bm : null;
+                var listItem = BuildChatListBoxItem(c, bitmap);
+                ChatPanel.Items.Add(listItem);
             }
 
-            sb.Append(@"
-</div>
- 
-<div id='overlay' onclick='hideImg()'><img id='oImg' src=''/></div>
- 
-<script>
-// Forward scroll to WPF
-window.addEventListener('wheel', function(e) {
-    window.chrome.webview.postMessage('scroll_wheel:' + e.deltaY);
-    e.preventDefault();
-}, { passive: false });
- 
-function showImg(src) {
-    document.getElementById('oImg').src = src;
-    document.getElementById('overlay').classList.add('on');
-}
-function hideImg() {
-    document.getElementById('overlay').classList.remove('on');
-}
- 
-// ✅ FIX: ResizeObserver — Collapsed hoy to JS run nahi thatu
-//    Hidden use karyo etle ResizeObserver properly fire thase
-//    Debounce 60ms — rapid updates spam nahi kare WPF ne
-var _timer = null;
-var _lastH  = 0;
-var chatEl  = document.getElementById('chat');
- 
-function reportHeight() {
-    var h = chatEl.scrollHeight;
-    if (h === _lastH) return;
-    _lastH = h;
-    window.chrome.webview.postMessage('content_height:' + h);
-}
- 
-var ro = new ResizeObserver(function() {
-    clearTimeout(_timer);
-    _timer = setTimeout(reportHeight, 60);
-});
-ro.observe(chatEl);
- 
-// Immediate first report
-reportHeight();
-</script>
-</body>
-</html>");
-
-            string finalHtml = sb.ToString();
-            var tcs = new TaskCompletionSource<bool>();
-
-            await Application.Current.Dispatcher.InvokeAsync(() =>
-            {
-                _chatWebView.Visibility = Visibility.Hidden;
-
-                EventHandler<CoreWebView2NavigationCompletedEventArgs> handler = null;
-                handler = (s, navArgs) =>
-                {
-                    _chatWebView.CoreWebView2.NavigationCompleted -= handler;
-                 
-                    _ = Task.Run(async () =>
-                    {
-                        await Task.Delay(3000);
-                        await Application.Current.Dispatcher.InvokeAsync(() =>
-                        {
-                            if (_chatWebView.Visibility != Visibility.Visible)
-                                _chatWebView.Visibility = Visibility.Visible;
-                        });
-                        tcs.TrySetResult(true);
-                    });
-                };
-
-                _chatWebView.CoreWebView2.NavigationCompleted += handler;
-                _chatWebView.NavigateToString(finalHtml);
-            });
-
-            await Task.WhenAny(tcs.Task, Task.Delay(5000));          
+            await Task.Delay(100);
+            ReplyPanel.ScrollToEnd();
         }
 
-        #endregion Single-WebView2 Chat
+        #endregion Single Chat
 
         #region Methods
         private void ScrollChatToBottom()
@@ -517,6 +266,7 @@ reportHeight();
             try
             {
                 var newListItem = await CreateChatListBoxItemAsync(chatItem);
+
                 if (ChatPanel.ItemsSource != null)
                 {
                     var existing = ChatPanel.Items.Cast<object>().ToList();
@@ -538,13 +288,40 @@ reportHeight();
         }
         private async Task<ListBoxItem> CreateChatListBoxItemAsync(ChatList chat)
         {
+
+            BitmapImage bitmap = null;
+            if (chat.filePath != null && chat.filePath.Count > 0
+                && !string.IsNullOrEmpty(chat.filePath[0]))
+            {
+                try
+                {
+                    using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+                    byte[] bytes = await http.GetByteArrayAsync(chat.filePath[0]);
+
+                    bitmap = new BitmapImage();
+                    using (var ms = new MemoryStream(bytes))
+                    {
+                        bitmap.BeginInit();
+                        bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                        bitmap.StreamSource = ms;
+                        bitmap.EndInit();
+                    }
+                    bitmap.Freeze();
+                }
+                catch { }
+            }
+
+            return BuildChatListBoxItem(chat, bitmap);
+        }
+        private ListBoxItem BuildChatListBoxItem(ChatList chat, BitmapImage bitmap)
+        {
             var outerBorder = new Border
             {
                 Background = Brushes.White,
                 BorderBrush = new SolidColorBrush(Color.FromRgb(204, 204, 204)),
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(6),
-                Padding = new Thickness(8, 0, 8, 6),
+                Padding = new Thickness(8, 8, 8, 6),
                 Margin = new Thickness(0, 0, 0, 8),
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 Width = double.NaN
@@ -552,116 +329,72 @@ reportHeight();
 
             var messageLayout = new StackPanel { Orientation = Orientation.Vertical };
 
-            var webView = new Microsoft.Web.WebView2.Wpf.WebView2
+            if (!string.IsNullOrWhiteSpace(chat.feedbackMessage))
             {
-                Height = 1,
-                MinHeight = 20,
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                Margin = new Thickness(0)
-            };
-
-            var webViewWrapper = new Border
-            {
-                Opacity = 0,
-                HorizontalAlignment = HorizontalAlignment.Stretch
-            };
-            webViewWrapper.Child = webView;
-
-            string wrappedHtml = $@"<!DOCTYPE html>
-<html>
-<head>
-    <style>
-        *, *::before, *::after {{
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }}
-        html {{
-            overflow: hidden;
-            width: 100%;
-        }}
-        body {{
-            margin: 0 !important;
-            padding: 0 !important;
-            overflow: hidden;
-            background: white;
-            width: 100%;                      
-            display: block;
-        }}
-        p {{
-            margin: 0;
-            padding: 0;
-            word-break: break-word;
-            overflow-wrap: break-word;
-            white-space: pre-wrap;
-        }}
-    </style>
-    <script>      
-       window.addEventListener('wheel', function(e) {{
-             if (Math.abs(e.deltaY) > 0) {{
-            window.chrome.webview.postMessage('scroll_wheel:' + e.deltaY);
-            }}
-        }}, {{ passive: true }});
-    </script>
-</head>
-<body><p>{chat.feedbackMessage}</p></body>
-</html>";
-
-            messageLayout.Children.Add(webViewWrapper);
-
-            if (chat.filePath != null && chat.filePath.Count > 0)
-            {
-                try
+                var rtb = new RichTextBox
                 {
-                    using (var httpClient = new HttpClient())
+                    IsReadOnly = true,
+                    BorderThickness = new Thickness(0),
+                    Background = Brushes.White,
+                    Padding = new Thickness(0),
+                    Margin = new Thickness(0),
+
+                    Width = double.NaN,
+                    Height = double.NaN,
+                    MinHeight = 0,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    VerticalAlignment = System.Windows.VerticalAlignment.Top,
+
+                    VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                    HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                    IsDocumentEnabled = false
+                };
+                rtb.Document = HtmlToFlowDocument(chat.feedbackMessage);
+
+                rtb.Document.TextAlignment = System.Windows.TextAlignment.Justify;
+                rtb.Document.PagePadding = new Thickness(0);
+                rtb.HorizontalContentAlignment = HorizontalAlignment.Stretch;
+
+                messageLayout.Children.Add(rtb);
+            }
+
+            if (bitmap != null)
+            {
+                var capturedBitmap = bitmap;
+
+                var chatImage = new System.Windows.Controls.Image
+                {
+                    Source = capturedBitmap,
+                    Width = 80,
+                    Height = 80,
+                    Stretch = Stretch.Uniform,
+                    Margin = new Thickness(0, 5, 0, 0),
+                    Cursor = Cursors.Hand,
+                    HorizontalAlignment = HorizontalAlignment.Left
+                };
+
+                chatImage.MouseLeftButtonUp += (s, ep) =>
+                {
+                    new Window
                     {
-                        var imageBytes = await httpClient.GetByteArrayAsync(chat.filePath[0]);
-                        var bitmap = new BitmapImage();
-
-                        using (var ms = new MemoryStream(imageBytes))
+                        Title = "Image Preview",
+                        Width = 600,
+                        Height = 600,
+                        WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                        Content = new System.Windows.Controls.Image
                         {
-                            bitmap.BeginInit();
-                            bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                            bitmap.StreamSource = ms;
-                            bitmap.EndInit();
-                            bitmap.Freeze();
+                            Source = capturedBitmap,
+                            Stretch = Stretch.Uniform
                         }
+                    }.ShowDialog();
+                };
 
-                        var chatImage = new System.Windows.Controls.Image
-                        {
-                            Source = bitmap,
-                            Width = 80,
-                            Height = 80,
-                            Stretch = Stretch.Uniform,
-                            Margin = new Thickness(0, 5, 0, 0),
-                            Cursor = Cursors.Hand,
-                            HorizontalAlignment = HorizontalAlignment.Left
-                        };
-
-                        chatImage.MouseLeftButtonUp += (s, ep) =>
-                        {
-                            new Window
-                            {
-                                Title = "Image Preview",
-                                Width = 600,
-                                Height = 600,
-                                WindowStartupLocation = WindowStartupLocation.CenterScreen,
-                                Content = new System.Windows.Controls.Image
-                                {
-                                    Source = bitmap,
-                                    Stretch = Stretch.Uniform
-                                }
-                            }.ShowDialog();
-                        };
-
-                        messageLayout.Children.Add(chatImage);
-                    }
-                }
-                catch { }
+                messageLayout.Children.Add(chatImage);
             }
 
             DateTime msgTime = CommonHelper.ConvertUtcToIst(chat.createdOn);
-            StackPanel timeContainer = new StackPanel
+
+            var timeContainer = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
                 Margin = new Thickness(0, 10, 0, 0),
@@ -705,126 +438,6 @@ reportHeight();
                 Background = Brushes.Transparent
             };
 
-
-            var capturedWebView = webView;
-            var capturedWrapper = webViewWrapper;
-            var capturedHtml = wrappedHtml;
-
-            _ = Application.Current.Dispatcher.InvokeAsync(async () =>
-            {
-                try
-                {
-                    await capturedWebView.EnsureCoreWebView2Async();
-
-                    capturedWebView.CoreWebView2.Settings.IsStatusBarEnabled = false;
-                    capturedWebView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
-                    capturedWebView.CoreWebView2.Settings.IsZoomControlEnabled = false;
-                    capturedWebView.CoreWebView2.Settings.AreBrowserAcceleratorKeysEnabled = false;
-
-                    capturedWebView.CoreWebView2.WebMessageReceived += (wvSender, wvArgs) =>
-                    {
-                        try
-                        {
-                            string msg = wvArgs.TryGetWebMessageAsString();
-                            if (msg != null && msg.StartsWith("scroll_wheel:"))
-                            {
-                                string deltaStr = msg.Substring("scroll_wheel:".Length);
-                                if (double.TryParse(deltaStr, System.Globalization.NumberStyles.Float,
-                                    System.Globalization.CultureInfo.InvariantCulture, out double delta))
-                                {
-                                    Application.Current.Dispatcher.InvokeAsync(() =>
-                                    {
-                                        SmoothScrollBy(delta * 0.5);
-                                    });
-                                }
-                            }
-                        }
-                        catch { }
-                    };
-
-                    bool heightSet = false;
-
-                    capturedWebView.NavigationCompleted += async (s, navArgs) =>
-                    {
-
-                        if (heightSet) return;
-                        heightSet = true;
-
-                        try
-                        {
-
-                            await Task.Delay(200);
-
-
-                            string heightStr = await capturedWebView.CoreWebView2.ExecuteScriptAsync(@"
-                                (function() {
-                                    document.body.style.overflow = 'hidden';
-                                    var h = Math.max(
-                                        document.body.scrollHeight,
-                                        document.body.offsetHeight,
-                                        document.documentElement.scrollHeight,
-                                        document.documentElement.offsetHeight
-                                    );
-                                    return h.toString();
-                                })()
-                            ");
-
-                            if (double.TryParse(heightStr.Trim('"'), out double htmlHeight) && htmlHeight > 0)
-                            {
-                                await Application.Current.Dispatcher.InvokeAsync(() =>
-                                {
-                                    capturedWebView.Height = htmlHeight;
-                                });
-
-                                await Task.Delay(500);
-
-                                string heightStr2 = await capturedWebView.CoreWebView2.ExecuteScriptAsync(@"                                                   
-                                                    (function() {
-                                                        document.body.style.overflow = 'hidden';
-                                                        var h = Math.max(
-                                                        document.body.scrollHeight,
-                                                        document.body.offsetHeight,
-                                                        document.documentElement.scrollHeight,
-                                                        document.documentElement.offsetHeight
-                                    );
-                                    return h.toString();
-                                })()    
-                                ");
-
-                                if (double.TryParse(heightStr2.Trim('"'), out double htmlHeight2) && htmlHeight2 > htmlHeight)
-                                {
-                                    await Application.Current.Dispatcher.InvokeAsync(() =>
-                                    {
-                                        capturedWebView.Height = htmlHeight2;
-                                        capturedWrapper.Opacity = 1;
-                                    });
-                                }
-                            }
-                        }
-                        catch
-                        {
-                            await Application.Current.Dispatcher.InvokeAsync(() =>
-                            {
-                                capturedWebView.Height = 40;
-                                capturedWrapper.Opacity = 1;
-                            });
-                        }
-                    };
-
-                    capturedWebView.NavigateToString(capturedHtml);
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"WebView2 error: {ex.Message}");
-                    await Application.Current.Dispatcher.InvokeAsync(() =>
-                    {
-                        capturedWebView.Height = 40;
-                        capturedWrapper.Opacity = 1;
-                    });
-                }
-            });
-
-
             return listItem;
         }
         private async Task LoadChatPanel(FeedbackData feedback)
@@ -835,28 +448,9 @@ reportHeight();
                 ChatPanel.Items.Clear();
 
                 if (feedback?.ChatList == null || feedback.ChatList.Count == 0)
-                {
-                    if (_chatWebViewReady)
-                    {
-                        await Application.Current.Dispatcher.InvokeAsync(() =>
-                        {
-                            _chatWebView.Height = 40;
-                            _chatWebView.Visibility = Visibility.Hidden;
-                            _chatWebView.NavigateToString(
-                                "<html><body style='margin:0;background:#f5f5f5'></body></html>");
-                        });
-                    }
                     return;
-                }
 
-                if (_chatWebViewReady)
-                {
-                    await RenderAllMessagesAsync(feedback.ChatList);
-                }
-                else
-                {
-                    _pendingChatData = feedback.ChatList;
-                }
+                await RenderAllMessagesAsync(feedback.ChatList);
             }
             catch (Exception ex)
             {
@@ -916,6 +510,449 @@ reportHeight();
 
         #endregion Methods
 
+        #region HtmlToFlowDocument Helper
+
+        private static FlowDocument HtmlToFlowDocument(string html)
+        {
+            var doc = new FlowDocument
+            {
+                PagePadding = new Thickness(0),
+                TextAlignment = System.Windows.TextAlignment.Left
+            };
+
+            if (string.IsNullOrWhiteSpace(html))
+            {
+                doc.Blocks.Add(new Paragraph { Margin = new Thickness(0) });
+                return doc;
+            }
+
+            var bodyMatch = Regex.Match(html,
+                @"<body[^>]*>(.*?)</body>",
+                RegexOptions.IgnoreCase | RegexOptions.Singleline);
+            string content = bodyMatch.Success ? bodyMatch.Groups[1].Value : html;
+
+            string divStyle = "";
+            var divMatch = Regex.Match(content,
+                @"<div([^>]*)>", RegexOptions.IgnoreCase);
+            if (divMatch.Success)
+            {
+                var divStyleMatch = Regex.Match(divMatch.Groups[1].Value,
+                    @"style\s*=\s*[""']([^""']*)[""']", RegexOptions.IgnoreCase);
+                if (divStyleMatch.Success)
+                    divStyle = divStyleMatch.Groups[1].Value;
+            }
+
+            content = Regex.Replace(content, @"<br\s*/?>", "\n", RegexOptions.IgnoreCase);
+
+            List<(string pStyle, string pContent)> paragraphs = ExtractParagraphs(content);
+
+            bool anyAdded = false;
+            foreach (var (pStyle, pContent) in paragraphs)
+            {
+                string stripped = Regex.Replace(pContent, "<[^>]+>", "");
+                if (string.IsNullOrWhiteSpace(stripped) && !pContent.Contains("\n"))
+                    continue;
+
+                var para = new Paragraph { Margin = new Thickness(0) };
+                
+                ApplyParagraphStyle(para, pStyle, divStyle);
+
+                string[] lines = pContent.Split('\n');
+                bool firstLine = true;
+                foreach (string line in lines)
+                {
+                    if (!firstLine) para.Inlines.Add(new LineBreak());
+                    ParseInlines(line, para.Inlines);
+                    firstLine = false;
+                }
+
+                doc.Blocks.Add(para);
+                anyAdded = true;
+            }
+
+            if (!anyAdded)
+                doc.Blocks.Add(new Paragraph { Margin = new Thickness(0) });
+
+            return doc;
+        }      
+        private static void ApplyParagraphStyle(Paragraph para, string styleAttr, string parentStyle = "")
+        {
+            
+            var ffMatch = Regex.Match(styleAttr, @"font-family\s*:\s*([^;]+)", RegexOptions.IgnoreCase);
+            if (!ffMatch.Success && !string.IsNullOrEmpty(parentStyle))
+                ffMatch = Regex.Match(parentStyle, @"font-family\s*:\s*([^;]+)", RegexOptions.IgnoreCase);
+
+            if (ffMatch.Success)
+            {
+               
+                string family = WebUtility.HtmlDecode(ffMatch.Groups[1].Value)
+                                    .Trim().Trim('"', '\'');
+                try { para.FontFamily = new FontFamily(family); } catch { }
+            }
+
+            
+            bool fontSizeApplied = false;
+            var fsMatch = Regex.Match(styleAttr,
+                @"font-size\s*:\s*([\d\.]+)\s*(pt|px|%|(?=;|$))",
+                RegexOptions.IgnoreCase);
+
+            if (fsMatch.Success)
+            {
+                fontSizeApplied = ApplyFontSize(para, fsMatch);
+            }
+
+           
+            if (!fontSizeApplied && !string.IsNullOrEmpty(parentStyle))
+            {
+                var parentFsMatch = Regex.Match(parentStyle,
+                    @"font-size\s*:\s*([\d\.]+)\s*(pt|px|%|(?=;|$))",
+                    RegexOptions.IgnoreCase);
+                if (parentFsMatch.Success)
+                    ApplyFontSize(para, parentFsMatch);
+            }
+        }
+        private static bool ApplyFontSize(Paragraph para, Match fsMatch)
+        {
+            string sizeValue = fsMatch.Groups[1].Value.Trim();
+            if (string.IsNullOrEmpty(sizeValue)) return false;
+
+            if (!double.TryParse(sizeValue, NumberStyles.Float,
+                    CultureInfo.InvariantCulture, out double size))
+                return false;
+
+            string unit = fsMatch.Groups[2].Value.ToLower().Trim();
+            para.FontSize = unit == "pt" ? size * (96.0 / 72.0) : size;
+            return true;
+        }
+        private static List<(string pStyle, string pContent)> ExtractParagraphs(string content)
+        {
+            var result = new List<(string, string)>();
+            int pos = 0;
+
+            while (pos < content.Length)
+            {
+                
+                var pOpen = Regex.Match(
+                    content.Substring(pos), @"<p([^>]*)>", RegexOptions.IgnoreCase);
+
+                if (!pOpen.Success)
+                {
+                    string remaining = content.Substring(pos).Trim();
+                    if (!string.IsNullOrEmpty(remaining))
+                        result.Add(("", remaining));
+                    break;
+                }
+
+               
+                if (pOpen.Index > 0)
+                {
+                    string before = content.Substring(pos, pOpen.Index).Trim();
+                    if (!string.IsNullOrEmpty(before))
+                        result.Add(("", before));
+                }
+
+               
+                string pAttribs = pOpen.Groups[1].Value;
+                var styleInP = Regex.Match(pAttribs,
+                    @"style\s*=\s*[""']([^""']*)[""']", RegexOptions.IgnoreCase);
+                string pStyle = styleInP.Success ? styleInP.Groups[1].Value : "";
+
+                int pContentStart = pos + pOpen.Index + pOpen.Length;
+                int pEnd = content.IndexOf("</p>", pContentStart,
+                    StringComparison.OrdinalIgnoreCase);
+
+                if (pEnd < 0)
+                {
+                    result.Add((pStyle, content.Substring(pContentStart)));
+                    break;
+                }
+
+                result.Add((pStyle,
+                    content.Substring(pContentStart, pEnd - pContentStart)));
+                pos = pEnd + 4; 
+            }
+
+            return result.Count > 0
+                ? result
+                : new List<(string, string)> { ("", content) };
+        }   
+        private static void ParseInlines(string html, InlineCollection inlines)
+        {
+            if (string.IsNullOrEmpty(html)) return;
+
+            int pos = 0;
+            while (pos < html.Length)
+            {
+                int tagStart = html.IndexOf('<', pos);
+
+                if (tagStart < 0)
+                {
+                    string text = WebUtility.HtmlDecode(html.Substring(pos));
+                    if (!string.IsNullOrEmpty(text)) inlines.Add(new Run(text));
+                    break;
+                }
+
+                if (tagStart > pos)
+                {
+                    string text = WebUtility.HtmlDecode(html.Substring(pos, tagStart - pos));
+                    if (!string.IsNullOrEmpty(text)) inlines.Add(new Run(text));
+                }
+
+                int tagEnd = html.IndexOf('>', tagStart);
+                if (tagEnd < 0) { pos = html.Length; break; }
+
+                string fullTag = html.Substring(tagStart, tagEnd - tagStart + 1);
+
+              
+                if (Regex.IsMatch(fullTag, @"^<br[\s/]*>$", RegexOptions.IgnoreCase))
+                {
+                    inlines.Add(new LineBreak());
+                    pos = tagEnd + 1;
+                    continue;
+                }
+
+               
+                if (fullTag.StartsWith("</"))
+                {
+                    pos = tagEnd + 1;
+                    continue;
+                }
+
+                var nameMatch = Regex.Match(fullTag, @"^<(\w+)");
+                if (!nameMatch.Success) { pos = tagEnd + 1; continue; }
+
+                string tagName = nameMatch.Groups[1].Value.ToLowerInvariant();
+                string closeTag = $"</{tagName}>";
+
+                int innerStart = tagEnd + 1;
+                int innerEnd = FindClosingTagPos(html, innerStart, tagName);
+
+                string innerHtml;
+                int afterClose;
+
+                if (innerEnd >= 0)
+                {
+                    innerHtml = html.Substring(innerStart, innerEnd - innerStart);
+                    afterClose = innerEnd + closeTag.Length;
+                }
+                else
+                {
+                    innerHtml = html.Substring(innerStart);
+                    afterClose = html.Length;
+                }
+
+                var span = new Span();
+                ParseInlines(innerHtml, span.Inlines);
+                ApplyFormatting(span, tagName, fullTag);
+
+                if (span.Inlines.Count > 0)
+                    inlines.Add(span);
+
+                pos = afterClose;
+            }
+        }    
+        private static int FindClosingTagPos(string html, int startPos, string tagName)
+        {
+            string openTag = $"<{tagName}";
+            string closeTag = $"</{tagName}>";
+            int depth = 1;
+            int pos = startPos;
+
+            while (pos < html.Length && depth > 0)
+            {
+                int nextOpen = html.IndexOf(openTag, pos, StringComparison.OrdinalIgnoreCase);
+                int nextClose = html.IndexOf(closeTag, pos, StringComparison.OrdinalIgnoreCase);
+
+                if (nextClose < 0) return -1;
+
+                if (nextOpen >= 0 && nextOpen < nextClose)
+                {
+                    depth++;
+                    pos = nextOpen + openTag.Length;
+                }
+                else
+                {
+                    depth--;
+                    if (depth == 0) return nextClose;
+                    pos = nextClose + closeTag.Length;
+                }
+            }
+            return -1;
+        }    
+        private static void ApplyFormatting(Span span, string tagName, string fullTag)
+        {
+            switch (tagName)
+            {
+                case "b":
+                case "strong":
+                    span.FontWeight = FontWeights.Bold;                    
+                    ApplyStyleAttribute(span, fullTag);
+                    break;
+
+                case "i":
+                case "em":
+                    span.FontStyle = FontStyles.Italic;
+                    ApplyStyleAttribute(span, fullTag);
+                    break;
+
+                case "u":
+                    span.TextDecorations = TextDecorations.Underline;
+                    ApplyStyleAttribute(span, fullTag);
+                    break;
+
+                case "s":
+                case "del":
+                case "strike":
+                    span.TextDecorations = TextDecorations.Strikethrough;
+                    ApplyStyleAttribute(span, fullTag);
+                    break;
+
+                case "sup":
+                    span.BaselineAlignment = BaselineAlignment.Superscript;
+                    span.FontSize = 8;
+                    break;
+
+                case "sub":
+                    span.BaselineAlignment = BaselineAlignment.Subscript;
+                    span.FontSize = 8;
+                    break;
+
+                case "tt":
+                case "code":
+                    span.FontFamily = new FontFamily("Courier New");
+                    break;
+
+                case "span":
+                case "font":
+                    ApplyStyleAttribute(span, fullTag);
+                    break;
+            }
+        }      
+        private static void ApplyStyleAttribute(Span span, string tag)
+        {
+            var styleMatch = Regex.Match(tag,
+                @"style\s*=\s*[""']([^""']*)[""']", RegexOptions.IgnoreCase);
+
+            if (styleMatch.Success)
+            {
+                string style = styleMatch.Groups[1].Value;
+
+                
+                if (Regex.IsMatch(style, @"font-weight\s*:\s*bold", RegexOptions.IgnoreCase))
+                    span.FontWeight = FontWeights.Bold;
+
+                
+                if (Regex.IsMatch(style, @"font-style\s*:\s*italic", RegexOptions.IgnoreCase))
+                    span.FontStyle = FontStyles.Italic;
+
+                
+                var decoMatch = Regex.Match(style,
+                    @"text-decoration\s*:\s*([^;]+)", RegexOptions.IgnoreCase);
+                if (decoMatch.Success)
+                {
+                    string decoVal = decoMatch.Groups[1].Value.ToLowerInvariant();
+                    bool hasUnderline = decoVal.Contains("underline");
+                    bool hasStrike = decoVal.Contains("line-through");
+
+                    if (hasUnderline && hasStrike)
+                    {
+                        var td = new TextDecorationCollection();
+                        td.Add(TextDecorations.Underline[0]);
+                        td.Add(TextDecorations.Strikethrough[0]);
+                        span.TextDecorations = td;
+                    }
+                    else if (hasUnderline)
+                        span.TextDecorations = TextDecorations.Underline;
+                    else if (hasStrike)
+                        span.TextDecorations = TextDecorations.Strikethrough;
+                }
+
+               
+                var fsPt = Regex.Match(style,
+                    @"font-size\s*:\s*([\d.]+)\s*pt", RegexOptions.IgnoreCase);
+                var fsPx = Regex.Match(style,
+                    @"font-size\s*:\s*([\d.]+)\s*px", RegexOptions.IgnoreCase);
+
+                if (fsPt.Success &&
+                    double.TryParse(fsPt.Groups[1].Value, NumberStyles.Float,
+                        CultureInfo.InvariantCulture, out double pts))
+                    span.FontSize = pts * (96.0 / 72.0);          // pt → WPF device-independent px
+                else if (fsPx.Success &&
+                    double.TryParse(fsPx.Groups[1].Value, NumberStyles.Float,
+                        CultureInfo.InvariantCulture, out double pxs))
+                    span.FontSize = pxs;
+
+               
+                var ffMatch = Regex.Match(style,
+                    @"font-family\s*:\s*([^;]+)", RegexOptions.IgnoreCase);
+                if (ffMatch.Success)
+                {
+                    string family = ffMatch.Groups[1].Value.Trim().Trim('"', '\'');
+                    try { span.FontFamily = new FontFamily(family); } catch { }
+                }
+               
+                var colorMatch = Regex.Match(style,
+                    @"\bcolor\s*:\s*(#[0-9a-fA-F]{3,8}|rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)|[a-zA-Z]+)",
+                    RegexOptions.IgnoreCase);
+                if (colorMatch.Success)
+                {
+                    var brush = ParseColorToBrush(colorMatch.Groups[1].Value.Trim());
+                    if (brush != null) span.Foreground = brush;
+                }
+               
+                if (Regex.IsMatch(style, @"vertical-align\s*:\s*super", RegexOptions.IgnoreCase))
+                {
+                    span.BaselineAlignment = BaselineAlignment.Superscript;
+                    span.FontSize = 8;
+                }
+                else if (Regex.IsMatch(style, @"vertical-align\s*:\s*sub", RegexOptions.IgnoreCase))
+                {
+                    span.BaselineAlignment = BaselineAlignment.Subscript;
+                    span.FontSize = 8;
+                }
+            }
+          
+            var colorAttr = Regex.Match(tag,
+                @"\bcolor\s*=\s*[""']([^""']*)[""']", RegexOptions.IgnoreCase);
+            if (colorAttr.Success)
+            {
+                var brush = ParseColorToBrush(colorAttr.Groups[1].Value.Trim());
+                if (brush != null) span.Foreground = brush;
+            }    
+            var faceAttr = Regex.Match(tag,
+                @"\bface\s*=\s*[""']([^""']*)[""']", RegexOptions.IgnoreCase);
+            if (faceAttr.Success)
+            {
+                try { span.FontFamily = new FontFamily(faceAttr.Groups[1].Value); } catch { }
+            }
+        }
+        private static SolidColorBrush ParseColorToBrush(string colorValue)
+        {
+            if (string.IsNullOrWhiteSpace(colorValue)) return null;
+
+            colorValue = colorValue.Trim();
+
+           
+            var rgbMatch = Regex.Match(colorValue,
+                @"^rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$",
+                RegexOptions.IgnoreCase);
+
+            if (rgbMatch.Success)
+            {
+                if (byte.TryParse(rgbMatch.Groups[1].Value, out byte r) &&
+                    byte.TryParse(rgbMatch.Groups[2].Value, out byte g) &&
+                    byte.TryParse(rgbMatch.Groups[3].Value, out byte b))
+                    return new SolidColorBrush(Color.FromRgb(r, g, b));
+            }            
+            try
+            {
+                return (SolidColorBrush)new BrushConverter().ConvertFromString(colorValue);
+            }
+            catch { return null; }
+        }
+
+        #endregion HtmlToFlowDocument Helper
+
         #region FormattingHelpers
         private void ToggleFormatting(DependencyProperty property, object value, object normalValue)
         {
@@ -926,13 +963,9 @@ reportHeight();
             var currentValue = selection.GetPropertyValue(property);
 
             if (currentValue != DependencyProperty.UnsetValue && currentValue.Equals(value))
-            {
                 selection.ApplyPropertyValue(property, normalValue);
-            }
             else
-            {
                 selection.ApplyPropertyValue(property, value);
-            }
         }
         private void LoadMyEmojis()
         {
@@ -972,7 +1005,6 @@ reportHeight();
                     Cursor = Cursors.Hand,
                     Margin = new Thickness(2)
                 };
-
                 btn.Click += EmojiItem_Click;
                 EmojiWrapPanel.Children.Add(btn);
             }
@@ -1015,7 +1047,6 @@ reportHeight();
                     Cursor = Cursors.Hand,
                     Margin = new Thickness(2)
                 };
-
                 btn.Click += EmojiReplayItem_Click;
                 ReplayeEmojiWrapPanel.Children.Add(btn);
             }
@@ -1029,13 +1060,9 @@ reportHeight();
             var currentValue = selection.GetPropertyValue(property);
 
             if (currentValue != DependencyProperty.UnsetValue && currentValue.Equals(value))
-            {
                 selection.ApplyPropertyValue(property, normalValue);
-            }
             else
-            {
                 selection.ApplyPropertyValue(property, value);
-            }
         }
 
         #endregion FormattingHelpers
@@ -1059,12 +1086,10 @@ reportHeight();
         private async void DgvFeedbackRecord_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             var grid = sender as DataGrid;
-
             if (grid == null || grid.CurrentItem == null) return;
 
             dynamic selectedRow = grid.CurrentItem;
             var currentColumn = grid.CurrentColumn;
-
             if (currentColumn == null) return;
 
             string header = currentColumn.Header?.ToString();
@@ -1117,7 +1142,7 @@ reportHeight();
                 }
             }
         }
-
+        
         #endregion Events — UserControl / Grid
 
         #region Events — Feedback Form
@@ -1205,24 +1230,19 @@ reportHeight();
                     isValid = false;
                 }
 
-                if (!isValid)
-                {
-                    return;
-                }
-                else
-                {
-                    TxtErrorMessage.Text = string.Empty;
-                    await _viewModel.SubmitFeedbackAsync(subject, html, file);
+                if (!isValid) return;
 
-                    ShowDataGridPanel();
-                    lblNoData.Visibility = Visibility.Collapsed;
-                    TxtSubject.Text = "";
-                    TxtMessage.Document.Blocks.Clear();
-                    this.ImagePath = "";
+                TxtErrorMessage.Text = string.Empty;
+                await _viewModel.SubmitFeedbackAsync(subject, html, file);
 
-                    await _viewModel.LoadFeedbackAsync();
-                    await RefreshFeedbackGrid();
-                }
+                ShowDataGridPanel();
+                lblNoData.Visibility = Visibility.Collapsed;
+                TxtSubject.Text = "";
+                TxtMessage.Document.Blocks.Clear();
+                this.ImagePath = "";
+
+                await _viewModel.LoadFeedbackAsync();
+                await RefreshFeedbackGrid();
             }
         }
 
@@ -1458,29 +1478,26 @@ reportHeight();
         private void BtnUndo_Click(object sender, RoutedEventArgs e)
         {
             while (TxtMessage.CanUndo)
-            {
                 TxtMessage.Undo();
-            }
         }
         private void BtnRedo_Click(object sender, RoutedEventArgs e)
         {
             while (TxtMessage.CanRedo)
-            {
                 TxtMessage.Redo();
-            }
         }
         private void BtnChooseFile_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                OpenFileDialog openFileDialog = new OpenFileDialog();
-                openFileDialog.Title = "Select Image File";
-                openFileDialog.Filter = "Image Files|*.jpg;*.jpeg;*.png;*.gif;*.bmp";
+                OpenFileDialog openFileDialog = new OpenFileDialog
+                {
+                    Title = "Select Image File",
+                    Filter = "Image Files|*.jpg;*.jpeg;*.png;*.gif;*.bmp"
+                };
 
                 if (openFileDialog.ShowDialog() == true)
                 {
                     string selectedImagePath = openFileDialog.FileName;
-
                     LblChosenFile.Content = System.IO.Path.GetFileName(selectedImagePath);
 
                     BitmapImage bitmapImage = new BitmapImage(new Uri(selectedImagePath));
@@ -1492,7 +1509,7 @@ reportHeight();
             catch { }
         }
 
-        #endregion  Events — New Feedback Formatting
+        #endregion Events — New Feedback Formatting
 
         #region Events — Reply Formatting
         private void ButtonReplayBold_Click(object sender, RoutedEventArgs e)
@@ -1619,16 +1636,12 @@ reportHeight();
         private void ButtonReplayUndo_Click(object sender, RoutedEventArgs e)
         {
             while (TxtReply.CanUndo)
-            {
                 TxtReply.Undo();
-            }
         }
         private void ButtonReplayRedo_Click(object sender, RoutedEventArgs e)
         {
             while (TxtReply.CanRedo)
-            {
                 TxtReply.Redo();
-            }
         }
         private void EmojiReplayItem_Click(object sender, RoutedEventArgs e)
         {
@@ -1652,14 +1665,15 @@ reportHeight();
         {
             try
             {
-                OpenFileDialog openFileDialog = new OpenFileDialog();
-                openFileDialog.Title = "Select Image File";
-                openFileDialog.Filter = "Image Files|*.jpg;*.jpeg;*.png;*.gif;*.bmp";
+                OpenFileDialog openFileDialog = new OpenFileDialog
+                {
+                    Title = "Select Image File",
+                    Filter = "Image Files|*.jpg;*.jpeg;*.png;*.gif;*.bmp"
+                };
 
                 if (openFileDialog.ShowDialog() == true)
                 {
                     string selectedImagePath = openFileDialog.FileName;
-
                     LableReplayFileName.Content = System.IO.Path.GetFileName(selectedImagePath);
 
                     BitmapImage bitmapImage = new BitmapImage(new Uri(selectedImagePath));
@@ -1690,6 +1704,5 @@ reportHeight();
         }
 
         #endregion Events — Delete
-
     }
 }
