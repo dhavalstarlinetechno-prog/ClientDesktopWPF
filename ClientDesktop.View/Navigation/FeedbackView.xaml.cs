@@ -137,6 +137,28 @@ namespace ClientDesktop.View.Navigation
         }
         private void ReplyPanel_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
+            //_isManualScroll = false;
+            //SmoothScrollBy(e.Delta < 0 ? 150 : -150);
+            //e.Handled = true;
+          
+            if (TxtReply != null && TxtReply.IsMouseOver && GroupBoxPanel.Visibility == Visibility.Visible)
+            {
+                var rtbScrollViewer = FindVisualChild<ScrollViewer>(TxtReply);
+                if (rtbScrollViewer != null)
+                {
+                    bool canScrollDown = e.Delta < 0 && rtbScrollViewer.VerticalOffset < rtbScrollViewer.ScrollableHeight;
+                    bool canScrollUp = e.Delta > 0 && rtbScrollViewer.VerticalOffset > 0;
+
+                    if (canScrollDown || canScrollUp)
+                    {                       
+                        double delta = e.Delta < 0 ? 50 : -50;
+                        rtbScrollViewer.ScrollToVerticalOffset(rtbScrollViewer.VerticalOffset + delta);
+                        e.Handled = true;
+                        return;
+                    }
+                }
+            }
+            
             _isManualScroll = false;
             SmoothScrollBy(e.Delta < 0 ? 150 : -150);
             e.Handled = true;
@@ -507,6 +529,17 @@ namespace ClientDesktop.View.Navigation
             DgvFeedbackRecord.Items.Clear();
             DgvFeedbackRecord.ItemsSource = updatedItems;
         }
+        private static T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T result) return result;
+                var descendant = FindVisualChild<T>(child);
+                if (descendant != null) return descendant;
+            }
+            return null;
+        }
 
         #endregion Methods
 
@@ -809,12 +842,12 @@ namespace ClientDesktop.View.Navigation
 
                 case "sup":
                     span.BaselineAlignment = BaselineAlignment.Superscript;
-                    span.FontSize = 8;
+                    span.FontSize = 10.0;
                     break;
 
                 case "sub":
                     span.BaselineAlignment = BaselineAlignment.Subscript;
-                    span.FontSize = 8;
+                    span.FontSize = 10.0;
                     break;
 
                 case "tt":
@@ -962,10 +995,35 @@ namespace ClientDesktop.View.Navigation
             TextSelection selection = TxtMessage.Selection;
             var currentValue = selection.GetPropertyValue(property);
 
-            if (currentValue != DependencyProperty.UnsetValue && currentValue.Equals(value))
-                selection.ApplyPropertyValue(property, normalValue);
+            if (property == Inline.TextDecorationsProperty)
+            {
+                TextDecorationCollection currentDecorations = new TextDecorationCollection();
+                if (currentValue != DependencyProperty.UnsetValue && currentValue is TextDecorationCollection existing)
+                {
+                    foreach (var d in existing) currentDecorations.Add(d);
+                }
+             
+                TextDecoration target = ((TextDecorationCollection)value)[0];
+                bool exists = false;
+                TextDecoration found = null;
+
+                foreach (var d in currentDecorations)
+                {
+                    if (d.Location == target.Location) { exists = true; found = d; break; }
+                }
+
+                if (exists) currentDecorations.Remove(found);
+                else currentDecorations.Add(target);
+
+                selection.ApplyPropertyValue(property, currentDecorations);
+            }            
             else
-                selection.ApplyPropertyValue(property, value);
+            {
+                if (currentValue != DependencyProperty.UnsetValue && currentValue.Equals(value))
+                    selection.ApplyPropertyValue(property, normalValue);
+                else
+                    selection.ApplyPropertyValue(property, value);
+            }
         }
         private void LoadMyEmojis()
         {
@@ -1059,10 +1117,35 @@ namespace ClientDesktop.View.Navigation
             TextSelection selection = TxtReply.Selection;
             var currentValue = selection.GetPropertyValue(property);
 
-            if (currentValue != DependencyProperty.UnsetValue && currentValue.Equals(value))
-                selection.ApplyPropertyValue(property, normalValue);
+            if (property == Inline.TextDecorationsProperty)
+            {
+                TextDecorationCollection currentDecorations = new TextDecorationCollection();
+                if (currentValue != DependencyProperty.UnsetValue && currentValue is TextDecorationCollection existing)
+                {
+                    foreach (var d in existing) currentDecorations.Add(d);
+                }
+
+                TextDecoration target = ((TextDecorationCollection)value)[0];
+                bool exists = false;
+                TextDecoration found = null;
+
+                foreach (var d in currentDecorations)
+                {
+                    if (d.Location == target.Location) { exists = true; found = d; break; }
+                }
+
+                if (exists) currentDecorations.Remove(found);
+                else currentDecorations.Add(target);
+
+                selection.ApplyPropertyValue(property, currentDecorations);
+            }
             else
-                selection.ApplyPropertyValue(property, value);
+            {
+                if (currentValue != DependencyProperty.UnsetValue && currentValue.Equals(value))
+                    selection.ApplyPropertyValue(property, normalValue);
+                else
+                    selection.ApplyPropertyValue(property, value);
+            }           
         }
 
         #endregion FormattingHelpers
@@ -1311,13 +1394,16 @@ namespace ClientDesktop.View.Navigation
                 }
             }
             else if (!string.IsNullOrEmpty(_viewModel.ErrorMessage))
-            {
-                MessageBox.Show(_viewModel.ErrorMessage, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            {              
+                FileLogger.ApplicationLog(nameof(BtnReplySubmit_Click), _viewModel.ErrorMessage);
                 BtnReplySubmit.IsEnabled = true;
             }
         }
         private void TxtReply_TextChanged(object sender, TextChangedEventArgs e)
         {
+            if (BtnReplySubmit == null)
+                return;
+
             if (TxtReply == null) return;
 
             TextRange range = new TextRange(TxtReply.Document.ContentStart, TxtReply.Document.ContentEnd);
@@ -1549,7 +1635,7 @@ namespace ClientDesktop.View.Navigation
                 (BaselineAlignment)currentAlignment != BaselineAlignment.Superscript)
             {
                 selection.ApplyPropertyValue(Inline.BaselineAlignmentProperty, BaselineAlignment.Superscript);
-                selection.ApplyPropertyValue(TextElement.FontSizeProperty, 8.0);
+                selection.ApplyPropertyValue(TextElement.FontSizeProperty, 10.0);
             }
             else
             {
@@ -1568,7 +1654,7 @@ namespace ClientDesktop.View.Navigation
                 (BaselineAlignment)currentAlignment != BaselineAlignment.Subscript)
             {
                 selection.ApplyPropertyValue(Inline.BaselineAlignmentProperty, BaselineAlignment.Subscript);
-                selection.ApplyPropertyValue(TextElement.FontSizeProperty, 8.0);
+                selection.ApplyPropertyValue(TextElement.FontSizeProperty, 10.0);
             }
             else
             {

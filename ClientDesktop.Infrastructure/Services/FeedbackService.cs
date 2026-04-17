@@ -128,38 +128,39 @@ namespace ClientDesktop.Infrastructure.Services
             {
                 string url = CommonHelper.ToReplaceUrl(AppConfig.FeedbackReplayURL, _sessionService.PrimaryDomain);
 
-                var formData = new MultipartFormDataContent();
-
-                formData.Add(new StringContent(feedbackid.ToString()), "feedbackId");
-                formData.Add(new StringContent(feedbackMessage ?? string.Empty), "feedbackMessage");
-
-                if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
-                {                  
-                    var fileBytes = await File.ReadAllBytesAsync(filePath);
-                    var fileContent = new ByteArrayContent(fileBytes);
-                  
-                    string ext = Path.GetExtension(filePath).ToLower();
-                    string contentType = (ext == ".png") ? "image/png" :
-                                         (ext == ".jpg" || ext == ".jpeg") ? "image/jpeg" :
-                                         "application/octet-stream";
-
-                    fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
-                    formData.Add(fileContent, "files", Path.GetFileName(filePath));
-                }
-               
-                HttpResponseMessage response = await _apiService.PostRawAsync(url, formData);
-
-                if (response.IsSuccessStatusCode)
+                using (var formData = new MultipartFormDataContent())
                 {
-                    string responseContent = await response.Content.ReadAsStringAsync();
-                    return JsonConvert.DeserializeObject<FeedbackReplyResponse>(responseContent);
-                }
+                    formData.Add(new StringContent(feedbackid.ToString()), "feedbackId");
+                    formData.Add(new StringContent(feedbackMessage ?? string.Empty), "feedbackMessage");
 
-                return new FeedbackReplyResponse
-                {
-                    IsSuccess = false,
-                    SuccessMessage = $"Server returned HTTP Code: {response.StatusCode}"
-                };
+                    if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
+                    {                       
+                        var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                        var fileContent = new StreamContent(fileStream);
+
+                        string ext = Path.GetExtension(filePath).ToLower();                     
+                        string contentType = (ext == ".png") ? "image/png" :
+                                             (ext == ".jpg" || ext == ".jpeg") ? "image/jpeg" :
+                                             "application/octet-stream";
+
+                        fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);                      
+                        formData.Add(fileContent, "files", Path.GetFileName(filePath));
+                    }
+
+                    HttpResponseMessage response = await _apiService.PostRawAsync(url, formData);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        string responseContent = await response.Content.ReadAsStringAsync();
+                        return JsonConvert.DeserializeObject<FeedbackReplyResponse>(responseContent);
+                    }
+
+                    return new FeedbackReplyResponse
+                    {
+                        IsSuccess = false,
+                        SuccessMessage = $"Server returned HTTP Code: {response.StatusCode}"
+                    };
+                }
             }
             catch (Exception ex)
             {
@@ -189,5 +190,59 @@ namespace ClientDesktop.Infrastructure.Services
         }
 
         #endregion Methods
+
+        #region Old ReplyFeedbackAsync
+
+        //public async Task<FeedbackReplyResponse> ReplyFeedbackAsync(int feedbackid, string feedbackMessage, string filePath)
+        //{
+        //    try
+        //    {
+        //        string url = CommonHelper.ToReplaceUrl(AppConfig.FeedbackReplayURL, _sessionService.PrimaryDomain);
+
+        //        var formData = new MultipartFormDataContent();
+
+        //        formData.Add(new StringContent(feedbackid.ToString()), "feedbackId");
+        //        formData.Add(new StringContent(feedbackMessage ?? string.Empty), "feedbackMessage");
+
+        //        if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
+        //        {                  
+        //            var fileBytes = await File.ReadAllBytesAsync(filePath);
+        //            var fileContent = new ByteArrayContent(fileBytes);
+
+        //            string ext = Path.GetExtension(filePath).ToLower();
+        //            string contentType = (ext == ".png") ? "image/png" :
+        //                                 (ext == ".jpg" || ext == ".jpeg") ? "image/jpeg" :
+        //                                 "application/octet-stream";
+
+        //            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
+        //            formData.Add(fileContent, "files", Path.GetFileName(filePath));
+        //        }
+
+        //        HttpResponseMessage response = await _apiService.PostRawAsync(url, formData);
+
+        //        if (response.IsSuccessStatusCode)
+        //        {
+        //            string responseContent = await response.Content.ReadAsStringAsync();
+        //            return JsonConvert.DeserializeObject<FeedbackReplyResponse>(responseContent);
+        //        }
+
+        //        return new FeedbackReplyResponse
+        //        {
+        //            IsSuccess = false,
+        //            SuccessMessage = $"Server returned HTTP Code: {response.StatusCode}"
+        //        };
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        FileLogger.ApplicationLog(nameof(ReplyFeedbackAsync), $"Error occurred: {ex.Message}");
+        //        return new FeedbackReplyResponse
+        //        {
+        //            IsSuccess = false,
+        //            SuccessMessage = ex.Message
+        //        };
+        //    }
+        //}
+
+        #endregion Old ReplyFeedbackAsync
     }
 }

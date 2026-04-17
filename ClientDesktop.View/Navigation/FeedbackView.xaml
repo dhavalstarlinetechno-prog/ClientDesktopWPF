@@ -396,15 +396,28 @@
                             <Button x:Name="BtnRedo" Content="↷" Style="{StaticResource ToolbarButtonStyle}" Click="BtnRedo_Click"/>
                         </WrapPanel>
 
-                       
+
                         <RichTextBox x:Name="TxtMessage" 
-                                   Grid.Row="1" 
-                                   Height="117"
-                                   FontSize="12"
-                                   BorderBrush="#CCCCCC"
-                                   BorderThickness="1"
-                                   VerticalContentAlignment ="Center"
-                                   VerticalScrollBarVisibility="Auto"/>
+                                     Grid.Row="1" 
+                                     Height="117"
+                                     FontSize="12"
+                                     BorderBrush="#CCCCCC"
+                                     BorderThickness="1"
+                                     VerticalScrollBarVisibility="Auto"
+                                     VerticalContentAlignment="Center"
+                                     Padding="5,48,5,5">
+                            <RichTextBox.Resources>
+                                <Style TargetType="{x:Type Paragraph}">
+                                    <Setter Property="Margin" Value="0"/>
+                                </Style>
+                            </RichTextBox.Resources>
+
+                            <FlowDocument>
+                                <Paragraph>
+                                    <Run Text=""/>
+                                </Paragraph>
+                            </FlowDocument>
+                        </RichTextBox>
                     </Grid>
 
                    
@@ -639,16 +652,32 @@
                                             <Button x:Name="ButtonReplayRedo" Content="↷" Style="{StaticResource ToolbarButtonStyle}" Click="ButtonReplayRedo_Click"/>
                                         </WrapPanel>
 
-                                        
+
                                         <RichTextBox x:Name="TxtReply"
                                                    Grid.Row="1"
                                                    Height="80"
                                                    BorderBrush="#CCCCCC"
                                                    BorderThickness="1"
                                                    Margin="0,0,0,5"
-                                                   VerticalScrollBarVisibility="Auto" TextChanged="TxtReply_TextChanged"/>
+                                                   VerticalScrollBarVisibility="Auto" 
+                                                   TextChanged="TxtReply_TextChanged"
+                                                   VerticalContentAlignment="Center"
+                                                   Padding="5,28,5,5">
+                                            <RichTextBox.Resources>
+                                                <Style TargetType="{x:Type Paragraph}">
+                                                    <Setter Property="Margin" Value="0"/>
+                                                </Style>
+                                            </RichTextBox.Resources>
 
-                                       
+                                            <FlowDocument>
+                                                <Paragraph>
+                                                    <Run Text=""/>
+                                                </Paragraph>
+                                            </FlowDocument>
+
+                                        </RichTextBox>
+
+
                                         <Popup x:Name="ReplayeEmojiPopup" 
                                              StaysOpen="False" 
                                              PlacementTarget="{Binding ElementName=ButtonReplayemoji}" 
