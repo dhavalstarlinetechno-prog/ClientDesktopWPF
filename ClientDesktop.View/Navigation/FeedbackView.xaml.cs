@@ -37,8 +37,7 @@ namespace ClientDesktop.View.Navigation
         #region Variable
 
         private readonly FeedbackViewModel _viewModel;
-        private readonly SessionService _sessionService;
-        Label lblNoData = new Label();
+        private readonly SessionService _sessionService;        
         private string lastSavedRtf = "";
         private Stack<string> undoStack = new Stack<string>();
         private Stack<string> redoStack = new Stack<string>();
@@ -481,33 +480,36 @@ namespace ClientDesktop.View.Navigation
         }
         private async Task RefreshFeedbackGrid()
         {
-            DgvFeedbackRecord.Items.Clear();
             int sr = 1;
 
             if (_viewModel.FeedbackList != null && _viewModel.FeedbackList.Count > 0)
             {
-                lblNoData.Visibility = Visibility.Collapsed;
+                LblNoData.Visibility = Visibility.Collapsed;
 
-                foreach (var items in _viewModel.FeedbackList)
+                var gridData = _viewModel.FeedbackList.Select(items =>
                 {
                     DateTime istTime = CommonHelper.ConvertUtcToIst(items.FeedbackDate);
                     string feedbackDateTime = istTime.ToString("dd/MM/yy HH:mm:ss", CultureInfo.InvariantCulture);
                     string status = items.IsClosed ? "Closed" : "Open";
 
-                    var row = new
+                    return new
                     {
-                        SrNo = sr,
+                        SrNo = sr++,
                         FeedbackId = items.FeedbackId,
                         Subject = items.FeedbackSubject,
                         Date = feedbackDateTime,
                         Status = status
                     };
-
-                    DgvFeedbackRecord.Items.Add(row);
-                    sr++;
-                }
+                }).ToList();
+              
+                DgvFeedbackRecord.ItemsSource = gridData;
 
                 DgvFeedbackRecord.SelectedIndex = 0;
+            }
+            else
+            {
+                LblNoData.Visibility = Visibility.Visible;
+                DgvFeedbackRecord.ItemsSource = null;
             }
         }
         private void RefreshGridAfterDelete(int feedbackId)
@@ -528,6 +530,15 @@ namespace ClientDesktop.View.Navigation
             DgvFeedbackRecord.ItemsSource = null;
             DgvFeedbackRecord.Items.Clear();
             DgvFeedbackRecord.ItemsSource = updatedItems;
+
+            if (DgvFeedbackRecord.Items.Count == 0)
+            {
+                LblNoData.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                LblNoData.Visibility = Visibility.Collapsed;
+            }
         }
         private static T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
         {
@@ -544,7 +555,6 @@ namespace ClientDesktop.View.Navigation
         #endregion Methods
 
         #region HtmlToFlowDocument Helper
-
         private static FlowDocument HtmlToFlowDocument(string html)
         {
             var doc = new FlowDocument
@@ -1243,8 +1253,6 @@ namespace ClientDesktop.View.Navigation
             }
 
             CmbFontSize.Text = "12";
-            lblNoData.Content = string.Empty;
-            lblNoData.Visibility = Visibility.Collapsed;
 
             ShowFeedbackFormPanel();
             DgvFeedbackRecord.Visibility = Visibility.Collapsed;
@@ -1318,8 +1326,7 @@ namespace ClientDesktop.View.Navigation
                 TxtErrorMessage.Text = string.Empty;
                 await _viewModel.SubmitFeedbackAsync(subject, html, file);
 
-                ShowDataGridPanel();
-                lblNoData.Visibility = Visibility.Collapsed;
+                ShowDataGridPanel();                
                 TxtSubject.Text = "";
                 TxtMessage.Document.Blocks.Clear();
                 this.ImagePath = "";
