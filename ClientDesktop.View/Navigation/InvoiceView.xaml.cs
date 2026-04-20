@@ -281,7 +281,7 @@ namespace ClientDesktop.View.Navigation
             if (!isDataLoaded)
             {
                 Lblfromdate.Content = "No Data Avaliable";
-                Lblfromdate.FontWeight = FontWeights.Bold;
+                Lblfromdate.FontWeight = FontWeights.Regular;
                 Lblfrom.Visibility = Visibility.Collapsed;
                 Lblfromdate.Visibility = Visibility.Visible;
             }
@@ -338,6 +338,7 @@ namespace ClientDesktop.View.Navigation
             Lblfrom.Content = "";
             Lblfrom.Visibility = Visibility.Visible;
             Lblfromdate.Visibility = Visibility.Collapsed;
+            isDataLoaded = true;
 
             if (_viewModel == null) return;
 
