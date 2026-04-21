@@ -346,6 +346,7 @@ namespace ClientDesktop.View.Navigation
 
             if (_viewModel.InvoiceDetails == null || _viewModel.InvoiceDetails.Count == 0)
             {
+                PdfExportBtn.Visibility = Visibility.Collapsed;
                 ShowNoData();
                 return;
             }

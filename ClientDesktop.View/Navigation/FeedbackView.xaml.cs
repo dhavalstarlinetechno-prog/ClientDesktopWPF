@@ -852,12 +852,12 @@ namespace ClientDesktop.View.Navigation
 
                 case "sup":
                     span.BaselineAlignment = BaselineAlignment.Superscript;
-                    span.FontSize = 10.0;
+                    ApplyStyleAttribute(span, fullTag);
                     break;
 
                 case "sub":
                     span.BaselineAlignment = BaselineAlignment.Subscript;
-                    span.FontSize = 10.0;
+                    ApplyStyleAttribute(span, fullTag);
                     break;
 
                 case "tt":
@@ -946,12 +946,12 @@ namespace ClientDesktop.View.Navigation
                 if (Regex.IsMatch(style, @"vertical-align\s*:\s*super", RegexOptions.IgnoreCase))
                 {
                     span.BaselineAlignment = BaselineAlignment.Superscript;
-                    span.FontSize = 8;
+                    //span.FontSize = 8;
                 }
                 else if (Regex.IsMatch(style, @"vertical-align\s*:\s*sub", RegexOptions.IgnoreCase))
                 {
                     span.BaselineAlignment = BaselineAlignment.Subscript;
-                    span.FontSize = 8;
+                    //span.FontSize = 8;
                 }
             }
           
@@ -995,6 +995,123 @@ namespace ClientDesktop.View.Navigation
         }
 
         #endregion HtmlToFlowDocument Helper
+
+        #region FlowDocumentToHtml
+        private static string FlowDocumentToHtml(FlowDocument doc)
+        {
+            var sb = new StringBuilder();
+            double docSize = double.IsNaN(doc.FontSize) ? 12.0 : doc.FontSize;
+            string docFamily = doc.FontFamily?.Source ?? "Segoe UI";
+
+            double docSizePt = docSize * (72.0 / 96.0);
+            sb.Append($"<div style=\"font-size:{docSizePt.ToString("0.##", CultureInfo.InvariantCulture)}pt;" +
+                      $"font-family:&quot;{docFamily}&quot;;\">");
+
+            foreach (var block in doc.Blocks)
+            {
+                if (block is Paragraph para)
+                    sb.Append(ParagraphToHtml(para, docSize));
+            }
+
+            sb.Append("</div>");
+            return sb.ToString();
+        }
+        private static string ParagraphToHtml(Paragraph para, double parentSize)
+        {
+            var sb = new StringBuilder();
+            double paraSize = double.IsNaN(para.FontSize) ? parentSize : para.FontSize;
+            double paraSizePt = paraSize * (72.0 / 96.0);
+
+            sb.Append($"<p style=\"font-size:{paraSizePt.ToString("0.##", CultureInfo.InvariantCulture)}pt;" +
+                      $"text-indent:0;text-align:left;margin:0;\">");
+
+            foreach (var inline in para.Inlines)
+                sb.Append(InlineToHtml(inline, paraSize));
+
+            sb.Append("</p>");
+            return sb.ToString();
+        }
+        private static string InlineToHtml(Inline inline, double parentSize)
+        {
+            if (inline is LineBreak)
+                return "<br/>";
+
+            string innerText = "";
+            double currentSize = parentSize;
+
+            if (inline is Run run)
+            {
+                innerText = WebUtility.HtmlEncode(run.Text);
+                currentSize = double.IsNaN(run.FontSize) ? parentSize : run.FontSize;
+            }
+            else if (inline is Span span)
+            {
+                currentSize = double.IsNaN(span.FontSize) ? parentSize : span.FontSize;
+                innerText = string.Concat(span.Inlines.Select(i => InlineToHtml(i, currentSize)));
+            }
+
+            if (string.IsNullOrEmpty(innerText)) return "";
+
+            string style = BuildInlineStyle(inline, parentSize);
+
+            return string.IsNullOrEmpty(style)
+                ? innerText
+                : $"<span style=\"{style}\">{innerText}</span>";
+        }
+        private static string BuildInlineStyle(Inline inline, double parentSize)
+        {
+            var styles = new List<string>();
+
+            // Font Size
+            double fontSize = inline.FontSize;
+            if (!double.IsNaN(fontSize) && Math.Abs(fontSize - parentSize) > 0.1)
+            {
+                double pt = fontSize * (72.0 / 96.0);
+                styles.Add($"font-size:{pt.ToString("0.##", CultureInfo.InvariantCulture)}pt");
+            }
+
+            // Bold
+            if (inline.FontWeight == FontWeights.Bold)
+                styles.Add("font-weight:bold");
+
+            // Italic
+            if (inline.FontStyle == FontStyles.Italic)
+                styles.Add("font-style:italic");
+
+            // Font Family
+            string family = inline.FontFamily?.Source;
+            if (!string.IsNullOrEmpty(family))
+                styles.Add($"font-family:{family}");
+
+            // Color
+            if (inline.Foreground is SolidColorBrush brush)
+            {
+                Color c = brush.Color;
+                if (c != Colors.Black)
+                    styles.Add($"color:#{c.R:X2}{c.G:X2}{c.B:X2}");
+            }
+
+            // ✅ Superscript / Subscript — MAIN FIX
+            if (inline.BaselineAlignment == BaselineAlignment.Superscript)
+                styles.Add("vertical-align:super");
+            else if (inline.BaselineAlignment == BaselineAlignment.Subscript)
+                styles.Add("vertical-align:sub");
+
+            // TextDecorations
+            if (inline.TextDecorations != null && inline.TextDecorations.Count > 0)
+            {
+                bool hasUnder = inline.TextDecorations.Any(d => d.Location == TextDecorationLocation.Underline);
+                bool hasStrike = inline.TextDecorations.Any(d => d.Location == TextDecorationLocation.Strikethrough);
+
+                if (hasUnder && hasStrike) styles.Add("text-decoration:underline line-through");
+                else if (hasUnder) styles.Add("text-decoration:underline");
+                else if (hasStrike) styles.Add("text-decoration:line-through");
+            }
+
+            return string.Join(";", styles);
+        }
+
+        #endregion FlowDocumentToHtml
 
         #region FormattingHelpers
         private void ToggleFormatting(DependencyProperty property, object value, object normalValue)
@@ -1366,23 +1483,54 @@ namespace ClientDesktop.View.Navigation
         }
         private async void BtnReplySubmit_Click(object sender, RoutedEventArgs e)
         {
+            #region
+            //BtnReplySubmit.IsEnabled = false;
+
+            //int feedbackid = Convert.ToInt32(TxtFeedbackId.Text);
+            //string rtfContent = "";
+            //TextRange range = new TextRange(TxtReply.Document.ContentStart, TxtReply.Document.ContentEnd);
+
+            //using (MemoryStream ms = new MemoryStream())
+            //{
+            //    range.Save(ms, DataFormats.Rtf);
+            //    ms.Seek(0, SeekOrigin.Begin);
+            //    using (StreamReader sr = new StreamReader(ms))
+            //    {
+            //        rtfContent = sr.ReadToEnd();
+            //    }
+            //}
+
+            //string html = Rtf.ToHtml(rtfContent);
+            //string file = this.ReplayImagePath;
+            //var result = await _viewModel.SubmitFeedbackReplyAsync(feedbackid, html, file);
+
+            //GroupBoxPanel.Visibility = Visibility.Collapsed;
+            //ChatPanel.Visibility = Visibility.Visible;
+            //TxtReply.Document.Blocks.Clear();
+            //this.ReplayImagePath = string.Empty;
+
+            //if (result != null && result.IsSuccess)
+            //{
+            //    if (!_viewModel.IsSocketConnected)
+            //    {
+            //        await _viewModel.GetFeedbackDetailsAsync(feedbackid);
+            //        if (_viewModel.SelectedFeedbackDetails != null)
+            //            await LoadChatPanel(_viewModel.SelectedFeedbackDetails);
+            //    }
+            //}
+            //else if (!string.IsNullOrEmpty(_viewModel.ErrorMessage))
+            //{              
+            //    FileLogger.ApplicationLog(nameof(BtnReplySubmit_Click), _viewModel.ErrorMessage);
+            //    BtnReplySubmit.IsEnabled = true;
+            //}
+            #endregion
+
             BtnReplySubmit.IsEnabled = false;
 
             int feedbackid = Convert.ToInt32(TxtFeedbackId.Text);
-            string rtfContent = "";
-            TextRange range = new TextRange(TxtReply.Document.ContentStart, TxtReply.Document.ContentEnd);
+            
+            string html = FlowDocumentToHtml(TxtReply.Document);
 
-            using (MemoryStream ms = new MemoryStream())
-            {
-                range.Save(ms, DataFormats.Rtf);
-                ms.Seek(0, SeekOrigin.Begin);
-                using (StreamReader sr = new StreamReader(ms))
-                {
-                    rtfContent = sr.ReadToEnd();
-                }
-            }
-
-            string html = Rtf.ToHtml(rtfContent);
             string file = this.ReplayImagePath;
             var result = await _viewModel.SubmitFeedbackReplyAsync(feedbackid, html, file);
 
@@ -1401,7 +1549,7 @@ namespace ClientDesktop.View.Navigation
                 }
             }
             else if (!string.IsNullOrEmpty(_viewModel.ErrorMessage))
-            {              
+            {
                 FileLogger.ApplicationLog(nameof(BtnReplySubmit_Click), _viewModel.ErrorMessage);
                 BtnReplySubmit.IsEnabled = true;
             }
@@ -1516,7 +1664,8 @@ namespace ClientDesktop.View.Navigation
                 Title = "Select Color",
                 Content = picker,
                 Height = 300,
-                Width = 300,
+                Width = 300,                
+                ResizeMode = ResizeMode.NoResize,
                 WindowStartupLocation = WindowStartupLocation.CenterScreen
             };
 
@@ -1642,12 +1791,12 @@ namespace ClientDesktop.View.Navigation
                 (BaselineAlignment)currentAlignment != BaselineAlignment.Superscript)
             {
                 selection.ApplyPropertyValue(Inline.BaselineAlignmentProperty, BaselineAlignment.Superscript);
-                selection.ApplyPropertyValue(TextElement.FontSizeProperty, 10.0);
+                //selection.ApplyPropertyValue(TextElement.FontSizeProperty, 10.0);
             }
             else
             {
                 selection.ApplyPropertyValue(Inline.BaselineAlignmentProperty, BaselineAlignment.Baseline);
-                selection.ApplyPropertyValue(TextElement.FontSizeProperty, 12.0);
+                //selection.ApplyPropertyValue(TextElement.FontSizeProperty, 12.0);
             }
         }
         private void ButtonReplaysubscript_Click(object sender, RoutedEventArgs e)
@@ -1661,12 +1810,12 @@ namespace ClientDesktop.View.Navigation
                 (BaselineAlignment)currentAlignment != BaselineAlignment.Subscript)
             {
                 selection.ApplyPropertyValue(Inline.BaselineAlignmentProperty, BaselineAlignment.Subscript);
-                selection.ApplyPropertyValue(TextElement.FontSizeProperty, 10.0);
+                //selection.ApplyPropertyValue(TextElement.FontSizeProperty, 10.0);
             }
             else
             {
                 selection.ApplyPropertyValue(Inline.BaselineAlignmentProperty, BaselineAlignment.Baseline);
-                selection.ApplyPropertyValue(TextElement.FontSizeProperty, 12.0);
+                //selection.ApplyPropertyValue(TextElement.FontSizeProperty, 12.0);
             }
         }
         private void CmbReplyFontSize_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -1690,6 +1839,7 @@ namespace ClientDesktop.View.Navigation
                 Content = picker,
                 Height = 300,
                 Width = 300,
+                ResizeMode = ResizeMode.NoResize,
                 WindowStartupLocation = WindowStartupLocation.CenterScreen
             };
 
