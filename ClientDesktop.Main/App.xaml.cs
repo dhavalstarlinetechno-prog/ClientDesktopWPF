@@ -1,10 +1,13 @@
-﻿using ClientDesktop.Core.Interfaces;
+﻿using ClientDesktop.Core.Base;
+using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Infrastructure.Helpers;
+using ClientDesktop.Infrastructure.Logger;
 using ClientDesktop.Infrastructure.Services;
 using ClientDesktop.Services;
 using ClientDesktop.ViewModel;
 using Microsoft.Extensions.DependencyInjection;
 using System.Windows;
+using System.Windows.Input;
 
 namespace ClientDesktop.Main
 {
@@ -37,6 +40,12 @@ namespace ClientDesktop.Main
 
             _ = ServiceProvider.GetRequiredService<SystemMonitorService>();
 
+            // ═══ Global ESC-to-Close: Register class-level handler for all Windows ═══
+            EventManager.RegisterClassHandler(
+                typeof(Window),
+                Keyboard.KeyDownEvent,
+                new KeyEventHandler(OnGlobalKeyDown));
+
             var mainWindow = ServiceProvider.GetRequiredService<MainWindow>();
             mainWindow.Show();
 
@@ -51,6 +60,40 @@ namespace ClientDesktop.Main
         #endregion
 
         #region Private Methods
+
+        /// <summary>
+        /// Global ESC key handler. Closes the active dialog window
+        /// unless the ViewModel opts out via IEscCloseable.AllowEscClose = false.
+        /// MainWindow is always protected from ESC close.
+        /// </summary>
+        private void OnGlobalKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Escape)
+                return;
+
+            try
+            {
+                var window = sender as Window;
+                if (window == null)
+                    return;
+
+                // Never close the MainWindow on ESC
+                if (window is MainWindow)
+                    return;
+
+                // Check if the ViewModel opts out of ESC close
+                if (window.Content is IEscCloseable escCloseable
+                    && !escCloseable.AllowEscClose)
+                    return;
+
+                window.Close();
+                e.Handled = true;
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(OnGlobalKeyDown), ex);
+            }
+        }
 
         /// <summary>
         /// Registers all required core services, view models, and views into the dependency injection container.
@@ -107,7 +150,7 @@ namespace ClientDesktop.Main
             services.AddTransient<InvoiceViewModel>();
             services.AddTransient<TradeViewModel>();
             services.AddSingleton<NavigationViewModel>();
-            services.AddTransient<DeleteTradeViewModel>();          
+            services.AddTransient<DeleteTradeViewModel>();
             services.AddTransient<FeedbackViewModel>();
             services.AddTransient<DeleteFeedbackViewModel>();
             // Views (Windows)

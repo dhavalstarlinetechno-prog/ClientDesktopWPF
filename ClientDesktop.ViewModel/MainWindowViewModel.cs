@@ -327,7 +327,7 @@ namespace ClientDesktop.ViewModel
                 SafeUIInvoke(() =>
                 {
                     _dialogService.ShowDialog<TradeViewModel>(
-                        "New Trade Order",
+                        "Trade Order",
                         configureViewModel: vm =>
                         {
                             vm.CurrentOrderTypeEnum = EnumTradeOrderType.Market;

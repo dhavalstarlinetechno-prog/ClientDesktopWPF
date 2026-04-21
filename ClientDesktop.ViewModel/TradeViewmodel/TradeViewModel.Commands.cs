@@ -180,7 +180,7 @@ namespace ClientDesktop.ViewModel
 
                 double currentPrice = actionType == TradeConstants.ActionBuy ? askPrice : bidPrice;
 
-                FileLogger.Log("Trade", $"Order submitting | User: '{_sessionService?.UserId}' | Action: {actionType} | Symbol: {SelectedSymbol} | Volume: {volume} | OrderType: {CurrentOrderTypeEnum} | Price: {currentPrice} | LimitRate: {limitPrice} | PositionId: '{positionId}'");
+                //FileLogger.Log("Trade", $"Order submitting | User: '{_sessionService?.UserId}' | Action: {actionType} | Symbol: {SelectedSymbol} | Volume: {volume} | OrderType: {CurrentOrderTypeEnum} | Price: {currentPrice} | LimitRate: {limitPrice} | PositionId: '{positionId}'");
 
                 var payload = BuildTradePayload(actionType, volume, currentPrice, limitPrice);
                 if (payload == null)

@@ -348,7 +348,7 @@ namespace ClientDesktop.ViewModel
                 if (_sessionService.IsLoggedIn && _sessionService.IsInternetAvailable)
                 {
                     _dialogService.ShowDialog<TradeViewModel>(
-                        "New Trade Order",
+                        "Trade Order",
                         configureViewModel: vm =>
                         {
                             _ = vm.LoadSymbolListAsync();
