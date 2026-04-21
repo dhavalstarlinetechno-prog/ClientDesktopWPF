@@ -919,7 +919,7 @@ namespace ClientDesktop.ViewModel
                 var apiToDate = DateTime.Now;
                 var apiFromDate = apiToDate.AddDays(-7);
 
-                FileLogger.Log("Network", $"{CurrentViewType} history request from {apiFromDate:dd/MM/yyyy} to {apiToDate:dd/MM/yyyy}");
+                FileLogger.Log("Network", $"{CurrentViewType} history request from {StartDate:dd/MM/yyyy} to {EndDate:dd/MM/yyyy}");
 
                 if (CurrentViewType == EnumHistoryType.Position)
                 {

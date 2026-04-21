@@ -648,11 +648,15 @@ namespace ClientDesktop.ViewModel
                                 .Select(s => s.SymbolId)
                                 .ToHashSet();
                         }
+                        else
+                        {
+                            MarketWatchSymbolsCollection.Clear();
+                        }
 
-                        MarketWatchSymbolsCollection.Clear();
+                        HiddenSymbolsCollection.Clear();
 
                         var validSymbols = marketWatchData.symbols
-                                            .Where(s => s.symbolStatus)
+                                            .Where(s => s.symbolStatus && !currentVisibleIds.Contains(s.symbolId))
                                             .OrderBy(s => s.displayPosition)
                                             .ToList();
 
@@ -660,33 +664,13 @@ namespace ClientDesktop.ViewModel
                         {
                             var symbolModel = CreateMarketItem(apiSymbol);
 
-                            bool shouldBeVisible = false;
-
-                            if (isOverwrite)
-                            {
-                                shouldBeVisible = !apiSymbol.symbolHide;
-                            }
-                            else
-                            {
-                                shouldBeVisible = !apiSymbol.symbolHide || currentVisibleIds.Contains(apiSymbol.symbolId);
-                            }
-
-                            if (shouldBeVisible)
+                            if (!apiSymbol.symbolHide)
                             {
                                 MarketWatchSymbolsCollection.Add(symbolModel);
-
-                                var hiddenToRemove = HiddenSymbolsCollection.FirstOrDefault(r => r.SymbolId == symbolModel.SymbolId);
-                                if (hiddenToRemove != null) HiddenSymbolsCollection.Remove(hiddenToRemove);
                             }
                             else
                             {
-                                var existingItem = HiddenSymbolsCollection.FirstOrDefault(r => r.SymbolName == symbolModel.SymbolName);
-
-                                if (existingItem == null || existingItem.IsBanned != symbolModel.IsBanned)
-                                {
-                                    if (existingItem != null) HiddenSymbolsCollection.Remove(existingItem);
-                                    HiddenSymbolsCollection.Add(symbolModel);
-                                }
+                                HiddenSymbolsCollection.Add(symbolModel);
                             }
                         }
                         EnsureEmptyRow();
