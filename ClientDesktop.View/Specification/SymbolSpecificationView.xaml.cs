@@ -58,13 +58,15 @@ namespace ClientDesktop.View.Specification
                     double right = 0.5;
                     double bottom = 0.5;
 
-                    if (j == 0)
-                    {
-                        right = 0;
-                    }
-                    if (j == 1)
+                    if (i == 0)
                     {
                         left = 0;
+                        right = 0;
+                    }
+                    else
+                    {
+                        if (j == 0) right = 0;
+                        if (j == 1) left = 0;
                     }
                     Border b = new Border
                     {

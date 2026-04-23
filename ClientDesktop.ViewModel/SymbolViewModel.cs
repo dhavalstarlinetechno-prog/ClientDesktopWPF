@@ -161,16 +161,15 @@ namespace ClientDesktop.ViewModel
                 IsBusy = true;
                 
                 var result = await _symbolService.Getsymbolsbyrouteforclient(routeId);
-               
+
+                var newItems = result?.Data?.ToList() ?? new List<SubSymbolModel>();
+
                 Loadsymbolsbyroute.Clear();
 
-                if (result != null && result.Data != null)
-                {                   
-                    foreach (var item in result.Data)
-                    {
-                        Loadsymbolsbyroute.Add(item);
-                    }
-                }                
+                foreach (var item in newItems)
+                {
+                    Loadsymbolsbyroute.Add(item);
+                }
                 return Newtonsoft.Json.JsonConvert.SerializeObject(result);
             }
             catch (Exception ex)

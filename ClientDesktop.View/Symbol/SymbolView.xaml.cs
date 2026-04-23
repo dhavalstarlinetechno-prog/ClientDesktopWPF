@@ -40,14 +40,16 @@ namespace ClientDesktop.View.Symbol
         private string symbolExpiry = string.Empty;
         private TreeViewItem _lastSelectedTreeViewItem;
         private bool _isUpdatingTreeProgrammatically = false;
+        private CancellationTokenSource _loadCts;
+        private int _lastLoadedRouteId = -1;
 
         #endregion Variables
 
         #region Constructor
         public SymbolView()
         {
-            InitializeComponent();
-            ApplyGridBorders(Tablespecification);
+            InitializeComponent();            
+            ApplyGridBorders(Tablespecification, 1);
             ApplyGridBorders(SecondGrid);
             if (!DesignerProperties.GetIsInDesignMode(this))
             {
@@ -62,7 +64,7 @@ namespace ClientDesktop.View.Symbol
 
         #region Methods
 
-        private void ApplyGridBorders(Grid grid)
+        private void ApplyGridBorders(Grid grid, int verticalLineStartRow = 0)
         {
             int rowCount = grid.RowDefinitions.Count;
             int colCount = grid.ColumnDefinitions.Count;
@@ -71,9 +73,20 @@ namespace ClientDesktop.View.Symbol
             {
                 for (int j = 0; j < colCount; j++)
                 {
-                    double left = j == 1 ? 0 : 0.5;
+                    double left, right;
+
+                    if (i < verticalLineStartRow)
+                    {
+                        left = 0;
+                        right = 0;
+                    }
+                    else
+                    {
+                        left = j == 1 ? 0 : 0.5;
+                        right = j == 0 ? 0 : 0.5;
+                    }
+
                     double top = 0.5;
-                    double right = j == 0 ? 0 : 0.5;
                     double bottom = 0.5;
 
                     Border b = new Border
@@ -88,7 +101,7 @@ namespace ClientDesktop.View.Symbol
                     grid.Children.Add(b);
                 }
             }
-        }     
+        }
         private void PopulateFolderTree(List<Folder> folders, TreeViewItem parentNode)
         {
             if (folders == null || folders.Count == 0) return;
@@ -328,7 +341,25 @@ namespace ClientDesktop.View.Symbol
             if (string.IsNullOrEmpty(input)) return input;
             return Regex.Replace(input, "([a-z])([A-Z])", "$1 $2");
         }
+        private async Task LoadSymbolsForRouteAsync(int routeId)
+        {           
+            if (routeId == _lastLoadedRouteId) return;
+          
+            _loadCts?.Cancel();
+            _loadCts = new CancellationTokenSource();
+            var token = _loadCts.Token;
 
+            try
+            {
+                await _viewModel.Loadsymbolsbyrouteforclient(routeId);
+              
+                if (token.IsCancellationRequested) return;
+
+                _lastLoadedRouteId = routeId;
+                ShowDataForNode(_viewModel.Loadsymbolsbyroute);
+            }
+            catch (OperationCanceledException) { }
+        }
         #endregion Methods
 
         #region Events
@@ -360,8 +391,7 @@ namespace ClientDesktop.View.Symbol
                 if (tvi.Tag is Folder folder)
                 {
                     routeId = folder.RouteId;
-                    await _viewModel.Loadsymbolsbyrouteforclient(routeId);
-                    ShowDataForNode(_viewModel.Loadsymbolsbyroute);
+                    await LoadSymbolsForRouteAsync(routeId);
                 }
             }
         }
@@ -375,8 +405,7 @@ namespace ClientDesktop.View.Symbol
                 if (folder != null)
                 {
                     routeId = folder.RouteId;
-                    await _viewModel.Loadsymbolsbyrouteforclient(routeId);
-                    ShowDataForNode(_viewModel.Loadsymbolsbyroute);
+                    await LoadSymbolsForRouteAsync(routeId);
                 }
             }
         }
