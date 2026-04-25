@@ -1,61 +1,50 @@
 ﻿<UserControl x:Class="ClientDesktop.View.Navigation.BanScript"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:ClientDesktop.View.Navigation"
+	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:local="clr-namespace:ClientDesktop.View.Navigation"
              mc:Ignorable="d" 
              Height="240" Width="320">
     <Border BorderBrush="Gray"
             BorderThickness="1"
             Padding="6">
-
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-         
             <StackPanel Orientation="Horizontal"
                      Margin="0,0,0,8">
-
                 <Viewbox Width="24" Height="24">
                     <Canvas Width="100" Height="100">
                         <Path Fill="#00ADEF" Stroke="#002B5B" StrokeThickness="3"
                                 Data="M20 15C20 12.2386 22.2386 10 25 10H60L80 30V85C80 87.7614 77.7614 90 75 90H25C22.2386 90 20 87.7614 20 85V15Z" />
-
                         <Path Fill="#00F2FF" Stroke="#002B5B" StrokeThickness="2"
                                 Data="M60 10V25C60 27.7614 62.2386 30 65 30H80L60 10Z" />
-
                         <Path Stroke="#002B5B" StrokeThickness="4" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
                                 Data="M35 50H65 M35 60H55 M35 70H45" />
-
                         <Path Fill="#FFD700" Stroke="#002B5B" StrokeThickness="2"
                                 Data="M70,48 A22,22 0 1,1 70,92 A22,22 0 1,1 70,48 Z" />
-
                         <Path Stroke="#002B5B" StrokeThickness="5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
                                 Data="M62 62L78 78 M78 62L62 78" />
                     </Canvas>
                 </Viewbox>
-
                 <TextBlock Text="Ban Script"
                         FontSize="15"
                         FontWeight="Bold"
                         VerticalAlignment="Center"
                         Margin="8,0,0,0"/>
             </StackPanel>
-           
             <WrapPanel Grid.Row="1"
                     Margin="0,0,0,6">
                 <TextBlock Text="Today's Banscripts Data"
                         FontSize="12"/>
-
                 <TextBlock x:Name="LblBanscripiptdate"
                         FontSize="12"
                         Margin="5,0,0,0"/>
             </WrapPanel>
-            
             <Grid Grid.Row="2">
                 <DataGrid x:Name="DgvBanScript"
                        ItemsSource="{Binding GridRows}"
@@ -71,7 +60,6 @@
                        CanUserAddRows="False"
                        CanUserDeleteRows="False"                      
                        VerticalScrollBarVisibility="Auto">
-
                     <DataGrid.Columns>
                         <DataGridTextColumn
                             Header="Symbol" FontFamily="Microsoft Sans Serif"
@@ -85,7 +73,6 @@
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
                     </DataGrid.Columns>
-                  
                     <DataGrid.CellStyle>
                         <Style TargetType="DataGridCell">
                             <Setter Property="BorderThickness" Value="0"/>
@@ -100,7 +87,6 @@
                             </Style.Triggers>
                         </Style>
                     </DataGrid.CellStyle>
-
                     <DataGrid.ColumnHeaderStyle>
                         <Style TargetType="DataGridColumnHeader">
                             <Setter Property="Background" Value="CornflowerBlue"/>
@@ -112,7 +98,6 @@
                         </Style>
                     </DataGrid.ColumnHeaderStyle>
                 </DataGrid>
-              
                 <TextBlock x:Name="LblNoData"
                         Text="No Data Available"
                         FontSize="15"                                   
@@ -120,12 +105,8 @@
                         HorizontalAlignment="Center"
                         VerticalAlignment="Top" 
                         FontFamily="Microsoft Sans Serif" Margin="0,34,0,0"
-                        Visibility="Collapsed">
-                  
-                </TextBlock>
-
+                        Visibility="Collapsed"></TextBlock>
             </Grid>
         </Grid>
-
     </Border>
 </UserControl>

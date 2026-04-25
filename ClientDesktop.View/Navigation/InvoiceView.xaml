@@ -1,12 +1,11 @@
 ﻿<UserControl x:Class="ClientDesktop.View.Navigation.InvoiceView"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:ClientDesktop.View.Navigation"
+	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:local="clr-namespace:ClientDesktop.View.Navigation"
              mc:Ignorable="d" 
              Height="600" Width="1000">
-
     <UserControl.Resources>
         <Style x:Key="FixedBlueButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="CornflowerBlue"/>
@@ -38,7 +37,6 @@
                 </Setter.Value>
             </Setter>
         </Style>
-       
         <Style x:Key="DataGridHeaderStyle" TargetType="DataGridColumnHeader">
             <Setter Property="FontWeight" Value="Regular"/>
             <Setter Property="BorderBrush" Value="LightGray"/>
@@ -46,7 +44,6 @@
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="Padding" Value="5"/>
         </Style>
-      
         <Style x:Key="LeftAlignedCellStyle" TargetType="TextBlock">
             <Setter Property="TextAlignment" Value="Left"/>
             <Setter Property="HorizontalAlignment" Value="Left"/>
@@ -62,7 +59,6 @@
             <Setter Property="Padding" Value="0,0,10,0"/>
         </Style>
     </UserControl.Resources>
-
     <Grid>
         <Grid x:Name="Mainpanel" Visibility="Visible">
             <Border BorderBrush="Gray" BorderThickness="1">
@@ -72,7 +68,6 @@
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-
                     <Viewbox Width="40" Height="40" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="10,0,10,0">
                         <Canvas Width="100" Height="100">
                             <Ellipse Fill="#FF3498DB" Width="96" Height="96" Canvas.Left="2" Canvas.Top="2"/>
@@ -90,9 +85,7 @@
                               Data="M 64,70 L 67,73 L 74,66" />
                         </Canvas>
                     </Viewbox>
-
                     <TextBlock x:Name="Lbltext" Grid.Row="0" Margin="40,30,40,20" FontSize="15" FontWeight="Bold" TextWrapping="Wrap" HorizontalAlignment="Center" FontFamily="Microsoft Sans Serif" Text="This report represents sample invoice format. It contains sample data only for education purpose. Invoice can be displayed in &#x0a;below structure"/>
-
                     <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-80,0,0">
                         <PasswordBox x:Name="TxtPassword" Width="188" Height="24" VerticalContentAlignment="Center" FontFamily="Microsoft Sans Serif" PasswordChanged="TxtPassword_PasswordChanged"/>
                         <Button x:Name="Btngo" Content="Go" Width="82" Height="30" Margin="10,0,0,0" FontFamily="Microsoft Sans Serif" Click="Btngo_Click" IsDefault="True" Style="{StaticResource FixedBlueButtonStyle}"/>
@@ -100,7 +93,6 @@
                 </Grid>
             </Border>
         </Grid>
-       
         <Grid x:Name="Childpanel" Background="White" Visibility="Hidden">
             <Border BorderBrush="Gray" BorderThickness="1">
                 <Grid Margin="10">
@@ -108,7 +100,6 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-
                     <Grid Grid.Row="0">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -121,9 +112,7 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-
                         <Label Content="Select Week :" Grid.Row="0" Grid.Column="0" FontFamily="Microsoft Sans Serif" FontSize="13" VerticalAlignment="Center" FontWeight="Regular"/>
-
                         <ComboBox x:Name="Cmbselectweek" 
                             Style="{StaticResource CustomComboBoxStyle}"      
                             Grid.Row="0" Grid.Column="1" 
@@ -137,9 +126,7 @@
                             <ComboBoxItem Content="Previous Week"/>
                             <ComboBoxItem Content="Last Previous Week"/>
                         </ComboBox>
-
                         <Button x:Name="Btngetdata" Content="Go" Grid.Row="0" Grid.Column="2" Width="82" Height="30" Margin="10,0,0,0" IsDefault="True" Click="Btngetdata_Click" Style="{StaticResource FixedBlueButtonStyle}"/>
-
                         <Button x:Name="PdfExportBtn" Grid.Row="0" Grid.RowSpan="2" Grid.Column="4" ToolTip="Export to PDF" Width="40" Height="40" 
                                 Background="Transparent" BorderThickness="0" 
                                 Cursor="Hand"                                
@@ -155,15 +142,12 @@
                                 </Grid>
                             </Viewbox>
                         </Button>
-
                         <Label x:Name="Lblfrom" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="5" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" FontSize="14" Content="" Margin="0,5,0,5"/>
                         <Label x:Name="Lblfromdate" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="5" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" FontSize="14" Content="" Visibility="Collapsed" Margin="0,5,0,5"/>
                     </Grid>
-
                     <Border x:Name="Gridpanel" Grid.Row="1" BorderBrush="LightGray" BorderThickness="1" Margin="10">
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel x:Name="GridpanelContent" Margin="10">
-                              
                                 <ItemsControl x:Name="SecurityGridsList">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
@@ -184,7 +168,6 @@
                                                         <DataGridTextColumn Header="Comm" Binding="{Binding Comm}" ElementStyle="{StaticResource RightAlignedCellStyle}" HeaderStyle="{StaticResource RightAlignedHeaderStyle}"/>
                                                         <DataGridTextColumn Header="Net" Binding="{Binding Net}" ElementStyle="{StaticResource RightAlignedCellStyle}" HeaderStyle="{StaticResource RightAlignedHeaderStyle}"/>
                                                     </DataGrid.Columns>
-                                                    
                                                     <DataGrid.CellStyle>
                                                         <Style TargetType="DataGridCell">
                                                             <Setter Property="BorderThickness" Value="0"/>
@@ -198,13 +181,11 @@
                                                             </Style.Triggers>
                                                         </Style>
                                                     </DataGrid.CellStyle>
-                                                    
                                                 </DataGrid>
                                             </StackPanel>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
-                               
                                 <StackPanel x:Name="SummaryPanel" Visibility="Collapsed">
                                     <TextBlock Text="SUMMARY" FontWeight="Bold" FontSize="15" HorizontalAlignment="Center" Margin="0,20,0,10" />
                                     <DataGrid x:Name="SummaryDataGrid"
@@ -221,7 +202,6 @@
                                             <DataGridTextColumn Header="Comm" Binding="{Binding Comm}" ElementStyle="{StaticResource RightAlignedCellStyle}" HeaderStyle="{StaticResource RightAlignedHeaderStyle}"/>
                                             <DataGridTextColumn Header="Total" Binding="{Binding Total}" ElementStyle="{StaticResource RightAlignedCellStyle}" HeaderStyle="{StaticResource RightAlignedHeaderStyle}"/>
                                         </DataGrid.Columns>
-                                        
                                         <DataGrid.CellStyle>
                                             <Style TargetType="DataGridCell">
                                                 <Setter Property="BorderThickness" Value="0"/>
@@ -235,10 +215,8 @@
                                                 </Style.Triggers>
                                             </Style>
                                         </DataGrid.CellStyle>
-                                        
                                     </DataGrid>
                                 </StackPanel>
-
                                 <StackPanel x:Name="CarryForwardPanel" Visibility="Collapsed">
                                     <TextBlock Text="CARRY FORWARD" FontWeight="Bold" FontSize="15" HorizontalAlignment="Center" Margin="0,20,0,10" />
                                     <DataGrid x:Name="CarryForwardDataGrid"
@@ -255,7 +233,6 @@
                                             <DataGridTextColumn Header="Quantity" Binding="{Binding Quantity}" ElementStyle="{StaticResource RightAlignedCellStyle}" HeaderStyle="{StaticResource RightAlignedHeaderStyle}"/>
                                             <DataGridTextColumn Header="Net" Binding="{Binding Net}" ElementStyle="{StaticResource RightAlignedCellStyle}" HeaderStyle="{StaticResource RightAlignedHeaderStyle}"/>
                                         </DataGrid.Columns>
-
                                         <DataGrid.CellStyle>
                                             <Style TargetType="DataGridCell">
                                                 <Setter Property="BorderThickness" Value="0"/>
@@ -269,7 +246,6 @@
                                                 </Style.Triggers>
                                             </Style>
                                         </DataGrid.CellStyle>
-
                                     </DataGrid>
                                 </StackPanel>
                             </StackPanel>
