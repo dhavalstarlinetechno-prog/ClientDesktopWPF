@@ -254,7 +254,7 @@
                                 <DataGridTemplateColumn Header="Action" Width="60">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Button Click="BtnDeleteFeedback_Click" CommandParameter="{Binding FeedbackId}"
+                                            <Button Click="BtnDeleteFeedback_Click" Style="{StaticResource ActionButtonStyle}" CommandParameter="{Binding FeedbackId}"
                                               Background="Transparent" 
                                               BorderThickness="0" 
                                               HorizontalAlignment="Center"

@@ -41,6 +41,39 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+
+        <Style x:Key="NoHoverButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#3498db"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                        CornerRadius="3">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                          
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#3498db"/>
+                            </Trigger>
+                            
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#2c80b4"/>
+                            </Trigger>
+                            
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.6"/>
+                            </Trigger>
+
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
     <Grid Margin="10">
         <Grid.RowDefinitions>
@@ -78,9 +111,9 @@
         </Grid>
         <StackPanel Grid.Row="1" Grid.Column="2" VerticalAlignment="Top">
             <Button x:Name="BtnShow" Content="Show" Height="30" Margin="0,0,0,10" 
-                Background="#3498db" Foreground="White" FontWeight="Bold" Click="BtnShow_Click"/>
+                Background="#3498db" Foreground="White" FontWeight="Bold" Style="{StaticResource NoHoverButtonStyle}" Click="BtnShow_Click"/>
             <Button x:Name="Btnhide" Content="Hide" Height="30" 
-                Background="#3498db" Foreground="White" FontWeight="Bold" Click="Btnhide_Click"/>
+                Background="#3498db" Foreground="White" FontWeight="Bold" Style="{StaticResource NoHoverButtonStyle}" Click="Btnhide_Click"/>
         </StackPanel>
         <Grid Grid.Row="1" Grid.Column="1" Margin="0,0,10,0">
             <Grid.RowDefinitions>

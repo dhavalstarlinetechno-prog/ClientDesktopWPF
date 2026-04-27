@@ -127,7 +127,7 @@
                             <ComboBoxItem Content="Last Previous Week"/>
                         </ComboBox>
                         <Button x:Name="Btngetdata" Content="Go" Grid.Row="0" Grid.Column="2" Width="82" Height="30" Margin="10,0,0,0" IsDefault="True" Click="Btngetdata_Click" Style="{StaticResource FixedBlueButtonStyle}"/>
-                        <Button x:Name="PdfExportBtn" Grid.Row="0" Grid.RowSpan="2" Grid.Column="4" ToolTip="Export to PDF" Width="40" Height="40" 
+                        <Button x:Name="PdfExportBtn" Style="{StaticResource FixedBlueButtonStyle}" Grid.Row="0" Grid.RowSpan="2" Grid.Column="4" ToolTip="Export to PDF" Width="40" Height="40" 
                                 Background="Transparent" BorderThickness="0" 
                                 Cursor="Hand"                                
                                 VerticalAlignment="Bottom" Margin="0,0,10,5" Click="PdfExportBtn_Click" Visibility="Collapsed">

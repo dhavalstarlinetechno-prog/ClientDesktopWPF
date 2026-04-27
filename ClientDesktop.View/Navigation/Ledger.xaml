@@ -155,7 +155,7 @@
                             FontFamily="Microsoft Sans Serif"   
                             FontSize="13"       
                             Margin="0,0,15,0"/>
-                        <Button x:Name="ExcelExportBtn" ToolTip="Export to Excel" Width="32" Height="32" Background="Transparent" BorderThickness="0" Cursor="Hand" Margin="0" Padding="0" Visibility="Collapsed" Click="ExcelExportBtn_Click">
+                        <Button x:Name="ExcelExportBtn" Style="{StaticResource FixedBlueButtonStyle}" ToolTip="Export to Excel" Width="32" Height="32" Background="Transparent" BorderThickness="0" Cursor="Hand" Margin="0" Padding="0" Visibility="Collapsed" Click="ExcelExportBtn_Click">
                             <Viewbox Width="24" Height="24">
                                 <Grid>
                                     <Path Fill="#217346" Data="M4,4 H20 A2,2 0 0 1 22,6 V26 A2,2 0 0 1 20,28 H4 A2,2 0 0 1 2,26 V6 A2,2 0 0 1 4,4 Z" />
@@ -170,7 +170,7 @@
                                 </Grid>
                             </Viewbox>
                         </Button>
-                        <Button x:Name="PdfExportBtn" ToolTip="Export to PDF" Width="32" Height="32" Background="Transparent" BorderThickness="0" Cursor="Hand" Margin="0" Padding="0" Click="PdfExportBtn_Click" Visibility="Collapsed">
+                        <Button x:Name="PdfExportBtn" Style="{StaticResource FixedBlueButtonStyle}" ToolTip="Export to PDF" Width="32" Height="32" Background="Transparent" BorderThickness="0" Cursor="Hand" Margin="0" Padding="0" Click="PdfExportBtn_Click" Visibility="Collapsed">
                             <Viewbox Width="24" Height="24">
                                 <Grid>
                                     <Path Fill="#B30B00" Data="M4,4 H20 A2,2 0 0 1 22,6 V26 A2,2 0 0 1 20,28 H4 A2,2 0 0 1 2,26 V6 A2,2 0 0 1 4,4 Z" />
