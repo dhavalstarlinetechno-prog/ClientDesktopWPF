@@ -326,7 +326,7 @@ namespace ClientDesktop.View.Navigation
                 Btngetdata.IsEnabled = true;
                 return;
             }
-            
+          
             SecurityGridsList.ItemsSource = null;
             SummaryDataGrid.ItemsSource = null;
             SummaryPanel.Visibility = Visibility.Collapsed;
@@ -341,7 +341,7 @@ namespace ClientDesktop.View.Navigation
             isDataLoaded = true;
 
             if (_viewModel == null) return;
-
+          
             await _viewModel.LoadInvoiceDetailAsync(fromdatefilter, todatefilter);
 
             if (_viewModel.InvoiceDetails == null || _viewModel.InvoiceDetails.Count == 0)
@@ -350,39 +350,45 @@ namespace ClientDesktop.View.Navigation
                 ShowNoData();
                 return;
             }
-           
-            List<string> Securities = _viewModel.InvoiceDetails
-                .Select(s => s.SecurityName)
-                .Where(x => !string.IsNullOrEmpty(x))
-                .Distinct()
-                .OrderBy(x => x)
-                .ToList();
 
-            if (Securities.Count == 0)
+            var allInvoices = _viewModel.InvoiceDetails;
+         
+            var grouped = await Task.Run(() =>
+                allInvoices
+                    .Where(x => !string.IsNullOrEmpty(x.SecurityName))
+                    .GroupBy(x => x.SecurityName)
+                    .OrderBy(g => g.Key)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g
+                            .Where(x => !string.IsNullOrEmpty(x.SymbolName))
+                            .GroupBy(x => x.SymbolName)
+                            .OrderBy(sg => sg.Key)
+                            .ToDictionary(
+                                sg => sg.Key,
+                                sg => sg.OrderBy(x => x.DealCreatedOn).ToList()
+                            )
+                    )
+            );
+
+            if (grouped.Count == 0)
             {
                 ShowNoData();
                 return;
             }
+
             PdfExportBtn.Visibility = Visibility.Visible;
-           
             UpdateDateLabel();
-
-            DataTable securityTable = ToDataTable(_viewModel.InvoiceDetails.ToList());          
-            var securityPdfTables = new List<(string SecurityName, DataTable Table)>();
-         
+           
             var securityGridItemsList = new List<SecurityGridItem>();
+            var securityPdfTables = new List<(string SecurityName, DataTable Table)>();
 
-            foreach (var security in Securities)
+            foreach (var secKvp in grouped)
             {
-                var symbols = securityTable.AsEnumerable()
-                    .Where(r => r.Field<string>("securityName") == security)
-                    .Select(r => r.Field<string>("symbolName"))
-                    .Where(s => !string.IsNullOrEmpty(s))
-                    .Distinct()
-                    .OrderBy(s => s)
-                    .ToList();
-                
-                DataTable dtSecurity = new DataTable();
+                string security = secKvp.Key;
+                var symbolDict = secKvp.Value;
+
+                var dtSecurity = new DataTable();
                 dtSecurity.Columns.Add("Date", typeof(string));
                 dtSecurity.Columns.Add("Type", typeof(string));
                 dtSecurity.Columns.Add("BVol", typeof(string));
@@ -392,8 +398,8 @@ namespace ClientDesktop.View.Navigation
                 dtSecurity.Columns.Add("Net", typeof(string));
                 dtSecurity.Columns.Add("IsHeader", typeof(bool));
                 dtSecurity.Columns.Add("IsTotal", typeof(bool));
-                
-                DataTable pdfSecurity = new DataTable();
+
+                var pdfSecurity = new DataTable();
                 pdfSecurity.Columns.Add("Date", typeof(string));
                 pdfSecurity.Columns.Add("Type", typeof(string));
                 pdfSecurity.Columns.Add("BVol", typeof(string));
@@ -401,82 +407,97 @@ namespace ClientDesktop.View.Navigation
                 pdfSecurity.Columns.Add("Rate", typeof(string));
                 pdfSecurity.Columns.Add("Comm", typeof(string));
                 pdfSecurity.Columns.Add("Net", typeof(string));
-                pdfSecurity.Columns.Add("RowType", typeof(string)); 
+                pdfSecurity.Columns.Add("RowType", typeof(string));
+             
+                var gridData = new List<SecurityRow>();
 
-                foreach (var symbol in symbols)
-                {                   
-                    dtSecurity.Rows.Add(symbol, "", "", "", "", "", "", true, false);
+                foreach (var symKvp in symbolDict)
+                {
+                    string symbol = symKvp.Key;
+                    var rows = symKvp.Value;
+                    
+                    gridData.Add(new SecurityRow
+                    {
+                        Date = symbol,
+                        Type = "",
+                        BVol = "",
+                        SVol = "",
+                        Rate = "",
+                        Comm = "",
+                        Net = "",
+                        IsHeader = true,
+                        IsTotal = false
+                    });
                     pdfSecurity.Rows.Add(symbol, "", "", "", "", "", "", "SecurityHeader");
 
-                    var symbolRows = securityTable.AsEnumerable()
-                        .Where(r => r.Field<string>("symbolName") == symbol &&
-                                     r.Field<string>("securityName") == security)
-                        .OrderBy(r => r.Field<string>("symbolName"))
-                        .ThenBy(r => r.Field<DateTime>("dealCreatedOn"))
-                        .ToList();
-
-                    foreach (var row in symbolRows)
+                    foreach (var inv in rows)
                     {
-                        string side = row["Side"]?.ToString();
-                        invoice.Volume = Convert.ToDouble(row["Volume"]);
-                        string bVol = side == "Buy" ? invoice.Volume.ToString() : "-";
-                        string sVol = side == "Sell" ? invoice.Volume.ToString() : "-";
-                        invoice.Price = double.TryParse(row["price"]?.ToString(), out var dRate) ? dRate : 0.00;
-                        invoice.UplineCommission = double.TryParse(row["uplineCommission"]?.ToString(), out var dComm) ? dComm : 0.00;
-                        invoice.Pnl = double.TryParse(row["pnl"]?.ToString(), out var dNet) ? dNet : 0.00;
+                        string bVol = inv.Side == "Buy" ? inv.Volume.ToString() : "-";
+                        string sVol = inv.Side == "Sell" ? inv.Volume.ToString() : "-";
 
-                        DateTime utcTime = DateTime.Parse(row["dealCreatedOn"]?.ToString());
-                        DateTime istTime = CommonHelper.ConvertUtcToIst(utcTime);
-                        invoice.DealCreatedOn = Convert.ToDateTime(
-                            istTime.ToString("dd/MM/yyyy HH:mm:ss", CultureInfo.InvariantCulture));
+                        DateTime istTime = CommonHelper.ConvertUtcToIst(inv.DealCreatedOn);
+                        string fDate = istTime.ToString("dd/MM/yyyy HH:mm:ss",
+                                               CultureInfo.InvariantCulture);
 
-                        invoice.Side = (row["OrderType"]?.ToString() == "Market" &&
-                                        row["Reason"]?.ToString() == "RollOver" &&
-                                        row["DealType"]?.ToString() == "IN") ? "CF" : side;
+                        bool isCF = inv.OrderType == "Market"
+                                          && inv.Reason == "RollOver"
+                                          && inv.DealType == "IN";
+                        string displaySide = isCF ? "CF" : inv.Side;
 
-                        string fRate = CommonHelper.FormatAmount(invoice.Price);
-                        string fComm = CommonHelper.FormatAmount(invoice.UplineCommission);
-                        string fNet = CommonHelper.FormatAmount(invoice.Pnl);
-                      
-                        dtSecurity.Rows.Add(invoice.DealCreatedOn, invoice.Side,
-                                            bVol, sVol, fRate, fComm, fNet,
-                                            false, false);
-                        
-                        pdfSecurity.Rows.Add(invoice.DealCreatedOn, invoice.Side,
-                                             bVol, sVol, fRate, fComm, fNet,
-                                             "Data");
+                        string fRate = CommonHelper.FormatAmount(inv.Price);
+                        string fComm = CommonHelper.FormatAmount(inv.UplineCommission);
+                        string fNet = CommonHelper.FormatAmount(inv.Pnl);
+
+                        gridData.Add(new SecurityRow
+                        {
+                            Date = fDate,
+                            Type = displaySide,
+                            BVol = bVol,
+                            SVol = sVol,
+                            Rate = fRate,
+                            Comm = fComm,
+                            Net = fNet,
+                            IsHeader = false,
+                            IsTotal = false
+                        });
+                        pdfSecurity.Rows.Add(fDate, displaySide, bVol, sVol,
+                                             fRate, fComm, fNet, "Data");
                     }
-
-                    double totalPnl = symbolRows.Sum(r => Convert.ToDouble(r["pnl"]));
-                    double totalComm = symbolRows.Sum(r => Convert.ToDouble(r["uplineCommission"]));
+                   
+                    double totalPnl = rows.Sum(r => r.Pnl);
+                    double totalComm = rows.Sum(r => r.UplineCommission);
 
                     string fTotalComm = CommonHelper.FormatAmount(totalComm);
                     string fTotalPnl = CommonHelper.FormatAmount(totalPnl);
                     string fGrandNet = CommonHelper.FormatAmount(totalPnl + totalComm);
-                  
-                    dtSecurity.Rows.Add("", "", "", "", "", fTotalComm, fTotalPnl, false, false);
-                    pdfSecurity.Rows.Add("", "", "", "", "", fTotalComm, fTotalPnl, "SubTotal");
 
-                    
-                    dtSecurity.Rows.Add("", "", "", "", "", "Total", fGrandNet, false, true);
-                    pdfSecurity.Rows.Add("", "", "", "", "", "Total", fGrandNet, "Total");
-                }
-               
-                var gridData = new List<SecurityRow>();
-                foreach (DataRow dr in dtSecurity.Rows)
-                {
                     gridData.Add(new SecurityRow
                     {
-                        Date = dr["Date"]?.ToString(),
-                        Type = dr["Type"]?.ToString(),
-                        BVol = dr["BVol"]?.ToString(),
-                        SVol = dr["SVol"]?.ToString(),
-                        Rate = dr["Rate"]?.ToString(),
-                        Comm = dr["Comm"]?.ToString(),
-                        Net = dr["Net"]?.ToString(),
-                        IsHeader = Convert.ToBoolean(dr["IsHeader"]),
-                        IsTotal = Convert.ToBoolean(dr["IsTotal"])
+                        Date = "",
+                        Type = "",
+                        BVol = "",
+                        SVol = "",
+                        Rate = "",
+                        Comm = fTotalComm,
+                        Net = fTotalPnl,
+                        IsHeader = false,
+                        IsTotal = false
                     });
+                    pdfSecurity.Rows.Add("", "", "", "", "", fTotalComm, fTotalPnl, "SubTotal");
+
+                    gridData.Add(new SecurityRow
+                    {
+                        Date = "",
+                        Type = "",
+                        BVol = "",
+                        SVol = "",
+                        Rate = "",
+                        Comm = "Total",
+                        Net = fGrandNet,
+                        IsHeader = false,
+                        IsTotal = true
+                    });
+                    pdfSecurity.Rows.Add("", "", "", "", "", "Total", fGrandNet, "Total");
                 }
 
                 securityGridItemsList.Add(new SecurityGridItem
@@ -484,36 +505,25 @@ namespace ClientDesktop.View.Navigation
                     SecurityName = security,
                     SecurityData = gridData
                 });
-                
                 securityPdfTables.Add((security, pdfSecurity));
             }
 
             SecurityGridsList.ItemsSource = securityGridItemsList;
-         
+            
             DataTable summaryPdfTable = null;
 
-            DataTable summaryTable = ToDataTable(_viewModel.InvoiceDetails.ToList());
+            var summaryFiltered = allInvoices
+                .Where(r => r.Pnl != 0
+                         || (r.OrderType == "Market"
+                             && (r.DealType == "IN" || r.DealType == "OUT")
+                             && r.Side == "Sell")
+                         || r.UplineCommission != 0
+                         || r.OrderType == "ClearBalance")
+                .ToList();
 
-            var filteredRows = summaryTable.AsEnumerable()
-                .Where(r =>
-                    (r["pnl"] != DBNull.Value &&
-                     decimal.TryParse(r["pnl"].ToString(), out decimal pnlValue) &&
-                     pnlValue != 0)
-                    ||
-                    (r.Field<string>("orderType") == "Market" &&
-                     (r.Field<string>("dealType") == "IN" || r.Field<string>("dealType") == "OUT") &&
-                     r.Field<string>("side") == "Sell")
-                    ||
-                    (r.Table.Columns.Contains("uplineCommission") &&
-                     r["uplineCommission"] != DBNull.Value &&
-                     Convert.ToDecimal(r["uplineCommission"]) != 0)
-                    ||
-                    r.Field<string>("orderType") == "ClearBalance"
-                ).ToList();
-
-            if (filteredRows.Any())
+            if (summaryFiltered.Any())
             {
-                DataTable dtSummary = new DataTable();
+                var dtSummary = new DataTable();
                 dtSummary.Columns.Add("Symbol", typeof(string));
                 dtSummary.Columns.Add("M2M", typeof(string));
                 dtSummary.Columns.Add("Comm", typeof(string));
@@ -521,83 +531,81 @@ namespace ClientDesktop.View.Navigation
                 dtSummary.Columns.Add("RowType", typeof(string));
                 dtSummary.Columns.Add("SecurityName", typeof(string));
 
-                DataTable Summarydt = filteredRows.CopyToDataTable();
-
-                var securityGroups = Summarydt.AsEnumerable()
-                    .GroupBy(r => r.Field<string>("securityName"))
-                    .OrderBy(g => g.Key);
-
                 decimal grandM2M = 0, grandComm = 0, grandTotal = 0;
 
-                foreach (var secGroup in securityGroups)
+                var secGroups = summaryFiltered
+                    .GroupBy(r => r.SecurityName)
+                    .OrderBy(g => g.Key);
+
+                foreach (var secGroup in secGroups)
                 {
                     string securityName = secGroup.Key;
                     dtSummary.Rows.Add(securityName, "", "", "", "SecurityHeader", securityName);
 
                     decimal secM2M = 0, secComm = 0, secTotal = 0;
 
-                    var symbolGroups = secGroup
-                        .GroupBy(r => r.Field<string>("symbolName"))
+                    var symGroups = secGroup
+                        .GroupBy(r => r.SymbolName)
                         .OrderBy(g => g.Key);
 
-                    foreach (var symGroup in symbolGroups)
+                    foreach (var symGroup in symGroups)
                     {
                         string symbol = symGroup.Key;
-                        decimal sumM2M = symGroup.Where(r => r["pnl"] != DBNull.Value)
-                                                   .Sum(r => Convert.ToDecimal(r["pnl"]));
-                        decimal sumComm = symGroup.Sum(r => Convert.ToDecimal(r["uplineCommission"]));
+                        decimal sumM2M = (decimal)symGroup.Sum(r => r.Pnl);
+                        decimal sumComm = (decimal)symGroup.Sum(r => r.UplineCommission);
                         decimal sumTotal = sumM2M + sumComm;
 
-                        dtSummary.Rows.Add(symbol,
-                                           CommonHelper.FormatAmount(sumM2M),
-                                           CommonHelper.FormatAmount(sumComm),
-                                           CommonHelper.FormatAmount(sumTotal),
-                                           "SymbolData",
-                                           securityName);
+                        dtSummary.Rows.Add(
+                            symbol,
+                            CommonHelper.FormatAmount(sumM2M),
+                            CommonHelper.FormatAmount(sumComm),
+                            CommonHelper.FormatAmount(sumTotal),
+                            "SymbolData",
+                            securityName);
 
                         secM2M += sumM2M;
                         secComm += sumComm;
                         secTotal += sumTotal;
                     }
 
-                    dtSummary.Rows.Add("Total",
-                                       secM2M.ToString("0.00"),
-                                       secComm.ToString("0.00"),
-                                       secTotal.ToString("0.00"),
-                                       "SecurityTotal",
-                                       securityName);
+                    dtSummary.Rows.Add(
+                        "Total",
+                        secM2M.ToString("0.00"),
+                        secComm.ToString("0.00"),
+                        secTotal.ToString("0.00"),
+                        "SecurityTotal",
+                        securityName);
 
                     grandM2M += secM2M;
                     grandComm += secComm;
                     grandTotal += secTotal;
                 }
 
-                dtSummary.Rows.Add("Grand Total",
-                                   CommonHelper.FormatAmount(grandM2M),
-                                   CommonHelper.FormatAmount(grandComm),
-                                   CommonHelper.FormatAmount(grandTotal),
-                                   "GrandTotal",
-                                   "");
+                dtSummary.Rows.Add(
+                    "Grand Total",
+                    CommonHelper.FormatAmount(grandM2M),
+                    CommonHelper.FormatAmount(grandComm),
+                    CommonHelper.FormatAmount(grandTotal),
+                    "GrandTotal", "");
 
-                
                 SummaryDataGrid.ItemsSource = dtSummary.DefaultView;
-                SummaryPanel.Visibility = Visibility.Visible;               
+                SummaryPanel.Visibility = Visibility.Visible;
                 summaryPdfTable = BuildSummaryPdfTable(dtSummary);
-            }          
+            }
+           
             DataTable carryPdfTable = null;
 
-            DataTable carryTable = ToDataTable(_viewModel.InvoiceDetails.ToList());
-
-            var filteredRowsCarry = carryTable.AsEnumerable()
-                .Where(r =>
-                    r.Field<string>("orderType") == "Market" &&
-                    r.Field<string>("reason") == "RollOver" &&
-                    r.Field<string>("dealType") == "IN")
+            var carryFiltered = allInvoices
+                .Where(r => r.OrderType == "Market"
+                         && r.Reason == "RollOver"
+                         && r.DealType == "IN")
+                .GroupBy(r => r.SecurityName)
+                .OrderBy(g => g.Key)
                 .ToList();
 
-            if (filteredRowsCarry.Any())
+            if (carryFiltered.Any())
             {
-                DataTable dtCarry = new DataTable();
+                var dtCarry = new DataTable();
                 dtCarry.Columns.Add("Symbol", typeof(string));
                 dtCarry.Columns.Add("Type", typeof(string));
                 dtCarry.Columns.Add("Quantity", typeof(string));
@@ -606,60 +614,44 @@ namespace ClientDesktop.View.Navigation
                 dtCarry.Columns.Add("Side", typeof(string));
                 dtCarry.Columns.Add("SecurityName", typeof(string));
 
-                DataTable carryforwardTable = filteredRowsCarry.CopyToDataTable();
-
-                var groupedData = carryforwardTable.AsEnumerable()
-                    .Where(r => _viewModel.InvoiceDetails
-                                           .Any(s => s.SecurityName == r.Field<string>("SecurityName")))
-                    .GroupBy(r => r.Field<string>("SecurityName"))
-                    .OrderBy(g => g.Key);
-
-                foreach (var group in groupedData)
+                foreach (var group in carryFiltered)
                 {
                     string securityName = group.Key;
                     dtCarry.Rows.Add(securityName, "", "", "", "SecurityHeader", "", securityName);
 
-                    foreach (var row in group)
+                    foreach (var inv in group)
                     {
-                        invoice.SymbolName = row.Field<string>("symbolName");
-                        invoice.Side = row.Field<string>("side");
-                        invoice.Volume = Convert.ToDouble(row["volume"]);
-                        invoice.Pnl = double.TryParse(row["pnl"]?.ToString(), out var dNet) ? dNet : 0.00;
-
                         dtCarry.Rows.Add(
-                            invoice.SymbolName,
-                            invoice.Side,
-                            invoice.Volume,
-                            CommonHelper.FormatAmount(invoice.Pnl),
+                            inv.SymbolName,
+                            inv.Side,
+                            inv.Volume,
+                            CommonHelper.FormatAmount(inv.Pnl),
                             "SymbolData",
-                            invoice.Side,
-                            securityName
-                        );
+                            inv.Side,
+                            securityName);
                     }
                 }
 
                 CarryForwardDataGrid.ItemsSource = dtCarry.DefaultView;
                 CarryForwardPanel.Visibility = Visibility.Visible;
-              
                 carryPdfTable = BuildCarryPdfTable(dtCarry);
             }
             else
             {
                 CarryForwardPanel.Visibility = Visibility.Visible;
             }
-          
+         
             string pdfTitle = $"{_sessionService.UserId} - {_sessionService.Username}";
             string pdfSubTitle = Lblfrom.Content?.ToString() ?? string.Empty;
 
             _viewModel.PreparePdfData(
-                pdfTitle,
-                pdfSubTitle,
+                pdfTitle, pdfSubTitle,
                 securityPdfTables,
                 summaryPdfTable,
                 carryPdfTable);
 
             Btngetdata.IsEnabled = true;
-        }                
+        }
         private void SecurityDataGrid_LoadingRow(object sender, DataGridRowEventArgs e)
         {
             var row = e.Row;
@@ -705,21 +697,23 @@ namespace ClientDesktop.View.Navigation
                         {
                             case "B Vol":
                                 if (!string.IsNullOrEmpty(cellText) && cellText != "-")
-                                    tb.Foreground = Brushes.Blue;
+                                    tb.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0077fe"));
                                 break;
                             case "S Vol":
                                 if (!string.IsNullOrEmpty(cellText) && cellText != "-")
-                                    tb.Foreground = Brushes.Red;
+                                    tb.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#dc3545"));
                                 break;
                             case "Comm":
                             case "Net":
                                 if (decimal.TryParse(cellText?.Replace(" ", ""), out decimal val))
-                                    tb.Foreground = val < 0 ? Brushes.Red : Brushes.Blue;
+                                    tb.Foreground = val < 0 
+                                    ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#dc3545"))
+                                    : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0077fe"));
                                 break;
                             case "Type":
                                 if (cellText == "Buy") tb.Foreground = Brushes.Blue;
-                                else if (cellText == "Sell") tb.Foreground = Brushes.Red;
-                                else if (cellText == "CF") tb.Foreground = Brushes.Green;
+                                else if (cellText == "Sell") tb.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#dc3545"));
+                                else if (cellText == "CF") tb.Foreground = Brushes.Black;
                                 break;
                         }
                     }
@@ -781,7 +775,9 @@ namespace ClientDesktop.View.Navigation
                             if (decimal.TryParse(cellText?.Replace(" ", ""), out decimal val))
                             {
                                 bool makeRed = val < 0 || (val == 0 && colName == "Comm");
-                                tb.Foreground = makeRed ? Brushes.Red : Brushes.Blue;
+                                tb.Foreground = makeRed
+                                ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#dc3545")) 
+                                : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0077fe"));
                             }
                         }
 
@@ -825,7 +821,8 @@ namespace ClientDesktop.View.Navigation
             dg.Dispatcher.BeginInvoke(new Action(() =>
             {
                 Brush textBrush = (side?.Equals("Sell", StringComparison.OrdinalIgnoreCase) ?? false)
-                    ? Brushes.Red : Brushes.Blue;
+                    ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#dc3545")) 
+                    : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0077fe"));
 
                 for (int i = 0; i < dg.Columns.Count; i++)
                 {
@@ -883,5 +880,352 @@ namespace ClientDesktop.View.Navigation
         }
 
         #endregion Events
+
+        #region Old Btngetdata_Click
+
+        //private async void Btngetdata_Click(object sender, RoutedEventArgs e)
+        //{
+        //    if (Cmbselectweek.SelectedIndex == 0)
+        //    {
+        //        Gridpanel.Visibility = Visibility.Collapsed;
+        //        Btngetdata.IsEnabled = true;
+        //        return;
+        //    }
+
+        //    SecurityGridsList.ItemsSource = null;
+        //    SummaryDataGrid.ItemsSource = null;
+        //    SummaryPanel.Visibility = Visibility.Collapsed;
+        //    CarryForwardDataGrid.ItemsSource = null;
+        //    CarryForwardPanel.Visibility = Visibility.Collapsed;
+
+        //    Gridpanel.Visibility = Visibility.Visible;
+        //    Btngetdata.IsEnabled = false;
+        //    Lblfrom.Content = "";
+        //    Lblfrom.Visibility = Visibility.Visible;
+        //    Lblfromdate.Visibility = Visibility.Collapsed;
+        //    isDataLoaded = true;
+
+        //    if (_viewModel == null) return;
+
+        //    await _viewModel.LoadInvoiceDetailAsync(fromdatefilter, todatefilter);
+
+        //    if (_viewModel.InvoiceDetails == null || _viewModel.InvoiceDetails.Count == 0)
+        //    {
+        //        PdfExportBtn.Visibility = Visibility.Collapsed;
+        //        ShowNoData();
+        //        return;
+        //    }
+
+        //    List<string> Securities = _viewModel.InvoiceDetails
+        //        .Select(s => s.SecurityName)
+        //        .Where(x => !string.IsNullOrEmpty(x))
+        //        .Distinct()
+        //        .OrderBy(x => x)
+        //        .ToList();
+
+        //    if (Securities.Count == 0)
+        //    {
+        //        ShowNoData();
+        //        return;
+        //    }
+        //    PdfExportBtn.Visibility = Visibility.Visible;
+
+        //    UpdateDateLabel();
+
+        //    DataTable securityTable = ToDataTable(_viewModel.InvoiceDetails.ToList());          
+        //    var securityPdfTables = new List<(string SecurityName, DataTable Table)>();
+
+        //    var securityGridItemsList = new List<SecurityGridItem>();
+
+        //    foreach (var security in Securities)
+        //    {
+        //        var symbols = securityTable.AsEnumerable()
+        //            .Where(r => r.Field<string>("securityName") == security)
+        //            .Select(r => r.Field<string>("symbolName"))
+        //            .Where(s => !string.IsNullOrEmpty(s))
+        //            .Distinct()
+        //            .OrderBy(s => s)
+        //            .ToList();
+
+        //        DataTable dtSecurity = new DataTable();
+        //        dtSecurity.Columns.Add("Date", typeof(string));
+        //        dtSecurity.Columns.Add("Type", typeof(string));
+        //        dtSecurity.Columns.Add("BVol", typeof(string));
+        //        dtSecurity.Columns.Add("SVol", typeof(string));
+        //        dtSecurity.Columns.Add("Rate", typeof(string));
+        //        dtSecurity.Columns.Add("Comm", typeof(string));
+        //        dtSecurity.Columns.Add("Net", typeof(string));
+        //        dtSecurity.Columns.Add("IsHeader", typeof(bool));
+        //        dtSecurity.Columns.Add("IsTotal", typeof(bool));
+
+        //        DataTable pdfSecurity = new DataTable();
+        //        pdfSecurity.Columns.Add("Date", typeof(string));
+        //        pdfSecurity.Columns.Add("Type", typeof(string));
+        //        pdfSecurity.Columns.Add("BVol", typeof(string));
+        //        pdfSecurity.Columns.Add("SVol", typeof(string));
+        //        pdfSecurity.Columns.Add("Rate", typeof(string));
+        //        pdfSecurity.Columns.Add("Comm", typeof(string));
+        //        pdfSecurity.Columns.Add("Net", typeof(string));
+        //        pdfSecurity.Columns.Add("RowType", typeof(string)); 
+
+        //        foreach (var symbol in symbols)
+        //        {                   
+        //            dtSecurity.Rows.Add(symbol, "", "", "", "", "", "", true, false);
+        //            pdfSecurity.Rows.Add(symbol, "", "", "", "", "", "", "SecurityHeader");
+
+        //            var symbolRows = securityTable.AsEnumerable()
+        //                .Where(r => r.Field<string>("symbolName") == symbol &&
+        //                             r.Field<string>("securityName") == security)
+        //                .OrderBy(r => r.Field<string>("symbolName"))
+        //                .ThenBy(r => r.Field<DateTime>("dealCreatedOn"))
+        //                .ToList();
+
+        //            foreach (var row in symbolRows)
+        //            {
+        //                string side = row["Side"]?.ToString();
+        //                invoice.Volume = Convert.ToDouble(row["Volume"]);
+        //                string bVol = side == "Buy" ? invoice.Volume.ToString() : "-";
+        //                string sVol = side == "Sell" ? invoice.Volume.ToString() : "-";
+        //                invoice.Price = double.TryParse(row["price"]?.ToString(), out var dRate) ? dRate : 0.00;
+        //                invoice.UplineCommission = double.TryParse(row["uplineCommission"]?.ToString(), out var dComm) ? dComm : 0.00;
+        //                invoice.Pnl = double.TryParse(row["pnl"]?.ToString(), out var dNet) ? dNet : 0.00;
+
+        //                DateTime utcTime = DateTime.Parse(row["dealCreatedOn"]?.ToString());
+        //                DateTime istTime = CommonHelper.ConvertUtcToIst(utcTime);
+        //                invoice.DealCreatedOn = Convert.ToDateTime(
+        //                    istTime.ToString("dd/MM/yyyy HH:mm:ss", CultureInfo.InvariantCulture));
+
+        //                invoice.Side = (row["OrderType"]?.ToString() == "Market" &&
+        //                                row["Reason"]?.ToString() == "RollOver" &&
+        //                                row["DealType"]?.ToString() == "IN") ? "CF" : side;
+
+        //                string fRate = CommonHelper.FormatAmount(invoice.Price);
+        //                string fComm = CommonHelper.FormatAmount(invoice.UplineCommission);
+        //                string fNet = CommonHelper.FormatAmount(invoice.Pnl);
+
+        //                dtSecurity.Rows.Add(invoice.DealCreatedOn, invoice.Side,
+        //                                    bVol, sVol, fRate, fComm, fNet,
+        //                                    false, false);
+
+        //                pdfSecurity.Rows.Add(invoice.DealCreatedOn, invoice.Side,
+        //                                     bVol, sVol, fRate, fComm, fNet,
+        //                                     "Data");
+        //            }
+
+        //            double totalPnl = symbolRows.Sum(r => Convert.ToDouble(r["pnl"]));
+        //            double totalComm = symbolRows.Sum(r => Convert.ToDouble(r["uplineCommission"]));
+
+        //            string fTotalComm = CommonHelper.FormatAmount(totalComm);
+        //            string fTotalPnl = CommonHelper.FormatAmount(totalPnl);
+        //            string fGrandNet = CommonHelper.FormatAmount(totalPnl + totalComm);
+
+        //            dtSecurity.Rows.Add("", "", "", "", "", fTotalComm, fTotalPnl, false, false);
+        //            pdfSecurity.Rows.Add("", "", "", "", "", fTotalComm, fTotalPnl, "SubTotal");
+
+
+        //            dtSecurity.Rows.Add("", "", "", "", "", "Total", fGrandNet, false, true);
+        //            pdfSecurity.Rows.Add("", "", "", "", "", "Total", fGrandNet, "Total");
+        //        }
+
+        //        var gridData = new List<SecurityRow>();
+        //        foreach (DataRow dr in dtSecurity.Rows)
+        //        {
+        //            gridData.Add(new SecurityRow
+        //            {
+        //                Date = dr["Date"]?.ToString(),
+        //                Type = dr["Type"]?.ToString(),
+        //                BVol = dr["BVol"]?.ToString(),
+        //                SVol = dr["SVol"]?.ToString(),
+        //                Rate = dr["Rate"]?.ToString(),
+        //                Comm = dr["Comm"]?.ToString(),
+        //                Net = dr["Net"]?.ToString(),
+        //                IsHeader = Convert.ToBoolean(dr["IsHeader"]),
+        //                IsTotal = Convert.ToBoolean(dr["IsTotal"])
+        //            });
+        //        }
+
+        //        securityGridItemsList.Add(new SecurityGridItem
+        //        {
+        //            SecurityName = security,
+        //            SecurityData = gridData
+        //        });
+
+        //        securityPdfTables.Add((security, pdfSecurity));
+        //    }
+
+        //    SecurityGridsList.ItemsSource = securityGridItemsList;
+
+        //    DataTable summaryPdfTable = null;
+
+        //    DataTable summaryTable = ToDataTable(_viewModel.InvoiceDetails.ToList());
+
+        //    var filteredRows = summaryTable.AsEnumerable()
+        //        .Where(r =>
+        //            (r["pnl"] != DBNull.Value &&
+        //             decimal.TryParse(r["pnl"].ToString(), out decimal pnlValue) &&
+        //             pnlValue != 0)
+        //            ||
+        //            (r.Field<string>("orderType") == "Market" &&
+        //             (r.Field<string>("dealType") == "IN" || r.Field<string>("dealType") == "OUT") &&
+        //             r.Field<string>("side") == "Sell")
+        //            ||
+        //            (r.Table.Columns.Contains("uplineCommission") &&
+        //             r["uplineCommission"] != DBNull.Value &&
+        //             Convert.ToDecimal(r["uplineCommission"]) != 0)
+        //            ||
+        //            r.Field<string>("orderType") == "ClearBalance"
+        //        ).ToList();
+
+        //    if (filteredRows.Any())
+        //    {
+        //        DataTable dtSummary = new DataTable();
+        //        dtSummary.Columns.Add("Symbol", typeof(string));
+        //        dtSummary.Columns.Add("M2M", typeof(string));
+        //        dtSummary.Columns.Add("Comm", typeof(string));
+        //        dtSummary.Columns.Add("Total", typeof(string));
+        //        dtSummary.Columns.Add("RowType", typeof(string));
+        //        dtSummary.Columns.Add("SecurityName", typeof(string));
+
+        //        DataTable Summarydt = filteredRows.CopyToDataTable();
+
+        //        var securityGroups = Summarydt.AsEnumerable()
+        //            .GroupBy(r => r.Field<string>("securityName"))
+        //            .OrderBy(g => g.Key);
+
+        //        decimal grandM2M = 0, grandComm = 0, grandTotal = 0;
+
+        //        foreach (var secGroup in securityGroups)
+        //        {
+        //            string securityName = secGroup.Key;
+        //            dtSummary.Rows.Add(securityName, "", "", "", "SecurityHeader", securityName);
+
+        //            decimal secM2M = 0, secComm = 0, secTotal = 0;
+
+        //            var symbolGroups = secGroup
+        //                .GroupBy(r => r.Field<string>("symbolName"))
+        //                .OrderBy(g => g.Key);
+
+        //            foreach (var symGroup in symbolGroups)
+        //            {
+        //                string symbol = symGroup.Key;
+        //                decimal sumM2M = symGroup.Where(r => r["pnl"] != DBNull.Value)
+        //                                           .Sum(r => Convert.ToDecimal(r["pnl"]));
+        //                decimal sumComm = symGroup.Sum(r => Convert.ToDecimal(r["uplineCommission"]));
+        //                decimal sumTotal = sumM2M + sumComm;
+
+        //                dtSummary.Rows.Add(symbol,
+        //                                   CommonHelper.FormatAmount(sumM2M),
+        //                                   CommonHelper.FormatAmount(sumComm),
+        //                                   CommonHelper.FormatAmount(sumTotal),
+        //                                   "SymbolData",
+        //                                   securityName);
+
+        //                secM2M += sumM2M;
+        //                secComm += sumComm;
+        //                secTotal += sumTotal;
+        //            }
+
+        //            dtSummary.Rows.Add("Total",
+        //                               secM2M.ToString("0.00"),
+        //                               secComm.ToString("0.00"),
+        //                               secTotal.ToString("0.00"),
+        //                               "SecurityTotal",
+        //                               securityName);
+
+        //            grandM2M += secM2M;
+        //            grandComm += secComm;
+        //            grandTotal += secTotal;
+        //        }
+
+        //        dtSummary.Rows.Add("Grand Total",
+        //                           CommonHelper.FormatAmount(grandM2M),
+        //                           CommonHelper.FormatAmount(grandComm),
+        //                           CommonHelper.FormatAmount(grandTotal),
+        //                           "GrandTotal",
+        //                           "");
+
+
+        //        SummaryDataGrid.ItemsSource = dtSummary.DefaultView;
+        //        SummaryPanel.Visibility = Visibility.Visible;               
+        //        summaryPdfTable = BuildSummaryPdfTable(dtSummary);
+        //    }          
+        //    DataTable carryPdfTable = null;
+
+        //    DataTable carryTable = ToDataTable(_viewModel.InvoiceDetails.ToList());
+
+        //    var filteredRowsCarry = carryTable.AsEnumerable()
+        //        .Where(r =>
+        //            r.Field<string>("orderType") == "Market" &&
+        //            r.Field<string>("reason") == "RollOver" &&
+        //            r.Field<string>("dealType") == "IN")
+        //        .ToList();
+
+        //    if (filteredRowsCarry.Any())
+        //    {
+        //        DataTable dtCarry = new DataTable();
+        //        dtCarry.Columns.Add("Symbol", typeof(string));
+        //        dtCarry.Columns.Add("Type", typeof(string));
+        //        dtCarry.Columns.Add("Quantity", typeof(string));
+        //        dtCarry.Columns.Add("Net", typeof(string));
+        //        dtCarry.Columns.Add("RowType", typeof(string));
+        //        dtCarry.Columns.Add("Side", typeof(string));
+        //        dtCarry.Columns.Add("SecurityName", typeof(string));
+
+        //        DataTable carryforwardTable = filteredRowsCarry.CopyToDataTable();
+
+        //        var groupedData = carryforwardTable.AsEnumerable()
+        //            .Where(r => _viewModel.InvoiceDetails
+        //                                   .Any(s => s.SecurityName == r.Field<string>("SecurityName")))
+        //            .GroupBy(r => r.Field<string>("SecurityName"))
+        //            .OrderBy(g => g.Key);
+
+        //        foreach (var group in groupedData)
+        //        {
+        //            string securityName = group.Key;
+        //            dtCarry.Rows.Add(securityName, "", "", "", "SecurityHeader", "", securityName);
+
+        //            foreach (var row in group)
+        //            {
+        //                invoice.SymbolName = row.Field<string>("symbolName");
+        //                invoice.Side = row.Field<string>("side");
+        //                invoice.Volume = Convert.ToDouble(row["volume"]);
+        //                invoice.Pnl = double.TryParse(row["pnl"]?.ToString(), out var dNet) ? dNet : 0.00;
+
+        //                dtCarry.Rows.Add(
+        //                    invoice.SymbolName,
+        //                    invoice.Side,
+        //                    invoice.Volume,
+        //                    CommonHelper.FormatAmount(invoice.Pnl),
+        //                    "SymbolData",
+        //                    invoice.Side,
+        //                    securityName
+        //                );
+        //            }
+        //        }
+
+        //        CarryForwardDataGrid.ItemsSource = dtCarry.DefaultView;
+        //        CarryForwardPanel.Visibility = Visibility.Visible;
+
+        //        carryPdfTable = BuildCarryPdfTable(dtCarry);
+        //    }
+        //    else
+        //    {
+        //        CarryForwardPanel.Visibility = Visibility.Visible;
+        //    }
+
+        //    string pdfTitle = $"{_sessionService.UserId} - {_sessionService.Username}";
+        //    string pdfSubTitle = Lblfrom.Content?.ToString() ?? string.Empty;
+
+        //    _viewModel.PreparePdfData(
+        //        pdfTitle,
+        //        pdfSubTitle,
+        //        securityPdfTables,
+        //        summaryPdfTable,
+        //        carryPdfTable);
+
+        //    Btngetdata.IsEnabled = true;
+        //}
+
+        #endregion Old Btngetdata_Click
     }
 }
