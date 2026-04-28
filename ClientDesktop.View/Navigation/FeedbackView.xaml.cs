@@ -136,10 +136,7 @@ namespace ClientDesktop.View.Navigation
         }
         private void ReplyPanel_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
-            //_isManualScroll = false;
-            //SmoothScrollBy(e.Delta < 0 ? 150 : -150);
-            //e.Handled = true;
-          
+                    
             if (TxtReply != null && TxtReply.IsMouseOver && GroupBoxPanel.Visibility == Visibility.Visible)
             {
                 var rtbScrollViewer = FindVisualChild<ScrollViewer>(TxtReply);
@@ -945,13 +942,11 @@ namespace ClientDesktop.View.Navigation
                
                 if (Regex.IsMatch(style, @"vertical-align\s*:\s*super", RegexOptions.IgnoreCase))
                 {
-                    span.BaselineAlignment = BaselineAlignment.Superscript;
-                    //span.FontSize = 8;
+                    span.BaselineAlignment = BaselineAlignment.Superscript;                   
                 }
                 else if (Regex.IsMatch(style, @"vertical-align\s*:\s*sub", RegexOptions.IgnoreCase))
                 {
-                    span.BaselineAlignment = BaselineAlignment.Subscript;
-                    //span.FontSize = 8;
+                    span.BaselineAlignment = BaselineAlignment.Subscript;                  
                 }
             }
           
@@ -1482,49 +1477,7 @@ namespace ClientDesktop.View.Navigation
             ShowDataGridPanel();
         }
         private async void BtnReplySubmit_Click(object sender, RoutedEventArgs e)
-        {
-            #region
-            //BtnReplySubmit.IsEnabled = false;
-
-            //int feedbackid = Convert.ToInt32(TxtFeedbackId.Text);
-            //string rtfContent = "";
-            //TextRange range = new TextRange(TxtReply.Document.ContentStart, TxtReply.Document.ContentEnd);
-
-            //using (MemoryStream ms = new MemoryStream())
-            //{
-            //    range.Save(ms, DataFormats.Rtf);
-            //    ms.Seek(0, SeekOrigin.Begin);
-            //    using (StreamReader sr = new StreamReader(ms))
-            //    {
-            //        rtfContent = sr.ReadToEnd();
-            //    }
-            //}
-
-            //string html = Rtf.ToHtml(rtfContent);
-            //string file = this.ReplayImagePath;
-            //var result = await _viewModel.SubmitFeedbackReplyAsync(feedbackid, html, file);
-
-            //GroupBoxPanel.Visibility = Visibility.Collapsed;
-            //ChatPanel.Visibility = Visibility.Visible;
-            //TxtReply.Document.Blocks.Clear();
-            //this.ReplayImagePath = string.Empty;
-
-            //if (result != null && result.IsSuccess)
-            //{
-            //    if (!_viewModel.IsSocketConnected)
-            //    {
-            //        await _viewModel.GetFeedbackDetailsAsync(feedbackid);
-            //        if (_viewModel.SelectedFeedbackDetails != null)
-            //            await LoadChatPanel(_viewModel.SelectedFeedbackDetails);
-            //    }
-            //}
-            //else if (!string.IsNullOrEmpty(_viewModel.ErrorMessage))
-            //{              
-            //    FileLogger.ApplicationLog(nameof(BtnReplySubmit_Click), _viewModel.ErrorMessage);
-            //    BtnReplySubmit.IsEnabled = true;
-            //}
-            #endregion
-
+        {          
             BtnReplySubmit.IsEnabled = false;
 
             int feedbackid = Convert.ToInt32(TxtFeedbackId.Text);
@@ -1790,13 +1743,11 @@ namespace ClientDesktop.View.Navigation
             if (currentAlignment == DependencyProperty.UnsetValue ||
                 (BaselineAlignment)currentAlignment != BaselineAlignment.Superscript)
             {
-                selection.ApplyPropertyValue(Inline.BaselineAlignmentProperty, BaselineAlignment.Superscript);
-                //selection.ApplyPropertyValue(TextElement.FontSizeProperty, 10.0);
+                selection.ApplyPropertyValue(Inline.BaselineAlignmentProperty, BaselineAlignment.Superscript);                
             }
             else
             {
-                selection.ApplyPropertyValue(Inline.BaselineAlignmentProperty, BaselineAlignment.Baseline);
-                //selection.ApplyPropertyValue(TextElement.FontSizeProperty, 12.0);
+                selection.ApplyPropertyValue(Inline.BaselineAlignmentProperty, BaselineAlignment.Baseline);               
             }
         }
         private void ButtonReplaysubscript_Click(object sender, RoutedEventArgs e)
@@ -1809,13 +1760,11 @@ namespace ClientDesktop.View.Navigation
             if (currentAlignment == DependencyProperty.UnsetValue ||
                 (BaselineAlignment)currentAlignment != BaselineAlignment.Subscript)
             {
-                selection.ApplyPropertyValue(Inline.BaselineAlignmentProperty, BaselineAlignment.Subscript);
-                //selection.ApplyPropertyValue(TextElement.FontSizeProperty, 10.0);
+                selection.ApplyPropertyValue(Inline.BaselineAlignmentProperty, BaselineAlignment.Subscript);                
             }
             else
             {
-                selection.ApplyPropertyValue(Inline.BaselineAlignmentProperty, BaselineAlignment.Baseline);
-                //selection.ApplyPropertyValue(TextElement.FontSizeProperty, 12.0);
+                selection.ApplyPropertyValue(Inline.BaselineAlignmentProperty, BaselineAlignment.Baseline);               
             }
         }
         private void CmbReplyFontSize_SelectionChanged(object sender, SelectionChangedEventArgs e)

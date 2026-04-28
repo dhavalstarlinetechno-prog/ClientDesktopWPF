@@ -22,10 +22,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 
 namespace ClientDesktop.View.Symbol
-{
-    /// <summary>
-    /// Interaction logic for SymbolView.xaml
-    /// </summary>
+{   
     public partial class SymbolView : UserControl
     {
         #region Variables
