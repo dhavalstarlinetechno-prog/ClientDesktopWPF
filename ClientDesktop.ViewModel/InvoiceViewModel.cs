@@ -23,9 +23,9 @@ namespace ClientDesktop.ViewModel
         private readonly InvoiceService _invoiceService;
         private readonly IPdfService _pdfService;
         private readonly ISocketService _socketService;        
-        private ObservableCollection<Invoicemodel> _invoiceData;
+        private ObservableCollection<Invoicemodel>? _invoiceData;
 
-        public ObservableCollection<Invoicemodel> InvoiceDetails
+        public ObservableCollection<Invoicemodel>? InvoiceDetails
         {
             get => _invoiceData;
             set { _invoiceData = value; OnPropertyChanged(); }
@@ -48,15 +48,16 @@ namespace ClientDesktop.ViewModel
         private List<(string SecurityName, DataTable Table)> _securityPdfTables
             = new List<(string, DataTable)>();
 
-        private DataTable _summaryPdfTable;
-        private DataTable _carryPdfTable;
-        private string _pdfTitle;
-        private string _pdfSubTitle;
+        private DataTable? _summaryPdfTable;
+        private DataTable? _carryPdfTable;
+        private string? _pdfTitle;
+        private string? _pdfSubTitle;
 
         #endregion Variables/Properties
 
         #region Constructor
-        public InvoiceViewModel(SessionService sessionService,InvoiceService invoiceService,IPdfService pdfService,ISocketService socketService)          
+        public InvoiceViewModel(SessionService sessionService,InvoiceService invoiceService,
+                IPdfService pdfService,ISocketService socketService)          
         {
             _sessionService = sessionService;
             _invoiceService = invoiceService;
@@ -138,7 +139,8 @@ namespace ClientDesktop.ViewModel
             }
             
         }     
-        public void PreparePdfData(string title,string subTitle,List<(string SecurityName, DataTable Table)> securityTables, DataTable summaryTable,DataTable carryTable)
+        public void PreparePdfData(string? title,string? subTitle,List<(string SecurityName, 
+            DataTable Table)> securityTables, DataTable? summaryTable,DataTable? carryTable)
         {
             _pdfTitle = title;
             _pdfSubTitle = subTitle;
@@ -168,8 +170,8 @@ namespace ClientDesktop.ViewModel
                 _pdfService.Clear();
 
                 _pdfService
-                    .AddTitle(_pdfTitle, fontSize: 18, centerAlign: true)
-                    .AddSubTitle(_pdfSubTitle, fontSize: 13, centerAlign: true);
+                    .AddTitle(_pdfTitle ?? string.Empty, fontSize: 18, centerAlign: true)
+                    .AddSubTitle(_pdfSubTitle ?? string.Empty, fontSize: 13, centerAlign: true);
 
                 foreach (var (securityName, table) in _securityPdfTables)
                 {
@@ -232,8 +234,8 @@ namespace ClientDesktop.ViewModel
 
         #region INotifyPropertyChanged
 
-        public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged([CallerMemberName] string name = null)
+        public new event PropertyChangedEventHandler? PropertyChanged;
+        protected new void OnPropertyChanged([CallerMemberName] string? name = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
         #endregion INotifyPropertyChanged

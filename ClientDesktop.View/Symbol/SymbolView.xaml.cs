@@ -27,17 +27,17 @@ namespace ClientDesktop.View.Symbol
     {
         #region Variables
 
-        private readonly SymbolViewModel _viewModel;
-        private readonly SessionService _sessionService;
+        private readonly SymbolViewModel? _viewModel;
+        private readonly SessionService? _sessionService;
         public static string Mainresponse = string.Empty;
         public static string subJson = string.Empty;
         public static int routeId = 0;
         public static string symbolId = string.Empty;
         private string symbolExpiryclose = string.Empty;
         private string symbolExpiry = string.Empty;
-        private TreeViewItem _lastSelectedTreeViewItem;
+        private TreeViewItem? _lastSelectedTreeViewItem;
         private bool _isUpdatingTreeProgrammatically = false;
-        private CancellationTokenSource _loadCts;
+        private CancellationTokenSource? _loadCts;
         private int _lastLoadedRouteId = -1;
 
         #endregion Variables
@@ -99,11 +99,15 @@ namespace ClientDesktop.View.Symbol
                 }
             }
         }
-        private void PopulateFolderTree(List<Folder> folders, TreeViewItem parentNode)
+        private void PopulateFolderTree(List<Folder>? folders, TreeViewItem? parentNode)
         {
             if (folders == null || folders.Count == 0) return;
 
-            var uniqueFolders = folders.GroupBy(f => f.FolderName.Trim(), StringComparer.OrdinalIgnoreCase).Select(g => g.First()).OrderBy(f => f.FolderName, StringComparer.OrdinalIgnoreCase).ToList();
+            var uniqueFolders = folders.
+                GroupBy(f => f.FolderName?.Trim(), StringComparer.OrdinalIgnoreCase)
+                .Select(g => g.First())
+                .OrderBy(f => f.FolderName, StringComparer.OrdinalIgnoreCase)
+                .ToList();
 
             foreach (var folder in uniqueFolders)
             {
@@ -119,7 +123,7 @@ namespace ClientDesktop.View.Symbol
                 if (childFolders != null && childFolders.Count > 0) PopulateFolderTree(childFolders, folderNode);
             }
         }
-        private void PopulateSymbolTree(List<SubSymbolModel> symbols, List<Folder> folders)
+        private void PopulateSymbolTree(List<SubSymbolModel>? symbols, List<Folder>? folders)
         {
             if (symbols == null || symbols.Count == 0 || folders == null || folders.Count == 0) return;
             SymbolTreeview.Items.Clear();
@@ -145,7 +149,7 @@ namespace ClientDesktop.View.Symbol
             {
                 if (string.IsNullOrWhiteSpace(symbol.SymbolRoutePath)) continue;
                 string[] parts = symbol.SymbolRoutePath.Split('/');
-                TreeViewItem targetFolderItem = null;
+                TreeViewItem? targetFolderItem = null;
                 ItemCollection currentCollection = SymbolTreeview.Items;
                 for (int i = 0; i < parts.Length; i++)
                 {
@@ -153,7 +157,7 @@ namespace ClientDesktop.View.Symbol
                     bool found = false;
                     foreach (TreeViewItem item in currentCollection)
                     {
-                        if (item.Tag is Folder folder && item.Header.ToString().StartsWith(parts[i]))
+                        if (item.Tag is Folder folder && item.Header?.ToString()?.StartsWith(parts[i]) == true)
                         {
                             targetFolderItem = item;
                             currentCollection = item.Items;
@@ -185,7 +189,7 @@ namespace ClientDesktop.View.Symbol
         {
             var sorted = items.Cast<TreeViewItem>().OrderBy(i =>
             {
-                string header = i.Header.ToString();
+                string header = i.Header?.ToString()?? string.Empty;
                 int idx = header.IndexOf('(');
                 if (idx > 0) header = header.Substring(0, idx).Trim();
                 return header;
@@ -246,12 +250,18 @@ namespace ClientDesktop.View.Symbol
         }
         private void GetSymbolsDetails(string selectedSymbolName, string symbolId)
         {
-            if (_viewModel.Loaddolorsymbols == null || _viewModel.Loaddolorsymbols.Count == 0)
+            if (_viewModel?.Loaddolorsymbols == null || _viewModel.Loaddolorsymbols.Count == 0)
                 return;
 
-            var selectedRoutes = selectedSymbolName.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).ToList();
+            var selectedRoutes = selectedSymbolName
+                .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => x.Trim())
+                .ToList();
 
-            var filteredSymbols = _viewModel.Loaddolorsymbols.Where(s => !string.IsNullOrEmpty(s.SymbolRoutePath) && selectedRoutes.Any(route => s.SymbolRoutePath.Equals(route, StringComparison.OrdinalIgnoreCase))).Select(s => new SymbolDisplayModel
+            var filteredSymbols = _viewModel.Loaddolorsymbols
+                .Where(s => !string.IsNullOrEmpty(s.SymbolRoutePath) && 
+                selectedRoutes.Any(route => s.SymbolRoutePath.Equals(route, StringComparison.OrdinalIgnoreCase)))
+                .Select(s => new SymbolDisplayModel
             {
                 Symbol = s.SymbolName,
                 Expiry = s.SymbolExpiry.HasValue ? CommonHelper.ConvertUtcToIst(s.SymbolExpiry.Value).ToString("dd/MM/yy HH:mm:ss", CultureInfo.InvariantCulture) : null,
@@ -265,14 +275,14 @@ namespace ClientDesktop.View.Symbol
             DgvSymbols.AutoGenerateColumns = false;
             DgvSymbols.ItemsSource = filteredSymbols;
         }
-        private TreeViewItem FindTreeViewItemByRouteId(ItemCollection items, string symbolId)
+        private TreeViewItem? FindTreeViewItemByRouteId(ItemCollection items, string symbolId)
         {
             foreach (TreeViewItem item in items)
             {
                 if (item.Tag is Folder folder && folder.RouteId.ToString() == symbolId) return item;
                 if (item.Items.Count > 0)
                 {
-                    TreeViewItem child = FindTreeViewItemByRouteId(item.Items, symbolId);
+                    TreeViewItem? child = FindTreeViewItemByRouteId(item.Items, symbolId);
                     if (child != null) return child;
                 }
             }
@@ -280,7 +290,7 @@ namespace ClientDesktop.View.Symbol
         }
         private void ExpandParentNodes(TreeViewItem item)
         {
-            DependencyObject parent = VisualTreeHelper.GetParent(item);
+            DependencyObject? parent = VisualTreeHelper.GetParent(item);
             while (parent != null)
             {
                 if (parent is TreeViewItem parentItem) parentItem.IsExpanded = true;
@@ -329,7 +339,7 @@ namespace ClientDesktop.View.Symbol
                 }
             }
         }
-        private string SafeToString(object o)
+        private string SafeToString(object? o)
         {
             return o?.ToString() ?? "";
         }
@@ -339,7 +349,8 @@ namespace ClientDesktop.View.Symbol
             return Regex.Replace(input, "([a-z])([A-Z])", "$1 $2");
         }
         private async Task LoadSymbolsForRouteAsync(int routeId)
-        {           
+        {
+            if (_viewModel == null) return;
             if (routeId == _lastLoadedRouteId) return;
           
             _loadCts?.Cancel();
@@ -362,6 +373,8 @@ namespace ClientDesktop.View.Symbol
         #region Events
         private async void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
+            if (_sessionService == null || _viewModel == null) return;
+
             if (!_sessionService.IsLoggedIn || !_sessionService.IsInternetAvailable)
             {
                 Window.GetWindow(this)?.Close();
@@ -370,8 +383,8 @@ namespace ClientDesktop.View.Symbol
             _viewModel.IsBusy = true;
             var getTask = _viewModel.LoadSymbolsAsync();
             var getSubTreeTask = _viewModel.LoadSubSymbolsAsync();
-            Mainresponse = await getTask;
-            subJson = await getSubTreeTask;
+            Mainresponse = await getTask ?? string.Empty;
+            subJson = await getSubTreeTask ?? string.Empty;
             var root = Newtonsoft.Json.JsonConvert.DeserializeObject<Symbolmodel>(Mainresponse);
             var subRoot = Newtonsoft.Json.JsonConvert.DeserializeObject<SubSymbolRoot>(subJson);
             PopulateFolderTree(root?.Data?.Where(f => f.ParentId == 1).ToList(), null);
@@ -408,6 +421,7 @@ namespace ClientDesktop.View.Symbol
         }
         private async void DgvSymbols_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
+            if (_viewModel == null) return;
             var grid = sender as DataGrid;
             if (grid == null || grid.SelectedItem == null) return;
             var selectedRow = grid.SelectedItem as SymbolDisplayModel;
@@ -417,18 +431,23 @@ namespace ClientDesktop.View.Symbol
             {               
                 _isUpdatingTreeProgrammatically = true;
 
-                string selectedSymbolName = selectedRow.Symbol.Trim();
-                string symbolIdStr = selectedRow.ParentId.Trim();
+                string selectedSymbolName = selectedRow.Symbol?.Trim() ?? string.Empty;
+                string symbolIdStr = selectedRow.ParentId?.Trim() ?? string.Empty;
                 if (string.IsNullOrEmpty(selectedSymbolName) || string.IsNullOrEmpty(symbolIdStr)) return;
                 await _viewModel.LoadDolorSignTree(symbolIdStr);
                 if (_viewModel.Loaddolorsymbols != null)
                 {
-                    var symbolDataList = _viewModel.Loaddolorsymbols.Where(x => !string.IsNullOrEmpty(x.SymbolRoutePath) && x.SymbolRoutePath.Contains(selectedSymbolName) && x.SymbolRoutePath.Contains("*")).ToList();
+                    var symbolDataList = _viewModel.Loaddolorsymbols
+                        .Where(x => !string.IsNullOrEmpty(x.SymbolRoutePath) && 
+                        x.SymbolRoutePath.Contains(selectedSymbolName) && 
+                        x.SymbolRoutePath.Contains("*"))
+                        .ToList();
+
                     if (symbolDataList.Any())
                     {
                         var validPaths = symbolDataList.Select(x => x.SymbolRoutePath).Distinct().ToList();
                         if (validPaths.Any()) GetSymbolsDetails(string.Join(",", validPaths), symbolIdStr);
-                        TreeViewItem foundNode = FindTreeViewItemByRouteId(SymbolTreeview.Items, symbolIdStr);
+                        TreeViewItem? foundNode = FindTreeViewItemByRouteId(SymbolTreeview.Items, symbolIdStr);
                         if (foundNode != null)
                         {
                             ExpandParentNodes(foundNode);
@@ -450,6 +469,8 @@ namespace ClientDesktop.View.Symbol
         }
         private void Txtsearch_TextChanged(object sender, TextChangedEventArgs e)
         {
+            if (_viewModel == null) return;
+
             if (string.IsNullOrWhiteSpace(Txtsearch.Text) || Txtsearch.Text == "Search Symbol")
             {
                 if (_lastSelectedTreeViewItem != null)
@@ -465,20 +486,25 @@ namespace ClientDesktop.View.Symbol
             var subRoot = Newtonsoft.Json.JsonConvert.DeserializeObject<SubSymbolRoot>(subJson);
             if (subRoot?.Data == null) return;
 
-            var filteredList = subRoot.Data.Where(x => !string.IsNullOrEmpty(x.SymbolName) && x.SymbolName.ToLowerInvariant().Contains(searchText)).Select(x => new SymbolDisplayModel
+            var filteredList = subRoot.Data.
+                Where(x => !string.IsNullOrEmpty(x.SymbolName) &&
+                x.SymbolName!.ToLowerInvariant().Contains(searchText))
+                .Select(x => new SymbolDisplayModel
             {
                 Symbol = x.SymbolName,
                 Expiry = x.SymbolExpiry.HasValue ? CommonHelper.ConvertUtcToIst(x.SymbolExpiry.Value).ToString("dd/MM/yy HH:mm:ss", CultureInfo.InvariantCulture) : null,
                 ExpiryClose = x.SymbolExpiryClose.HasValue ? CommonHelper.ConvertUtcToIst(x.SymbolExpiryClose.Value).ToString("dd/MM/yy HH:mm:ss", CultureInfo.InvariantCulture) : null,
                 ParentId = x.SymbolId.ToString(),
                 SymbolStatus = x.SymbolStatus.ToString(),
-                RouteType = x.RouteType.ToString()
+                RouteType = x.RouteType
             }).ToList();
 
             DgvSymbols.ItemsSource = filteredList;
         }
         private async void DgvSymbols_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
+            if (_viewModel == null) return;
+
             var dep = (DependencyObject)e.OriginalSource;
             while ((dep != null) && !(dep is DataGridRow))
             {
@@ -487,11 +513,12 @@ namespace ClientDesktop.View.Symbol
             if (dep == null) return;
 
             var row = dep as DataGridRow;
+            if (row == null) return;
 
             var dataItem = row.DataContext as SymbolDisplayModel;
             if (dataItem == null) return;
 
-            string selectedSymbolName = dataItem.Symbol;
+            string? selectedSymbolName = dataItem.Symbol;
             if (string.IsNullOrWhiteSpace(selectedSymbolName)) return;
 
             int parentId = 0;
@@ -532,7 +559,7 @@ namespace ClientDesktop.View.Symbol
 
                             Lbladvancevalue.Content = (latestData.SymbolAdvancelimit ? "Yes" : "No");
                             Lblgtcvalue.Content = FormatValue(SafeToString(latestData.SecurityGtc));
-                            Lblordervalue.Content = SafeToString(latestData.SymbolOrder.ToString().Replace(",", ", "));
+                            Lblordervalue.Content = SafeToString(latestData.SymbolOrder?.Replace(",", ", "));
 
                             var expiryCloseToken = latestData.SymbolExpiryclose?.ToString();
                             if (!string.IsNullOrEmpty(expiryCloseToken) && DateTime.TryParse(expiryCloseToken, out DateTime utcTimeClose))
@@ -561,15 +588,15 @@ namespace ClientDesktop.View.Symbol
                                 ShowDayRows();
                                 foreach (var session in sessions)
                                 {
-                                    string day = session.SessionDay;
-                                    string quoteTimeStr = session.Quotetime;
+                                    string day = session.SessionDay ?? string.Empty;
+                                    string quoteTimeStr = session.Quotetime ?? string.Empty;
                                     if (!string.IsNullOrWhiteSpace(quoteTimeStr))
                                     {
                                         var formatted = SetDateAndTime(quoteTimeStr);
                                         symbolExpiryclose = string.Join(", ", formatted);
                                     }
 
-                                    string tradeTimeStr = session.Tradetime;
+                                    string tradeTimeStr = session.Tradetime ?? string.Empty;
                                     if (!string.IsNullOrWhiteSpace(tradeTimeStr))
                                     {
                                         var formattedRanges = SetDateAndTime(tradeTimeStr);

@@ -19,7 +19,7 @@ namespace ClientDesktop.Infrastructure.Services
 
         private readonly IApiService _apiService;
         private readonly SessionService _sessionService;
-        private readonly IRepository<List<FeedbackModel>> _symbolModel;
+        //private readonly IRepository<List<FeedbackModel>> _symbolModel;
 
         #endregion Variables
 
@@ -63,7 +63,8 @@ namespace ClientDesktop.Infrastructure.Services
                 if (response.IsSuccessStatusCode)
                 {
                     string responseContent = await response.Content.ReadAsStringAsync();
-                    return JsonConvert.DeserializeObject<FeedbackResponse>(responseContent);
+                    return JsonConvert.DeserializeObject<FeedbackResponse>(responseContent)
+                        ?? new FeedbackResponse { IsSuccess = false, Exception = "Empty response from server." };
                 }
 
                 return new FeedbackResponse
@@ -101,7 +102,7 @@ namespace ClientDesktop.Infrastructure.Services
                 };
             }
         }
-        public async Task<FeedbackData> GetFeedbackDetailsAsync(int feedbackId)
+        public async Task<FeedbackData?> GetFeedbackDetailsAsync(int feedbackId)
         {
             try
             {                
@@ -152,7 +153,8 @@ namespace ClientDesktop.Infrastructure.Services
                     if (response.IsSuccessStatusCode)
                     {
                         string responseContent = await response.Content.ReadAsStringAsync();
-                        return JsonConvert.DeserializeObject<FeedbackReplyResponse>(responseContent);
+                        return JsonConvert.DeserializeObject<FeedbackReplyResponse>(responseContent)
+                            ?? new FeedbackReplyResponse { IsSuccess = false, SuccessMessage = "Empty response from server." };
                     }
 
                     return new FeedbackReplyResponse

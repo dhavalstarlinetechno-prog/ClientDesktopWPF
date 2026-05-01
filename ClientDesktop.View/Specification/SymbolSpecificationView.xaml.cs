@@ -164,19 +164,19 @@ namespace ClientDesktop.View.Specification
 
                 if (vm.SymbolData != null)
                 {
-                    LableSymbol.Content = vm.SymbolData.SymbolName + " , " + vm.SymbolData.MasterSymbolName.ToString();
+                    LableSymbol.Content = vm.SymbolData.SymbolName + " , " + (vm.SymbolData.MasterSymbolName ?? string.Empty);
                     Lbldigitvalue.Content = vm.SymbolData.SymbolDigits.ToString();
                     Lblcontractsizevalue.Content = vm.SymbolData.SymbolContractsize.ToString();
                     Lblstopsizevalue.Content = vm.SymbolData.SymbolLimitstoplevel.ToString();
                     Lblticksizevalue.Content = vm.SymbolData.SymbolTicksize.ToString();
-                    LblTradeValue.Content = FormatValue(vm.SymbolData.SymbolTrade.ToString());
+                    LblTradeValue.Content = FormatValue(vm.SymbolData.SymbolTrade ?? string.Empty);
                     bool advanceLimit = vm.SymbolData.SymbolAdvancelimit.ToString() != null &&
                                         (bool)vm.SymbolData.SymbolAdvancelimit;
                     Lbladvancevalue.Content = advanceLimit ? "Yes" : "No";
-                    Lblgtcvalue.Content = FormatValue(vm.SymbolData.SecurityGtc.ToString());
-                    Lblordervalue.Content = vm.SymbolData.SymbolOrder.ToString().Replace(",", ", ");
+                    Lblgtcvalue.Content = FormatValue(vm.SymbolData.SecurityGtc ?? string.Empty);
+                    Lblordervalue.Content = vm.SymbolData.SymbolOrder?.Replace(",", ", ");
 
-                    var expiryCloseToken = vm.SymbolData.SymbolExpiryclose.ToString();
+                    var expiryCloseToken = vm.SymbolData.SymbolExpiryclose?.ToString();
                     if (!string.IsNullOrEmpty(expiryCloseToken))
                     {
                         if (DateTime.TryParse(expiryCloseToken, out DateTime utcTime))
@@ -196,8 +196,8 @@ namespace ClientDesktop.View.Specification
                         }
                     }
 
-                    Lblclosevalue.Content = symbolExpiryclose?.ToString();
-                    Lblpositionvalue.Content = symbolExpiry?.ToString();
+                    Lblclosevalue.Content = symbolExpiryclose;
+                    Lblpositionvalue.Content = symbolExpiry;
                     Lblminimumvalue.Content = vm.SymbolData.SymbolMinimumvalue.ToString();
                     Lblstepvalue.Content = vm.SymbolData.SymbolStepvalue.ToString();
                     Lbloneclickvalue.Content = vm.SymbolData.SymbolOneclickvalue.ToString();
@@ -208,15 +208,16 @@ namespace ClientDesktop.View.Specification
                     {
                         foreach (var session in sessions)
                         {
-                            string day = session.SessionDay;
-                            string quoteTimeStr = session.Quotetime;
+                            string day = session.SessionDay ?? string.Empty;
+                            string quoteTimeStr = session.Quotetime ?? string.Empty;
+
                             if (!string.IsNullOrWhiteSpace(quoteTimeStr))
                             {
                                 var formatted = SetDateAndTime(quoteTimeStr);
                                 symbolExpiryclose = string.Join(",", formatted);
                             }
 
-                            string tradeTimeStr = session.Tradetime;
+                            string tradeTimeStr = session.Tradetime ?? string.Empty;
                             if (!string.IsNullOrWhiteSpace(tradeTimeStr))
                             {
                                 var formattedRanges = SetDateAndTime(tradeTimeStr);

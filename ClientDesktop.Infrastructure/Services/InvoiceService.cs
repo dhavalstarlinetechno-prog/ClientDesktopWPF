@@ -20,7 +20,7 @@ namespace ClientDesktop.Infrastructure.Services
 
         private readonly IApiService _apiService;
         private readonly SessionService _sessionService;
-        private readonly IRepository<List<Invoicemodel>> _symbolMode;
+        //private readonly IRepository<List<Invoicemodel>>? _symbolMode;
 
         #endregion Variables
 
@@ -34,7 +34,7 @@ namespace ClientDesktop.Infrastructure.Services
         #endregion Constructor
 
         #region Methods
-        public async Task<(bool Success, string ErrorMessage, LedgerAuthData ResponseData)> VerifyUserPasswordAsync(string clientId, string password, string licenseId)
+        public async Task<(bool Success, string? ErrorMessage, LedgerAuthData? ResponseData)> VerifyUserPasswordAsync(string clientId, string password, string licenseId)
         {
             try
             {                

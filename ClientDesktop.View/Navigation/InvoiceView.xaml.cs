@@ -21,19 +21,19 @@ namespace ClientDesktop.View.Navigation
 {
     public class SecurityGridItem
     {
-        public string SecurityName { get; set; }
-        public List<SecurityRow> SecurityData { get; set; }
+        public string? SecurityName { get; set; }
+        public List<SecurityRow>? SecurityData { get; set; }
     }
 
     public class SecurityRow
     {
-        public string Date { get; set; }
-        public string Type { get; set; }
-        public string BVol { get; set; }
-        public string SVol { get; set; }
-        public string Rate { get; set; }
-        public string Comm { get; set; }
-        public string Net { get; set; }
+        public string? Date { get; set; }
+        public string? Type { get; set; }
+        public string? BVol { get; set; }
+        public string? SVol { get; set; }
+        public string? Rate { get; set; }
+        public string? Comm { get; set; }
+        public string? Net { get; set; }
         public bool IsHeader { get; set; }
         public bool IsTotal { get; set; }
     }
@@ -42,8 +42,8 @@ namespace ClientDesktop.View.Navigation
     {
         #region Variables
 
-        private readonly InvoiceViewModel _viewModel;
-        private readonly SessionService _sessionService;
+        private readonly InvoiceViewModel? _viewModel;
+        private readonly SessionService? _sessionService;
         bool isDataLoaded = false;
         DateTime today = DateTime.Today;
         DateTime thisWeekStart = new DateTime();
@@ -201,18 +201,19 @@ namespace ClientDesktop.View.Navigation
         #endregion Methods
 
         #region Events
-
         private void InvoiceView_Loaded(object sender, RoutedEventArgs e)
         {
+            if (_sessionService == null) return;
+
             if (!_sessionService.IsLoggedIn || !_sessionService.IsInternetAvailable)
             {
                 Window.GetWindow(this)?.Close();
                 return;
             }
         }
-        private void ViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(InvoiceViewModel.IsViewLocked))
+            if (e.PropertyName == nameof(InvoiceViewModel.IsViewLocked) && _viewModel != null)
             {
                 ApplyViewLockUI(_viewModel.IsViewLocked);
             }
@@ -231,7 +232,7 @@ namespace ClientDesktop.View.Navigation
 
             if (Childpanel.Visibility == Visibility.Hidden)
             {
-                bool isValid = await _viewModel.VerifyPasswordAsync(TxtPassword.Password);
+                bool isValid = _viewModel != null && await _viewModel.VerifyPasswordAsync(TxtPassword.Password);
                 if (isValid)
                 {
                     Childpanel.Visibility = Visibility.Visible;
@@ -274,9 +275,9 @@ namespace ClientDesktop.View.Navigation
         {
             if (Btngetdata == null) return;
 
-            ComboBoxItem selectedItem = Cmbselectweek.SelectedItem as ComboBoxItem;
+            ComboBoxItem? selectedItem = Cmbselectweek.SelectedItem as ComboBoxItem;
             if (selectedItem == null) return;
-            string selection = selectedItem.Content.ToString();
+            string selection = selectedItem.Content.ToString() ?? string.Empty;
 
             if (!isDataLoaded)
             {
@@ -356,13 +357,13 @@ namespace ClientDesktop.View.Navigation
             var grouped = await Task.Run(() =>
                 allInvoices
                     .Where(x => !string.IsNullOrEmpty(x.SecurityName))
-                    .GroupBy(x => x.SecurityName)
+                    .GroupBy(x => x.SecurityName!)
                     .OrderBy(g => g.Key)
                     .ToDictionary(
                         g => g.Key,
                         g => g
                             .Where(x => !string.IsNullOrEmpty(x.SymbolName))
-                            .GroupBy(x => x.SymbolName)
+                            .GroupBy(x => x.SymbolName!)
                             .OrderBy(sg => sg.Key)
                             .ToDictionary(
                                 sg => sg.Key,
@@ -385,7 +386,7 @@ namespace ClientDesktop.View.Navigation
 
             foreach (var secKvp in grouped)
             {
-                string security = secKvp.Key;
+                string? security = secKvp.Key;
                 var symbolDict = secKvp.Value;
 
                 var dtSecurity = new DataTable();
@@ -413,7 +414,7 @@ namespace ClientDesktop.View.Navigation
 
                 foreach (var symKvp in symbolDict)
                 {
-                    string symbol = symKvp.Key;
+                    string? symbol = symKvp.Key;
                     var rows = symKvp.Value;
                     
                     gridData.Add(new SecurityRow
@@ -442,7 +443,7 @@ namespace ClientDesktop.View.Navigation
                         bool isCF = inv.OrderType == "Market"
                                           && inv.Reason == "RollOver"
                                           && inv.DealType == "IN";
-                        string displaySide = isCF ? "CF" : inv.Side;
+                        string displaySide = isCF ? "CF" : inv.Side ?? string.Empty;
 
                         string fRate = CommonHelper.FormatAmount(inv.Price);
                         string fComm = CommonHelper.FormatAmount(inv.UplineCommission);
@@ -505,12 +506,12 @@ namespace ClientDesktop.View.Navigation
                     SecurityName = security,
                     SecurityData = gridData
                 });
-                securityPdfTables.Add((security, pdfSecurity));
+                securityPdfTables.Add((security ?? string.Empty, pdfSecurity));
             }
 
             SecurityGridsList.ItemsSource = securityGridItemsList;
             
-            DataTable summaryPdfTable = null;
+            DataTable? summaryPdfTable = null;
 
             var summaryFiltered = allInvoices
                 .Where(r => r.Pnl != 0
@@ -539,7 +540,7 @@ namespace ClientDesktop.View.Navigation
 
                 foreach (var secGroup in secGroups)
                 {
-                    string securityName = secGroup.Key;
+                    string? securityName = secGroup.Key;
                     dtSummary.Rows.Add(securityName, "", "", "", "SecurityHeader", securityName);
 
                     decimal secM2M = 0, secComm = 0, secTotal = 0;
@@ -550,7 +551,7 @@ namespace ClientDesktop.View.Navigation
 
                     foreach (var symGroup in symGroups)
                     {
-                        string symbol = symGroup.Key;
+                        string? symbol = symGroup.Key;
                         decimal sumM2M = (decimal)symGroup.Sum(r => r.Pnl);
                         decimal sumComm = (decimal)symGroup.Sum(r => r.UplineCommission);
                         decimal sumTotal = sumM2M + sumComm;
@@ -593,7 +594,7 @@ namespace ClientDesktop.View.Navigation
                 summaryPdfTable = BuildSummaryPdfTable(dtSummary);
             }
            
-            DataTable carryPdfTable = null;
+            DataTable? carryPdfTable = null;
 
             var carryFiltered = allInvoices
                 .Where(r => r.OrderType == "Market"
@@ -616,7 +617,7 @@ namespace ClientDesktop.View.Navigation
 
                 foreach (var group in carryFiltered)
                 {
-                    string securityName = group.Key;
+                    string? securityName = group.Key;
                     dtCarry.Rows.Add(securityName, "", "", "", "SecurityHeader", "", securityName);
 
                     foreach (var inv in group)
@@ -641,7 +642,7 @@ namespace ClientDesktop.View.Navigation
                 CarryForwardPanel.Visibility = Visibility.Visible;
             }
          
-            string pdfTitle = $"{_sessionService.UserId} - {_sessionService.Username}";
+            string pdfTitle = $"{_sessionService?.UserId} - {_sessionService?.Username}";
             string pdfSubTitle = Lblfrom.Content?.ToString() ?? string.Empty;
 
             _viewModel.PreparePdfData(
@@ -681,7 +682,9 @@ namespace ClientDesktop.View.Navigation
                 row.FontWeight = FontWeights.Normal;
             }
 
-            DataGrid dg = sender as DataGrid;
+            DataGrid? dg = sender as DataGrid;
+            if (dg == null) return;
+
             dg.Dispatcher.BeginInvoke(new Action(() =>
             {
                 for (int i = 0; i < dg.Columns.Count; i++)
@@ -690,7 +693,7 @@ namespace ClientDesktop.View.Navigation
                     var cellContent = column.GetCellContent(row);
                     if (cellContent is System.Windows.Controls.TextBlock tb)
                     {
-                        string colName = column.Header?.ToString();
+                        string? colName = column.Header?.ToString();
                         string cellText = tb.Text;
 
                         switch (colName)
@@ -727,8 +730,8 @@ namespace ClientDesktop.View.Navigation
             if (rowView == null) return;
 
             int rowIndex = row.GetIndex();
-            string rowType = rowView["RowType"]?.ToString();
-            string symbol = rowView["Symbol"]?.ToString()?.Trim().ToLower();
+            string? rowType = rowView["RowType"]?.ToString();
+            string? symbol = rowView["Symbol"]?.ToString()?.Trim().ToLower();
 
             if (rowType == "SecurityHeader")
             {
@@ -758,7 +761,9 @@ namespace ClientDesktop.View.Navigation
                 row.FontWeight = FontWeights.Normal;
             }
 
-            DataGrid dg = sender as DataGrid;
+            DataGrid? dg = sender as DataGrid;
+            if (dg == null) return;
+
             dg.Dispatcher.BeginInvoke(new Action(() =>
             {
                 for (int i = 0; i < dg.Columns.Count; i++)
@@ -767,7 +772,7 @@ namespace ClientDesktop.View.Navigation
                     var cellContent = column.GetCellContent(row);
                     if (cellContent is System.Windows.Controls.TextBlock tb)
                     {
-                        string colName = column.Header?.ToString();
+                        string? colName = column.Header?.ToString();
                         string cellText = tb.Text;
 
                         if (colName == "M2M" || colName == "Comm" || colName == "Total")
@@ -798,8 +803,8 @@ namespace ClientDesktop.View.Navigation
             if (rowView == null) return;
 
             int rowIndex = row.GetIndex();
-            string rowType = rowView["RowType"]?.ToString();
-            string side = rowView["Side"]?.ToString();
+            string? rowType = rowView["RowType"]?.ToString();
+            string? side = rowView["Side"]?.ToString();
 
             if (rowType == "SecurityHeader")
             {
@@ -817,7 +822,9 @@ namespace ClientDesktop.View.Navigation
                 row.FontWeight = FontWeights.Normal;
             }
 
-            DataGrid dg = sender as DataGrid;
+            DataGrid? dg = sender as DataGrid;
+            if (dg == null) return;
+
             dg.Dispatcher.BeginInvoke(new Action(() =>
             {
                 Brush textBrush = (side?.Equals("Sell", StringComparison.OrdinalIgnoreCase) ?? false)
@@ -830,7 +837,7 @@ namespace ClientDesktop.View.Navigation
                     var cellContent = column.GetCellContent(row);
                     if (cellContent is System.Windows.Controls.TextBlock tb)
                     {
-                        string colName = column.Header?.ToString();
+                        string? colName = column.Header?.ToString();
                         if (colName == "Type" || colName == "Quantity" || colName == "Net")
                             tb.Foreground = textBrush;
                     }

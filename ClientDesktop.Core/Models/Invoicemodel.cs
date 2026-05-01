@@ -6,22 +6,22 @@ namespace ClientDesktop.Core.Models
     public class Invoicemodel
     {
         [JsonProperty("symbolName")]
-        public string SymbolName { get; set; }
+        public string? SymbolName { get; set; }
 
         [JsonProperty("securityName")]
-        public string SecurityName { get; set; }
+        public string? SecurityName { get; set; }
 
         [JsonProperty("orderType")]
-        public string OrderType { get; set; }
+        public string? OrderType { get; set; }
 
         [JsonProperty("dealType")]
-        public string DealType { get; set; }
+        public string? DealType { get; set; }
 
         [JsonProperty("side")]
-        public string Side { get; set; }
+        public string? Side { get; set; }
 
         [JsonProperty("reason")]
-        public string Reason { get; set; }
+        public string? Reason { get; set; }
 
         [JsonProperty("volume")]
         public double Volume { get; set; }
@@ -41,13 +41,13 @@ namespace ClientDesktop.Core.Models
 
     public class SecurityRow
     {
-        public string Date { get; set; }
-        public string Type { get; set; }
-        public string BVol { get; set; }
-        public string SVol { get; set; }
-        public string Rate { get; set; }
-        public string Comm { get; set; }
-        public string Net { get; set; }
+        public string? Date { get; set; }
+        public string? Type { get; set; }
+        public string? BVol { get; set; }
+        public string? SVol { get; set; }
+        public string? Rate { get; set; }
+        public string? Comm { get; set; }
+        public string? Net { get; set; }
         public bool IsHeader { get; set; }
         public bool IsTotal { get; set; }
     }

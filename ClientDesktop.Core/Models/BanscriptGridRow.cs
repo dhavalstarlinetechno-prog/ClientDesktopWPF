@@ -9,6 +9,6 @@ namespace ClientDesktop.Core.Models
     public class BanscriptGridRow
     {
         public RowType Type { get; set; }
-        public string Symbol { get; set; }
+        public string? Symbol { get; set; }
     }
 }

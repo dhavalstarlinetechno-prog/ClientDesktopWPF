@@ -20,7 +20,7 @@ namespace ClientDesktop.ViewModel
 
         private readonly SessionService _sessionService;
         private readonly FeedbackService _FeedbackService;
-        private ObservableCollection<FeedbackModel> _feedbackList;
+        private ObservableCollection<FeedbackModel> _feedbackList = new ObservableCollection<FeedbackModel>();
         private readonly ISocketService _socketService;
         public ObservableCollection<FeedbackModel> FeedbackList
         {
@@ -42,7 +42,7 @@ namespace ClientDesktop.ViewModel
             }
         }
 
-        private string _errorMessage;
+        private string _errorMessage = string.Empty;
         public string ErrorMessage
         {
             get => _errorMessage;
@@ -52,13 +52,13 @@ namespace ClientDesktop.ViewModel
                 OnPropertyChanged(nameof(ErrorMessage));
             }
         }       
-        public Action OnFeedbackSubmittedSuccessfully { get; set; }
+        public Action? OnFeedbackSubmittedSuccessfully { get; set; }
 
-        public static Action<int> OnRecordDeletedExternally;
-        public Action OnRequestClose { get; set; }        
+        public static Action<int>? OnRecordDeletedExternally;
+        public Action? OnRequestClose { get; set; }        
 
-        private FeedbackData _selectedFeedbackDetails;
-        public FeedbackData SelectedFeedbackDetails
+        private FeedbackData? _selectedFeedbackDetails;
+        public FeedbackData? SelectedFeedbackDetails
         {
             get => _selectedFeedbackDetails;
             set
@@ -75,7 +75,7 @@ namespace ClientDesktop.ViewModel
             private set { _currentFeedbackId = value; OnPropertyChanged(nameof(CurrentFeedbackId)); }
         }
 
-        public event Action<ChatList> OnNewReplyReceived;
+        public event Action<ChatList>? OnNewReplyReceived;
 
         #endregion Variables/Properties
 
@@ -188,7 +188,7 @@ namespace ClientDesktop.ViewModel
                 IsBusy = false;
             }
         }
-        public async Task<FeedbackResponse> SubmitFeedbackAsync(string feedbackSubject, string htmlMessage, string filePath)
+        public async Task<FeedbackResponse?> SubmitFeedbackAsync(string? feedbackSubject, string htmlMessage, string filePath)
         {
             if (!_sessionService.IsInternetAvailable) return null;
 
@@ -197,7 +197,7 @@ namespace ClientDesktop.ViewModel
 
             try
             {
-                var response = await _FeedbackService.GenerateFeedbackAsync(feedbackSubject, htmlMessage, filePath);
+                var response = await _FeedbackService.GenerateFeedbackAsync(feedbackSubject ?? string.Empty, htmlMessage, filePath);
 
                 if (response != null && response.IsSuccess)
                     OnFeedbackSubmittedSuccessfully?.Invoke();
@@ -216,7 +216,7 @@ namespace ClientDesktop.ViewModel
                 IsBusy = false;
             }
         }
-        public async Task<FeedbackReplyResponse> SubmitFeedbackReplyAsync(int feedbackId, string feedbackMessage, string filePath)
+        public async Task<FeedbackReplyResponse?> SubmitFeedbackReplyAsync(int feedbackId, string feedbackMessage, string filePath)
         {
             if (!_sessionService.IsInternetAvailable) return null;
 

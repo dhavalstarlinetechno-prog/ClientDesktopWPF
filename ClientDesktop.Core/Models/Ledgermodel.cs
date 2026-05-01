@@ -8,28 +8,28 @@ namespace ClientDesktop.Core.Models
         public long LedgerTransactionId { get; set; }
 
         [JsonProperty("operatorId")]
-        public string OperatorId { get; set; }
+        public string? OperatorId { get; set; }
 
         [JsonProperty("userRole")]
-        public string UserRole { get; set; }
+        public string? UserRole { get; set; }
 
         [JsonProperty("userName")]
-        public string UserName { get; set; }
+        public string? UserName { get; set; }
 
         [JsonProperty("parentUserName")]
-        public string ParentUserName { get; set; }
+        public string? ParentUserName { get; set; }
 
         [JsonProperty("name")]
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         [JsonProperty("transactionType")]
-        public string TransactionType { get; set; }
+        public string? TransactionType { get; set; }
 
         [JsonProperty("amount")]
         public decimal Amount { get; set; }
 
         [JsonProperty("remarks")]
-        public string Remarks { get; set; }
+        public string? Remarks { get; set; }
 
         [JsonProperty("ledgerDate")]
         public DateTime LedgerDate { get; set; }
@@ -37,13 +37,13 @@ namespace ClientDesktop.Core.Models
     public class LedgerResponse
     {
         [JsonProperty("data")]
-        public LedgerData data { get; set; }
-        
+        public LedgerData? data { get; set; }
+
         [JsonProperty("exception")]
-        public string exception { get; set; }
+        public string? exception { get; set; }
 
         [JsonProperty("successMessage")]
-        public string successMessage { get; set; }
+        public string? successMessage { get; set; }
 
         [JsonProperty("returnID")]
         public int returnID { get; set; }
@@ -64,18 +64,18 @@ namespace ClientDesktop.Core.Models
         public decimal ClosingAmount { get; set; }
 
         [JsonProperty("transactions")]
-        public List<Ledgermodel> Transactions { get; set; }
+        public List<Ledgermodel>? Transactions { get; set; }
     }
     public class LedgerAuthResponse
     {
         [JsonProperty("data")]
-        public LedgerAuthData data { get; set; }
+        public LedgerAuthData? data { get; set; }
 
         [JsonProperty("exception")]
-        public string exception { get; set; }
+        public string? exception { get; set; }
 
         [JsonProperty("successMessage")]
-        public string successMessage { get; set; }
+        public string? successMessage { get; set; }
 
         [JsonProperty("returnID")]
         public int returnID { get; set; }
@@ -96,19 +96,19 @@ namespace ClientDesktop.Core.Models
         public int isSuccess { get; set; }
 
         [JsonProperty("msg")]
-        public List<string> msg { get; set; }
+        public List<string>? msg { get; set; }
     }
 
     public class LedgerUserResponse
     {
         [JsonProperty("data")]
-        public LedgerUserDetail data { get; set; }
+        public LedgerUserDetail? data { get; set; }
 
         [JsonProperty("exception")]
-        public string exception { get; set; }
+        public string? exception { get; set; }
 
         [JsonProperty("successMessage")]
-        public string successMessage { get; set; }
+        public string? successMessage { get; set; }
 
         [JsonProperty("returnID")]
         public int returnID { get; set; }
@@ -123,19 +123,19 @@ namespace ClientDesktop.Core.Models
     public class LedgerUserDetail
     {
         [JsonProperty("userRole")]
-        public string UserRole { get; set; }
+        public string? UserRole { get; set; }
 
         [JsonProperty("userName")]
-        public string UserName { get; set; }
+        public string? UserName { get; set; }
 
         [JsonProperty("name")]
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         [JsonProperty("amount")]
         public decimal Amount { get; set; }
 
         [JsonProperty("remarks")]
-        public string Remarks { get; set; } // Can be null
+        public string? Remarks { get; set; } // Can be null
 
         [JsonProperty("clientDeleted")]
         public bool ClientDeleted { get; set; }
@@ -149,7 +149,7 @@ namespace ClientDesktop.Core.Models
         public string Date { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
         public string Amount { get; set; } = string.Empty;
-        public string Remarks { get; set; } = string.Empty;  
+        public string Remarks { get; set; } = string.Empty;
         public bool IsSummaryRow { get; set; } = false;
     }
 }

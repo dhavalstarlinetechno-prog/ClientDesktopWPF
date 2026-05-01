@@ -36,16 +36,16 @@ namespace ClientDesktop.View.Navigation
     {
         #region Variable
 
-        private readonly FeedbackViewModel _viewModel;
-        private readonly SessionService _sessionService;        
-        private string lastSavedRtf = "";
+        private readonly FeedbackViewModel _viewModel = null!;
+        private readonly SessionService _sessionService = null!;        
+        //private string lastSavedRtf = "";
         private Stack<string> undoStack = new Stack<string>();
         private Stack<string> redoStack = new Stack<string>();
         private string ImagePath = string.Empty;
         private string ReplayImagePath = string.Empty;
-        private readonly IDialogService _dialogService;
+        private readonly IDialogService _dialogService = null!;
         private int _currentFeedbackId = 0;
-        private DispatcherTimer _scrollTimer;
+        private DispatcherTimer _scrollTimer = null!;
         private double _scrollTarget;
         private bool _isManualScroll = false;
         private const double ScrollEasingFactor = 0.12;
@@ -217,7 +217,7 @@ namespace ClientDesktop.View.Navigation
             if (chatItems == null || chatItems.Count == 0)
                 return;
 
-            var imageMap = new Dictionary<int, BitmapImage>();
+            var imageMap = new Dictionary<int, BitmapImage?>();
 
             var imageTasks = chatItems
                 .Select((c, i) => new { c, i })
@@ -229,8 +229,9 @@ namespace ClientDesktop.View.Navigation
                     try
                     {
                         using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
-                        byte[] bytes = await http.GetByteArrayAsync(x.c.filePath[0]);
-
+                        //byte[] bytes = await http.GetByteArrayAsync(x.c.filePath[0]);
+                        string imageUrl = x.c.filePath![0];
+                        byte[] bytes = await http.GetByteArrayAsync(imageUrl);
                         var bmp = new BitmapImage();
                         using (var ms = new MemoryStream(bytes))
                         {
@@ -240,11 +241,11 @@ namespace ClientDesktop.View.Navigation
                             bmp.EndInit();
                         }
                         bmp.Freeze();
-                        return (x.i, bmp);
+                        return (x.i, (BitmapImage?)bmp);
                     }
                     catch
                     {
-                        return (x.i, (BitmapImage)null);
+                        return (x.i, (BitmapImage?)null);
                     }
                 });
 
@@ -260,7 +261,7 @@ namespace ClientDesktop.View.Navigation
                 bool hasImage = imageMap.ContainsKey(i);
                 if (!hasMessage && !hasImage) continue;
 
-                BitmapImage bitmap = imageMap.TryGetValue(i, out var bm) ? bm : null;
+                BitmapImage? bitmap = imageMap.TryGetValue(i, out var bm) ? bm : null;
                 var listItem = BuildChatListBoxItem(c, bitmap);
                 ChatPanel.Items.Add(listItem);
             }
@@ -307,7 +308,7 @@ namespace ClientDesktop.View.Navigation
         private async Task<ListBoxItem> CreateChatListBoxItemAsync(ChatList chat)
         {
 
-            BitmapImage bitmap = null;
+            BitmapImage? bitmap = null;
             if (chat.filePath != null && chat.filePath.Count > 0
                 && !string.IsNullOrEmpty(chat.filePath[0]))
             {
@@ -331,7 +332,7 @@ namespace ClientDesktop.View.Navigation
 
             return BuildChatListBoxItem(chat, bitmap);
         }
-        private ListBoxItem BuildChatListBoxItem(ChatList chat, BitmapImage bitmap)
+        private ListBoxItem BuildChatListBoxItem(ChatList chat, BitmapImage? bitmap)
         {
             var outerBorder = new Border
             {
@@ -458,7 +459,7 @@ namespace ClientDesktop.View.Navigation
 
             return listItem;
         }
-        private async Task LoadChatPanel(FeedbackData feedback)
+        private async Task LoadChatPanel(FeedbackData? feedback)
         {
             try
             {
@@ -475,7 +476,7 @@ namespace ClientDesktop.View.Navigation
                 FileLogger.ApplicationLog(nameof(LoadChatPanel), $"error: {ex.Message}");
             }
         }
-        private async Task RefreshFeedbackGrid()
+        private Task RefreshFeedbackGrid()
         {
             int sr = 1;
 
@@ -508,6 +509,7 @@ namespace ClientDesktop.View.Navigation
                 LblNoData.Visibility = Visibility.Visible;
                 DgvFeedbackRecord.ItemsSource = null;
             }
+            return Task.CompletedTask;
         }
         private void RefreshGridAfterDelete(int feedbackId)
         {
@@ -537,7 +539,7 @@ namespace ClientDesktop.View.Navigation
                 LblNoData.Visibility = Visibility.Collapsed;
             }
         }
-        private static T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+        private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
         {
             for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
             {
@@ -964,7 +966,7 @@ namespace ClientDesktop.View.Navigation
                 try { span.FontFamily = new FontFamily(faceAttr.Groups[1].Value); } catch { }
             }
         }
-        private static SolidColorBrush ParseColorToBrush(string colorValue)
+        private static SolidColorBrush? ParseColorToBrush(string colorValue)
         {
             if (string.IsNullOrWhiteSpace(colorValue)) return null;
 
@@ -984,7 +986,7 @@ namespace ClientDesktop.View.Navigation
             }            
             try
             {
-                return (SolidColorBrush)new BrushConverter().ConvertFromString(colorValue);
+                return new BrushConverter().ConvertFromString(colorValue) as SolidColorBrush;
             }
             catch { return null; }
         }
@@ -1074,7 +1076,7 @@ namespace ClientDesktop.View.Navigation
                 styles.Add("font-style:italic");
 
             // Font Family
-            string family = inline.FontFamily?.Source;
+            string? family = inline.FontFamily?.Source;
             if (!string.IsNullOrEmpty(family))
                 styles.Add($"font-family:{family}");
 
@@ -1109,7 +1111,7 @@ namespace ClientDesktop.View.Navigation
         #endregion FlowDocumentToHtml
 
         #region FormattingHelpers
-        private void ToggleFormatting(DependencyProperty property, object value, object normalValue)
+        private void ToggleFormatting(DependencyProperty property, object value, object? normalValue)
         {
             if (TxtMessage.Selection.IsEmpty)
                 return;
@@ -1127,7 +1129,7 @@ namespace ClientDesktop.View.Navigation
              
                 TextDecoration target = ((TextDecorationCollection)value)[0];
                 bool exists = false;
-                TextDecoration found = null;
+                TextDecoration? found = null;
 
                 foreach (var d in currentDecorations)
                 {
@@ -1231,7 +1233,7 @@ namespace ClientDesktop.View.Navigation
                 ReplayeEmojiWrapPanel.Children.Add(btn);
             }
         }
-        private void ToggleFormattingForReplay(DependencyProperty property, object value, object normalValue)
+        private void ToggleFormattingForReplay(DependencyProperty property, object value, object? normalValue)
         {
             if (TxtReply.Selection.IsEmpty)
                 return;
@@ -1249,7 +1251,7 @@ namespace ClientDesktop.View.Navigation
 
                 TextDecoration target = ((TextDecorationCollection)value)[0];
                 bool exists = false;
-                TextDecoration found = null;
+                TextDecoration? found = null;
 
                 foreach (var d in currentDecorations)
                 {
@@ -1273,7 +1275,7 @@ namespace ClientDesktop.View.Navigation
         #endregion FormattingHelpers
 
         #region Events — UserControl / Grid
-        private async void UserControl_Loaded(object sender, RoutedEventArgs e)
+        private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
             if (!_sessionService.IsLoggedIn || !_sessionService.IsInternetAvailable)
             {
@@ -1297,7 +1299,7 @@ namespace ClientDesktop.View.Navigation
             var currentColumn = grid.CurrentColumn;
             if (currentColumn == null) return;
 
-            string header = currentColumn.Header?.ToString();
+            string? header = currentColumn.Header?.ToString();
 
             if (header == "Subject")
             {
@@ -1387,7 +1389,7 @@ namespace ClientDesktop.View.Navigation
         }
         private async void BtnSubmit_Click(object sender, RoutedEventArgs e)
         {
-            string subject = TxtSubject.Text?.Trim();
+            string? subject = TxtSubject.Text?.Trim();
             string rtfContent = "";
             TextRange range = new TextRange(TxtMessage.Document.ContentStart, TxtMessage.Document.ContentEnd);
 
@@ -1603,7 +1605,7 @@ namespace ClientDesktop.View.Navigation
 
             if (CmbFontSize.SelectedItem is ComboBoxItem item)
             {
-                string content = item.Content.ToString();
+                string? content = item.Content.ToString();
                 if (double.TryParse(content, out double newSize))
                     TxtMessage.FontSize = newSize;
             }
@@ -1652,7 +1654,8 @@ namespace ClientDesktop.View.Navigation
         {
             if (sender is Button clickedBtn && clickedBtn.Content != null)
             {
-                string selectedEmoji = clickedBtn.Content.ToString();
+                string? selectedEmoji = clickedBtn.Content.ToString();
+                if (string.IsNullOrEmpty(selectedEmoji)) return;
 
                 if (!TxtMessage.Selection.IsEmpty)
                     TxtMessage.Selection.Text = string.Empty;
@@ -1773,7 +1776,7 @@ namespace ClientDesktop.View.Navigation
 
             if (CmbReplyFontSize.SelectedItem is ComboBoxItem item)
             {
-                string content = item.Content.ToString();
+                string? content = item.Content.ToString();
                 if (double.TryParse(content, out double newSize))
                     TxtReply.FontSize = newSize;
             }
@@ -1839,7 +1842,8 @@ namespace ClientDesktop.View.Navigation
         {
             if (sender is Button clickedBtn && clickedBtn.Content != null)
             {
-                string selectedEmoji = clickedBtn.Content.ToString();
+                string? selectedEmoji = clickedBtn.Content.ToString();
+                if (string.IsNullOrEmpty(selectedEmoji)) return;
 
                 if (!TxtReply.Selection.IsEmpty)
                     TxtReply.Selection.Text = string.Empty;

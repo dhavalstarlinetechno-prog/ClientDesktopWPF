@@ -23,7 +23,7 @@ namespace ClientDesktop.Infrastructure.Services
 
         private readonly IApiService _apiService;
         private readonly SessionService _sessionService;
-        private readonly IRepository<List<Symbolmodel>> _symbolModel;
+        //private readonly IRepository<List<Symbolmodel>> _symbolModel;
 
         #endregion Variables
 
@@ -38,7 +38,7 @@ namespace ClientDesktop.Infrastructure.Services
         #endregion Constructor
 
         #region Methods
-        public async Task<Symbolmodel> GetSymbolsAsync()
+        public async Task<Symbolmodel?> GetSymbolsAsync()
         {
             try
             {
@@ -76,7 +76,7 @@ namespace ClientDesktop.Infrastructure.Services
                 return null;
             }
         }
-        public async Task<SubSymbolRoot> GetSubSymbolsAsync()
+        public async Task<SubSymbolRoot?> GetSubSymbolsAsync()
         {
             try
             {
@@ -113,7 +113,7 @@ namespace ClientDesktop.Infrastructure.Services
                 return null;
             }
         }
-        public async Task<SubSymbolRoot> Getsymbolsbyrouteforclient(int routeId)
+        public async Task<SubSymbolRoot?> Getsymbolsbyrouteforclient(int routeId)
         {
             try
             {
@@ -148,7 +148,7 @@ namespace ClientDesktop.Infrastructure.Services
                 return null;
             }
         }
-        public async Task<SubSymbolRoot> GetDolorSignTree(string symbolId)
+        public async Task<SubSymbolRoot?> GetDolorSignTree(string symbolId)
         {
             try
             {

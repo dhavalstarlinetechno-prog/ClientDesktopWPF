@@ -20,17 +20,17 @@ namespace ClientDesktop.ViewModel
 
         private readonly SessionService _sessionService;
         private readonly SymbolService _symbolService;
-        public Action CloseAction { get; set; }
+        public new Action? CloseAction { get; set; }
         public ICommand CloseCommand { get; }
 
-        private string _symbolName;
-        public string SymbolName
+        private string? _symbolName;
+        public string? SymbolName
         {
             get => _symbolName;
             set => SetProperty(ref _symbolName, value);
         }
 
-        private ObservableCollection<Folder> _folders;
+        private ObservableCollection<Folder> _folders = new ObservableCollection<Folder>();
         public ObservableCollection<Folder> Folders
         {
             get { return _folders; }
@@ -41,9 +41,9 @@ namespace ClientDesktop.ViewModel
             }
         }
 
-        private ObservableCollection<SubSymbolModel> _subSymbols;
+        private ObservableCollection<SubSymbolModel> _subSymbols = new ObservableCollection<SubSymbolModel>();
 
-        private ObservableCollection<SymbolModel> _symbolData;
+        private ObservableCollection<SymbolModel> _symbolData = new ObservableCollection<SymbolModel>();
 
         public ObservableCollection<SubSymbolModel> SubSymbols
         {
@@ -94,7 +94,7 @@ namespace ClientDesktop.ViewModel
         #endregion Constructor
 
         #region Methods
-        public async Task<string> LoadSymbolsAsync()
+        public async Task<string?> LoadSymbolsAsync()
         {
             try
             {
@@ -125,7 +125,7 @@ namespace ClientDesktop.ViewModel
             }
         }
 
-        public async Task<string> LoadSubSymbolsAsync()
+        public async Task<string?> LoadSubSymbolsAsync()
         {
             try
             {
@@ -151,7 +151,7 @@ namespace ClientDesktop.ViewModel
             }
         }
 
-        public async Task<string> Loadsymbolsbyrouteforclient(int routeId)
+        public async Task<string?> Loadsymbolsbyrouteforclient(int routeId)
         {
             try
             {
@@ -183,7 +183,7 @@ namespace ClientDesktop.ViewModel
             }
         }
 
-        public async Task<string> LoadDolorSignTree(string symbolId)
+        public async Task<string?> LoadDolorSignTree(string symbolId)
         {
             try
             {
@@ -217,7 +217,7 @@ namespace ClientDesktop.ViewModel
             }
         }
 
-        public async Task<string> LoadSymbolDetailsAsync(int symbolId)
+        public async Task<string?> LoadSymbolDetailsAsync(int symbolId)
         {
             try
             {

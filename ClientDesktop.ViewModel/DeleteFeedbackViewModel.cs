@@ -19,18 +19,18 @@ namespace ClientDesktop.ViewModel
         private readonly SessionService _sessionService;
         private readonly FeedbackService _FeedbackService;
         public int FeedbackId { get; set; }
-        public string deleteMessage { get; private set; }
+        public string? deleteMessage { get; private set; }
         public bool? isDeleted { get; private set; } = null;
 
-        private string _randomString;
-        public string RandomString
+        private string? _randomString;
+        public string? RandomString
         {
             get => _randomString;
             private set => SetProperty(ref _randomString, value);
         }
 
-        private string _userInput;
-        public string UserInput
+        private string? _userInput;
+        public string? UserInput
         {
             get => _userInput;
             set
@@ -56,7 +56,7 @@ namespace ClientDesktop.ViewModel
         public bool IsFormEnabled => !IsBusy;
         public ICommand SubmitCommand { get; }
         public ICommand CancelCommand { get; }
-        public Action CloseAction { get; set; }
+        public new Action? CloseAction { get; set; }
 
         #endregion Variables/Properties
 

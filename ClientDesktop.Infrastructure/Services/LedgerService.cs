@@ -10,7 +10,6 @@ namespace ClientDesktop.Infrastructure.Services
     public class LedgerService
     {
         #region Variables
-
         private readonly IApiService _apiService;
         private readonly SessionService _sessionService;
 
@@ -26,17 +25,17 @@ namespace ClientDesktop.Infrastructure.Services
         #endregion Constructor
 
         #region Methods
-        public async Task<(bool Success, string ErrorMessage, LedgerAuthData ResponseData)> VerifyUserPasswordAsync(string clientId, string password, string licenseId)
+        public async Task<(bool Success, string? ErrorMessage, LedgerAuthData? ResponseData)> VerifyUserPasswordAsync(string clientId, string password, string licenseId)
         {
             try
-            {                
+            {
                 var payload = new
                 {
                     type = "USER",
                     password,
                     clientId
                 };
-               
+
                 var serverDomain = _sessionService.ServerListData
                     .FirstOrDefault(x => x.licenseId.ToString() == licenseId)
                     ?.primaryDomain;
@@ -45,7 +44,7 @@ namespace ClientDesktop.Infrastructure.Services
                 var fullUrl = baseUrl.Contains("http")
                     ? baseUrl
                     : $"{serverDomain}{baseUrl}";
-               
+
                 var result = await _apiService
                     .PutAsync<LedgerAuthResponse>(fullUrl, payload);
 
@@ -56,7 +55,7 @@ namespace ClientDesktop.Infrastructure.Services
                     return (false,
                         result.successMessage ?? CommonMessages.FailedVerifyUser,
                         null);
-               
+
                 var message = result.data.msg?.FirstOrDefault()?.Trim() ?? string.Empty;
 
                 if (message.Equals(CommonMessages.WrongPassword, StringComparison.OrdinalIgnoreCase))
@@ -79,7 +78,7 @@ namespace ClientDesktop.Infrastructure.Services
                 return (false, ex.Message, null);
             }
         }
-        public async Task<LedgerUserDetail> GetLedgerUserDetail()
+        public async Task<LedgerUserDetail?> GetLedgerUserDetail()
         {
             try
             {
@@ -89,7 +88,7 @@ namespace ClientDesktop.Infrastructure.Services
                 var response = await _apiService.GetAsync<LedgerUserResponse>(url);
 
                 if (response == null)
-                {                  
+                {
                     return null;
                 }
 
@@ -101,7 +100,7 @@ namespace ClientDesktop.Infrastructure.Services
                 return null;
             }
         }
-        public async Task<(bool Success, string ErrorMessage, LedgerData ResponseData)> GetLedgerListAsync(string clientId, DateTime fromDate, DateTime toDate, string licenseId)
+        public async Task<(bool Success, string? ErrorMessage, LedgerData? ResponseData)> GetLedgerListAsync(string clientId, DateTime fromDate, DateTime toDate, string licenseId)
         {
             try
             {
@@ -111,7 +110,7 @@ namespace ClientDesktop.Infrastructure.Services
                     fromDate = fromDate.ToString("yyyy-MM-dd"),
                     toDate = toDate.ToString("yyyy-MM-dd")
                 };
-               
+
                 var serverDomain = _sessionService.ServerListData
                     .FirstOrDefault(w => w.licenseId.ToString() == licenseId)
                     ?.primaryDomain;
@@ -143,7 +142,7 @@ namespace ClientDesktop.Infrastructure.Services
                 return (false, ex.Message, null);
             }
         }
-        
+
         #endregion Methods
     }
 }

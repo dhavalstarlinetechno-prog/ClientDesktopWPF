@@ -25,14 +25,15 @@ namespace ClientDesktop.ViewModel
         private readonly IExcelService _excelService;
         private readonly ISocketService _socketService;
 
-        private LedgerUserDetail _ledgerUser;
+        private LedgerUserDetail? _ledgerUser;
         private bool _isBusy;
         private bool _isViewLocked;
 
         #endregion Fields
 
         #region Constructor      
-        public LedgerViewModel(SessionService sessionService,LedgerService ledgerService,IPdfService pdfService,IExcelService excelService,ISocketService socketService)           
+        public LedgerViewModel(SessionService sessionService, LedgerService ledgerService,
+                IPdfService pdfService, IExcelService excelService, ISocketService socketService)
         {
             _sessionService = sessionService;
             _ledgerService = ledgerService;
@@ -53,19 +54,17 @@ namespace ClientDesktop.ViewModel
         #endregion Constructor
 
         #region Properties
-
         public ObservableCollection<LedgerRowModel> GridRows { get; }
-        public LedgerUserDetail LedgerUser
+        public LedgerUserDetail? LedgerUser
         {
             get => _ledgerUser;
             set { _ledgerUser = value; OnPropertyChanged(); }
-        }        
+        }
         public bool IsBusy
         {
             get => _isBusy;
             set { _isBusy = value; OnPropertyChanged(); }
         }
-
         public bool IsViewLocked
         {
             get => _isViewLocked;
@@ -87,7 +86,6 @@ namespace ClientDesktop.ViewModel
                 IsViewLocked = isLocked;
             });
         }
-
         public void Cleanup()
         {
             _socketService.OnViewLockChanged -= OnViewLockChangedHandler;
@@ -96,7 +94,6 @@ namespace ClientDesktop.ViewModel
         #endregion WebSocket Handler  
 
         #region Auth & User Detail
-
         public async Task<bool> VerifyPasswordAsync(string password)
         {
             try
@@ -118,9 +115,8 @@ namespace ClientDesktop.ViewModel
                 FileLogger.ApplicationLog(nameof(VerifyPasswordAsync), ex.Message);
                 return false;
             }
-            
-        }
 
+        }
         public async Task LoadLedgerUserDetailAsync()
         {
             try
@@ -132,7 +128,7 @@ namespace ClientDesktop.ViewModel
                 if (result != null)
                     LedgerUser = result;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 FileLogger.ApplicationLog(nameof(LoadLedgerUserDetailAsync), ex.Message);
             }
@@ -141,8 +137,7 @@ namespace ClientDesktop.ViewModel
         #endregion Auth & User Detail
 
         #region Grid Population
-
-        public async Task<bool> LoadAndPopulateGridAsync(DateTime fromDate,DateTime toDate)
+        public async Task<bool> LoadAndPopulateGridAsync(DateTime fromDate, DateTime toDate)
         {
             if (!_sessionService.IsInternetAvailable)
                 return false;
@@ -168,8 +163,8 @@ namespace ClientDesktop.ViewModel
                     ledgerData.Transactions != null && ledgerData.Transactions.Count > 0;
 
                 if (!hasTransactions)
-                    return false;  
-                
+                    return false;
+
                 GridRows.Add(new LedgerRowModel
                 {
                     Sr = "",
@@ -179,9 +174,9 @@ namespace ClientDesktop.ViewModel
                     Remarks = "",
                     IsSummaryRow = true
                 });
-               
+
                 int sr = 1;
-                foreach (var led in ledgerData.Transactions)
+                foreach (var led in ledgerData.Transactions!)
                 {
                     DateTime istTime = CommonHelper.ConvertUtcToIst(led.LedgerDate);
                     string displayTime = istTime.ToString("dd/MM/yy HH:mm:ss", CultureInfo.InvariantCulture);
@@ -190,13 +185,13 @@ namespace ClientDesktop.ViewModel
                     {
                         Sr = sr.ToString(),
                         Date = displayTime,
-                        Type = led.TransactionType,
+                        Type = led.TransactionType ?? "",
                         Amount = CommonHelper.FormatAmount(led.Amount),
                         Remarks = led.Remarks ?? ""
                     });
                     sr++;
                 }
-               
+
                 GridRows.Add(new LedgerRowModel
                 {
                     Sr = "",
@@ -209,7 +204,7 @@ namespace ClientDesktop.ViewModel
 
                 return true;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 FileLogger.ApplicationLog(nameof(LoadAndPopulateGridAsync), ex.Message);
                 return false;
@@ -224,7 +219,7 @@ namespace ClientDesktop.ViewModel
 
         #region PDF Export     
         public void ExportToPdf(DateTime fromDate, DateTime toDate)
-        {          
+        {
             if (GridRows == null || GridRows.Count == 0)
             {
                 FileLogger.ApplicationLog("Export", "No data available to export");
@@ -232,31 +227,31 @@ namespace ClientDesktop.ViewModel
             }
 
             try
-            {                
+            {
                 DataTable dt = BuildPdfDataTable();
-              
+
                 var columnAlignments = new Dictionary<string, EnumPdfColumnAlignment>
                 {
                     ["Amount"] = EnumPdfColumnAlignment.Right
                 };
-              
+
                 string title =
                     $"Ledger History Report for User Id: {_sessionService.UserId} (Client)" +
                     $"   From: {fromDate:dd-MM-yyyy}   To: {toDate:dd-MM-yyyy}";
-               
+
                 _pdfService
                     .Clear()
                     .AddSubTitle(title, fontSize: 14, centerAlign: true)
                     .AddGrid(
                         dataTable: dt,
                         columnAlignments: columnAlignments)
-                    .BuildPDF("Ledger_History", landscape: true, autoFormat: true);              
+                    .BuildPDF("Ledger_History", landscape: true, autoFormat: true);
             }
             catch (Exception ex)
             {
                 FileLogger.ApplicationLog(nameof(ExportToPdf), ex.Message);
             }
-        }      
+        }
         private DataTable BuildPdfDataTable()
         {
             var dt = new DataTable("LedgerHistory");
@@ -270,7 +265,7 @@ namespace ClientDesktop.ViewModel
             {
                 string srVal = row.Sr;
                 string dateVal = row.Date;
-                
+
                 if (row.IsSummaryRow)
                 {
                     if (dateVal.Contains("Opening Amount"))
@@ -294,7 +289,6 @@ namespace ClientDesktop.ViewModel
         #endregion PDF Export
 
         #region Excel Export
-
         public void ExportToExcel(DateTime fromDate, DateTime toDate)
         {
             if (GridRows == null || GridRows.Count == 0)
@@ -304,9 +298,9 @@ namespace ClientDesktop.ViewModel
             }
 
             try
-            {              
+            {
                 DataTable dt = BuildExportDataTable();
-                
+
                 string title =
                     $"Ledger History Report for User Id:{_sessionService.UserId}(Client)" +
                     $"  From: {fromDate:dd-MM-yyyy} To: {toDate:dd-MM-yyyy}";
@@ -367,9 +361,8 @@ namespace ClientDesktop.ViewModel
         #endregion Shared DataTable Builder
 
         #region INotifyPropertyChanged
-
-        public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged([CallerMemberName] string name = null)
+        public new event PropertyChangedEventHandler? PropertyChanged;
+        protected new void OnPropertyChanged([CallerMemberName] string? name = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
         #endregion INotifyPropertyChanged

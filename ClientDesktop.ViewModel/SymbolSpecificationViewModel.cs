@@ -18,7 +18,7 @@ namespace ClientDesktop.ViewModel
 
         public readonly SessionService _sessionService;
         private readonly SymbolSpecificationService _symbolSpecificationService;       
-        public Action CloseAction { get; set; }
+        public new Action? CloseAction { get; set; }
        
         public ICommand CloseCommand { get; }
 
@@ -29,15 +29,15 @@ namespace ClientDesktop.ViewModel
             set => SetProperty(ref _symbolId, value);
         }
 
-        private string _symbolName;
-        public string SymbolName
+        private string? _symbolName;
+        public string? SymbolName
         {
             get => _symbolName;
             set => SetProperty(ref _symbolName, value);
         }
 
-        private SymbolModel _symbolData;
-        public SymbolModel SymbolData
+        private SymbolModel? _symbolData;
+        public SymbolModel? SymbolData
         {
             get => _symbolData;
             set => SetProperty(ref _symbolData, value);

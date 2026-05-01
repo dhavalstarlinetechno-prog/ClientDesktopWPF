@@ -51,7 +51,7 @@ namespace ClientDesktop.Infrastructure.Services
 
                     if (apiData != null)
                     {
-                        Task.Run(() => _banscriptRepo.Save(relativePath, apiData, "banscript"));
+                        _= Task.Run(() => _banscriptRepo.Save(relativePath, apiData, "banscript"));
                         return apiData;
                     }
                 }
