@@ -11,6 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Threading;
 
 namespace ClientDesktop.ViewModel
 {
@@ -22,6 +23,7 @@ namespace ClientDesktop.ViewModel
         private readonly FeedbackService _FeedbackService;
         private ObservableCollection<FeedbackModel> _feedbackList = new ObservableCollection<FeedbackModel>();
         private readonly ISocketService _socketService;
+        private DispatcherTimer? _socketKeepAliveTimer;
         public ObservableCollection<FeedbackModel> FeedbackList
         {
             get => _feedbackList;
@@ -94,14 +96,49 @@ namespace ClientDesktop.ViewModel
         #region SocketLogic
         public void SubscribeToFeedbackSocket()
         {
-            if (_socketService == null) return;          
+            if (_socketService == null) return;                        
             _socketService.OnFeedbackReplyReceived -= HandleSocketFeedbackReply;
             _socketService.OnFeedbackReplyReceived += HandleSocketFeedbackReply;
+            StartSocketKeepAlive();
         }
         public void UnsubscribeFromFeedbackSocket()
         {
             if (_socketService == null) return;
             _socketService.OnFeedbackReplyReceived -= HandleSocketFeedbackReply;
+
+            StopSocketKeepAlive();
+        }
+        private void StartSocketKeepAlive()
+        {
+            StopSocketKeepAlive();
+
+            _socketKeepAliveTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(5)
+            };
+            _socketKeepAliveTimer.Tick += SocketKeepAlive_Tick;
+            _socketKeepAliveTimer.Start();
+        }
+        private void StopSocketKeepAlive()
+        {
+            if (_socketKeepAliveTimer == null) return;
+            _socketKeepAliveTimer.Stop();
+            _socketKeepAliveTimer.Tick -= SocketKeepAlive_Tick;
+            _socketKeepAliveTimer = null;
+        }
+        private void SocketKeepAlive_Tick(object? sender, EventArgs e)
+        {
+            try
+            {
+                if (!IsSocketConnected)
+                {
+                    _socketService?.Start();
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(SocketKeepAlive_Tick), ex.Message);
+            }
         }
         private void HandleSocketFeedbackReply(FeedbackReplyData data)
         {           
