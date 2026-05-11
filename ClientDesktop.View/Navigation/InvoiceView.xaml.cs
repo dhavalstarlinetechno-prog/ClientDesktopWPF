@@ -779,13 +779,24 @@ namespace ClientDesktop.View.Navigation
                         {
                             if (decimal.TryParse(cellText?.Replace(" ", ""), out decimal val))
                             {
-                                bool makeRed = val < 0 || (val == 0 && colName == "Comm");
+                                bool isTotalRow = (rowType == "SecurityTotal" || symbol == "total" || rowType == "GrandTotal" || symbol == "grand total");
+                                bool makeRed = false;
+
+                                if (isTotalRow)
+                                {                                    
+                                    if (val <= 0) makeRed = true;
+                                }
+                                else
+                                {                                   
+                                    if (val < 0) makeRed = true;
+                                }
+
                                 tb.Foreground = makeRed
-                                ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#dc3545")) 
-                                : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0077fe"));
+                                    ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#dc3545"))
+                                    : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0077fe"));
                             }
                         }
-
+                        
                         if (symbol == "total" || symbol == "grand total")
                         {
                             tb.FontWeight = FontWeights.Bold;
@@ -827,9 +838,8 @@ namespace ClientDesktop.View.Navigation
 
             dg.Dispatcher.BeginInvoke(new Action(() =>
             {
-                Brush textBrush = (side?.Equals("Sell", StringComparison.OrdinalIgnoreCase) ?? false)
-                    ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#dc3545")) 
-                    : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0077fe"));
+                Brush redBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#dc3545"));
+                Brush blueBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0077fe"));
 
                 for (int i = 0; i < dg.Columns.Count; i++)
                 {
@@ -838,8 +848,22 @@ namespace ClientDesktop.View.Navigation
                     if (cellContent is System.Windows.Controls.TextBlock tb)
                     {
                         string? colName = column.Header?.ToString();
-                        if (colName == "Type" || colName == "Quantity" || colName == "Net")
-                            tb.Foreground = textBrush;
+
+                        if (colName == "Type")
+                        {
+                            tb.Foreground = (side?.Equals("Sell", StringComparison.OrdinalIgnoreCase) ?? false) ? redBrush : blueBrush;
+                        }
+                        else if (colName == "Quantity" || colName == "Net")
+                        {
+                            if (double.TryParse(tb.Text, out double val))
+                            {
+                                tb.Foreground = val < 0 ? redBrush : blueBrush;
+                            }
+                            else
+                            {
+                                tb.Foreground = blueBrush;
+                            }
+                        }
                     }
                 }
             }), System.Windows.Threading.DispatcherPriority.Render);
