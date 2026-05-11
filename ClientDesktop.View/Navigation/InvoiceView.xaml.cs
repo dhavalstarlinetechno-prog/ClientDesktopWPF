@@ -145,7 +145,7 @@ namespace ClientDesktop.View.Navigation
         }
         private void ShowNoData()
         {
-            Lblfrom.Visibility = Visibility.Collapsed;
+            Lblfrom.Visibility = Visibility.Hidden;
             Lblfromdate.Visibility = Visibility.Visible;
             Lblfromdate.Content = CommonMessages.NoDataAvailable;
             Lblfromdate.FontSize = 20;
@@ -281,14 +281,14 @@ namespace ClientDesktop.View.Navigation
 
             if (!isDataLoaded)
             {
-                Lblfromdate.Content = "No Data Avaliable";
+                Lblfromdate.Content = CommonMessages.NoDataAvailable;
                 Lblfromdate.FontWeight = FontWeights.Regular;
-                Lblfrom.Visibility = Visibility.Collapsed;
+                Lblfrom.Visibility = Visibility.Hidden;
                 Lblfromdate.Visibility = Visibility.Visible;
             }
             else
             {
-                Lblfromdate.Visibility = Visibility.Collapsed;
+                Lblfromdate.Visibility = Visibility.Hidden;
             }
 
             int diff = (7 + ((int)today.DayOfWeek - (int)DayOfWeek.Monday)) % 7;
@@ -323,22 +323,22 @@ namespace ClientDesktop.View.Navigation
         {
             if (Cmbselectweek.SelectedIndex == 0)
             {
-                Gridpanel.Visibility = Visibility.Collapsed;
+                Gridpanel.Visibility = Visibility.Hidden;
                 Btngetdata.IsEnabled = true;
                 return;
             }
           
             SecurityGridsList.ItemsSource = null;
             SummaryDataGrid.ItemsSource = null;
-            SummaryPanel.Visibility = Visibility.Collapsed;
+            SummaryPanel.Visibility = Visibility.Hidden;
             CarryForwardDataGrid.ItemsSource = null;
-            CarryForwardPanel.Visibility = Visibility.Collapsed;
+            CarryForwardPanel.Visibility = Visibility.Hidden;
 
             Gridpanel.Visibility = Visibility.Visible;
             Btngetdata.IsEnabled = false;
             Lblfrom.Content = "";
             Lblfrom.Visibility = Visibility.Visible;
-            Lblfromdate.Visibility = Visibility.Collapsed;
+            Lblfromdate.Visibility = Visibility.Hidden;
             isDataLoaded = true;
 
             if (_viewModel == null) return;
@@ -347,7 +347,7 @@ namespace ClientDesktop.View.Navigation
 
             if (_viewModel.InvoiceDetails == null || _viewModel.InvoiceDetails.Count == 0)
             {
-                PdfExportBtn.Visibility = Visibility.Collapsed;
+                PdfExportBtn.Visibility = Visibility.Hidden;
                 ShowNoData();
                 return;
             }
