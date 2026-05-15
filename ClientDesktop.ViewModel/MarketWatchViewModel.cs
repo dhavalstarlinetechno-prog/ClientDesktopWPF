@@ -39,7 +39,7 @@ namespace ClientDesktop.ViewModel
         private int _debounceId = 0;
         private string _currentTime;
         private string _searchText;
-        private int _selectedFontSize;
+        private int _selectedFontSize = 12;
         private string _newSymbolSearchText;
         private string _symbolCountText;
         private bool _isSuggestionOpen;
@@ -95,8 +95,20 @@ namespace ClientDesktop.ViewModel
         public int SelectedFontSize
         {
             get => _selectedFontSize;
-            set { _selectedFontSize = value; OnPropertyChanged(); }
+            set
+            {
+                _selectedFontSize = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(RowHeight));
+                OnPropertyChanged(nameof(ColumnMinWidth));
+                OnPropertyChanged(nameof(SymbolColumnMinWidth));
+            }
         }
+
+        public double RowHeight => _selectedFontSize + 12;
+        public double ColumnMinWidth => (_selectedFontSize * 5.0) + 20;
+
+        public double SymbolColumnMinWidth => (_selectedFontSize * 9.0) + 20;
 
         public string NewSymbolSearchText
         {

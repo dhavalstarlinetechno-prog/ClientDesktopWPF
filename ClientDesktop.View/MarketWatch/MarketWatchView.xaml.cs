@@ -33,10 +33,96 @@ namespace ClientDesktop.View.MarketWatch
             try
             {
                 InitializeComponent();
+
+                DataContextChanged += (s, e) =>
+                {
+                    if (e.OldValue is MarketWatchViewModel oldVm)
+                        oldVm.PropertyChanged -= ViewModel_PropertyChanged;
+
+                    if (e.NewValue is MarketWatchViewModel newVm)
+                        newVm.PropertyChanged += ViewModel_PropertyChanged;
+                };
             }
             catch (Exception ex)
             {
                 FileLogger.ApplicationLog(nameof(MarketWatchView), ex);
+            }
+        }
+
+        private void ViewModel_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            try
+            {
+                if (e.PropertyName == nameof(MarketWatchViewModel.SelectedFontSize))
+                {
+                    ResetColumnWidths();
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(ViewModel_PropertyChanged), ex);
+            }
+        }
+
+        private void ResetColumnWidths()
+        {
+            try
+            {
+                var vm = DataContext as MarketWatchViewModel;
+                if (vm == null) return;
+
+                // Read fresh values DIRECTLY from ViewModel — bypasses stale DataGridColumn bindings.
+                // DataGridColumn is not in visual tree so MinWidth bindings may hold old values.
+                double numericMinWidth = vm.ColumnMinWidth;       // for Auto columns (Bid, Ask, LTP...)
+                double symbolMinWidth = vm.SymbolColumnMinWidth; // for Star column (Symbol)
+
+                // Snapshot: IsStar = Symbol(*), IsFixed = drag-handle(30px absolute)
+                var columnSnapshot = MarketGrid.Columns
+                    .Select(col => new
+                    {
+                        Column = col,
+                        IsStar = col.Width.IsStar,
+                        IsFixed = col.Width.IsAbsolute
+                    })
+                    .ToList();
+
+                // STEP 1: Force pixel width = correct MinWidth per column type.
+                // This makes WPF shrink ALL columns immediately to the new font-based size.
+                foreach (var item in columnSnapshot)
+                {
+                    if (item.IsFixed) continue;
+
+                    // Use larger SymbolColumnMinWidth for Star column, ColumnMinWidth for rest
+                    double minW = item.IsStar ? symbolMinWidth : numericMinWidth;
+
+                    item.Column.MinWidth = minW;                        // override stale binding
+                    item.Column.Width = new DataGridLength(minW);    // force immediate shrink
+                }
+
+                // STEP 2: After render cycle, restore to Auto / Star.
+                // Columns now grow from the correct new MinWidth baseline — shrink and grow both work.
+                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Render, new Action(() =>
+                {
+                    try
+                    {
+                        foreach (var item in columnSnapshot)
+                        {
+                            if (item.IsFixed) continue;
+
+                            item.Column.Width = item.IsStar
+                                ? new DataGridLength(1, DataGridLengthUnitType.Star)
+                                : DataGridLength.Auto;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        FileLogger.ApplicationLog(nameof(ResetColumnWidths), ex);
+                    }
+                }));
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(ResetColumnWidths), ex);
             }
         }
 

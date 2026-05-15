@@ -19,6 +19,10 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <conv:PriceChangeColorConverter x:Key="PriceChangeColorConverter"/>
 
+        <Style TargetType="{x:Type DataGridColumnHeader}">
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+
         <!-- ========================================== -->
         <!-- STYLES                                     -->
         <!-- ========================================== -->
@@ -349,7 +353,8 @@
                   x:Name="MarketGrid"
                   ItemsSource="{Binding MarketView}"
                   SelectedItem="{Binding SelectedMarketItem}"
-                  FontSize="{Binding SelectedFontSize}"
+                  FontSize="{Binding SelectedFontSize}"  
+                  RowHeight="{Binding RowHeight}"
                   Style="{StaticResource CustomDataGrid}"
                   AutoGenerateColumns="False" 
                   CanUserAddRows="False"
@@ -359,7 +364,7 @@
                   RowHeaderWidth="0"
                   SelectionMode="Single"
                   SelectionUnit="FullRow"
-                  AllowDrop="True"
+                  AllowDrop="True"                  
                   CanUserSortColumns="True"
                   PreviewMouseLeftButtonDown="DataGrid_PreviewMouseLeftButtonDown"
                   Drop="DataGrid_Drop"
@@ -412,7 +417,7 @@
                 </DataGridTemplateColumn>
 
                 <!-- Symbol Column -->
-                <DataGridTemplateColumn Header="Symbol" Width="*" MinWidth="100" SortMemberPath="SymbolName" CanUserSort="True">
+                <DataGridTemplateColumn Header="Symbol" Width="*" MinWidth="{Binding Data.SymbolColumnMinWidth, Source={StaticResource Proxy}}" SortMemberPath="SymbolName" CanUserSort="True">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal" Margin="5,0,0,0">
@@ -461,7 +466,7 @@
                 </DataGridTemplateColumn>
 
                 <!-- Bid Column -->
-                <DataGridTemplateColumn Header="Bid" Width="Auto" MinWidth="70" CanUserSort="False">
+                <DataGridTemplateColumn Header="Bid" Width="Auto" MinWidth="{Binding Data.ColumnMinWidth, Source={StaticResource Proxy}}" CanUserSort="False">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding DisplayBid, StringFormat=N2}" Style="{StaticResource BidColorStyle}"/>
@@ -470,7 +475,7 @@
                 </DataGridTemplateColumn>
 
                 <!-- Ask Column -->
-                <DataGridTemplateColumn Header="Ask" Width="Auto" MinWidth="70" CanUserSort="False">
+                <DataGridTemplateColumn Header="Ask" Width="Auto" MinWidth="{Binding Data.ColumnMinWidth, Source={StaticResource Proxy}}" CanUserSort="False">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding DisplayAsk, StringFormat=N2}" Style="{StaticResource AskColorStyle}"/>
@@ -479,7 +484,7 @@
                 </DataGridTemplateColumn>
 
                 <!-- LTP Column -->
-                <DataGridTemplateColumn Header="LTP" Width="Auto" MinWidth="70" CanUserSort="False" Visibility="{Binding Data.ShowLtp, Source={StaticResource Proxy}, Converter={StaticResource BoolToVis}}">
+                <DataGridTemplateColumn Header="LTP" Width="Auto" MinWidth="{Binding Data.ColumnMinWidth, Source={StaticResource Proxy}}" CanUserSort="False" Visibility="{Binding Data.ShowLtp, Source={StaticResource Proxy}, Converter={StaticResource BoolToVis}}">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding DisplayLtp, StringFormat=N2}" Style="{StaticResource LtpColorStyle}"/>
@@ -488,23 +493,23 @@
                 </DataGridTemplateColumn>
 
                 <!-- High Column -->
-                <DataGridTextColumn Header="High" Binding="{Binding DisplayHigh, StringFormat=N2}" ElementStyle="{StaticResource RightAlignCell}" Width="Auto" MinWidth="70" CanUserSort="False"
+                <DataGridTextColumn Header="High" Binding="{Binding DisplayHigh, StringFormat=N2}" ElementStyle="{StaticResource RightAlignCell}" Width="Auto" MinWidth="{Binding Data.ColumnMinWidth, Source={StaticResource Proxy}}" CanUserSort="False"
                                     Visibility="{Binding Data.ShowHighLow, Source={StaticResource Proxy}, Converter={StaticResource BoolToVis}}"/>
 
                 <!-- Low Column -->
-                <DataGridTextColumn Header="Low" Binding="{Binding DisplayLow, StringFormat=N2}" ElementStyle="{StaticResource RightAlignCell}" Width="Auto" MinWidth="70" CanUserSort="False"
+                <DataGridTextColumn Header="Low" Binding="{Binding DisplayLow, StringFormat=N2}" ElementStyle="{StaticResource RightAlignCell}" Width="Auto" MinWidth="{Binding Data.ColumnMinWidth, Source={StaticResource Proxy}}" CanUserSort="False"
                                     Visibility="{Binding Data.ShowHighLow, Source={StaticResource Proxy}, Converter={StaticResource BoolToVis}}"/>
 
                 <!-- Open Column -->
-                <DataGridTextColumn Header="Open" Binding="{Binding DisplayOpen, StringFormat=N2}" ElementStyle="{StaticResource RightAlignCell}" Width="Auto" MinWidth="70" CanUserSort="False"
+                <DataGridTextColumn Header="Open" Binding="{Binding DisplayOpen, StringFormat=N2}" ElementStyle="{StaticResource RightAlignCell}" Width="Auto" MinWidth="{Binding Data.ColumnMinWidth, Source={StaticResource Proxy}}" CanUserSort="False"
                                     Visibility="{Binding Data.ShowOpen, Source={StaticResource Proxy}, Converter={StaticResource BoolToVis}}"/>
 
                 <!-- Close Column -->
-                <DataGridTextColumn Header="Close" Binding="{Binding DisplayClose, StringFormat=N2}" ElementStyle="{StaticResource RightAlignCell}" Width="Auto" MinWidth="70" CanUserSort="False"
+                <DataGridTextColumn Header="Close" Binding="{Binding DisplayClose, StringFormat=N2}" ElementStyle="{StaticResource RightAlignCell}" Width="Auto" MinWidth="{Binding Data.ColumnMinWidth, Source={StaticResource Proxy}}" CanUserSort="False"
                                     Visibility="{Binding Data.ShowClose, Source={StaticResource Proxy}, Converter={StaticResource BoolToVis}}"/>
 
                 <!-- Spread Column -->
-                <DataGridTemplateColumn Header="Spread" Width="Auto" MinWidth="60" CanUserSort="False" Visibility="{Binding Data.ShowSpread, Source={StaticResource Proxy}, Converter={StaticResource BoolToVis}}">
+                <DataGridTemplateColumn Header="Spread" Width="Auto" MinWidth="{Binding Data.ColumnMinWidth, Source={StaticResource Proxy}}" CanUserSort="False" Visibility="{Binding Data.ShowSpread, Source={StaticResource Proxy}, Converter={StaticResource BoolToVis}}">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding DisplaySpread, StringFormat=N2}" Style="{StaticResource SpreadColorStyle}"/>
@@ -513,7 +518,7 @@
                 </DataGridTemplateColumn>
 
                 <!-- DCP Column -->
-                <DataGridTemplateColumn Header="DCP" Width="Auto" MinWidth="60" CanUserSort="False" Visibility="{Binding Data.ShowDcp, Source={StaticResource Proxy}, Converter={StaticResource BoolToVis}}">
+                <DataGridTemplateColumn Header="DCP" Width="Auto" MinWidth="{Binding Data.ColumnMinWidth, Source={StaticResource Proxy}}" CanUserSort="False" Visibility="{Binding Data.ShowDcp, Source={StaticResource Proxy}, Converter={StaticResource BoolToVis}}">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding Dcp}" Style="{StaticResource DcpColorStyle}"/>
@@ -522,7 +527,7 @@
                 </DataGridTemplateColumn>
 
                 <!-- DCV Column -->
-                <DataGridTemplateColumn Header="DCV" Width="Auto" MinWidth="60" CanUserSort="False" Visibility="{Binding Data.ShowDcv, Source={StaticResource Proxy}, Converter={StaticResource BoolToVis}}">
+                <DataGridTemplateColumn Header="DCV" Width="Auto" MinWidth="{Binding Data.ColumnMinWidth, Source={StaticResource Proxy}}" CanUserSort="False" Visibility="{Binding Data.ShowDcv, Source={StaticResource Proxy}, Converter={StaticResource BoolToVis}}">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding DisplayDcv, StringFormat=N2}" Style="{StaticResource DcvColorStyle}"/>
@@ -531,7 +536,7 @@
                 </DataGridTemplateColumn>
 
                 <!-- Time Column -->
-                <DataGridTemplateColumn Header="Time" Width="*" MinWidth="80" CanUserSort="False" Visibility="{Binding Data.ShowTime, Source={StaticResource Proxy}, Converter={StaticResource BoolToVis}}">
+                <DataGridTemplateColumn Header="Time" Width="*" MinWidth="{Binding Data.ColumnMinWidth, Source={StaticResource Proxy}}" CanUserSort="False" Visibility="{Binding Data.ShowTime, Source={StaticResource Proxy}, Converter={StaticResource BoolToVis}}">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding Time}" Style="{StaticResource TimeColorStyle}"/>
