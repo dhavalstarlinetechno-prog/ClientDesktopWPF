@@ -228,11 +228,12 @@
                         <Grid Grid.Column="0">
                             <TextBox x:Name="AddBox" BorderThickness="0" Background="Transparent" 
                                      VerticalAlignment="Center" Padding="2,0" FontWeight="SemiBold"
+                                     FontSize="12"
                                      Text="{Binding Data.NewSymbolSearchText, Source={StaticResource Proxy}, UpdateSourceTrigger=PropertyChanged}"
                                      PreviewKeyDown="AddBox_PreviewKeyDown"
                                      GotFocus="AddBox_GotFocus"/>
 
-                            <TextBlock Text="Click to add..." Foreground="Gray" IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,0,0">
+                            <TextBlock Text="Click to add..." Foreground="Gray" IsHitTestVisible="False" VerticalAlignment="Center" Margin="5,0,0,0" FontSize="12">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Visibility" Value="Collapsed"/>
@@ -252,13 +253,15 @@
                                     <ListBox x:Name="SuggestionListBox" 
                                              ItemsSource="{Binding Data.SuggestedSymbols, Source={StaticResource Proxy}}"
                                              BorderThickness="0" Background="Transparent" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                             FontSize="12"
                                              PreviewKeyDown="SuggestionListBox_PreviewKeyDown">
                                         <ListBox.ItemTemplate>
                                             <DataTemplate>
                                                 <Button Content="{Binding SymbolName}" 
                                                         Command="{Binding Data.AddSymbolCommand, Source={StaticResource Proxy}}"
                                                         CommandParameter="{Binding}"
-                                                        Background="Transparent" BorderThickness="0" 
+                                                        Background="Transparent" BorderThickness="0"
+                                                        FontSize="12"
                                                         HorizontalContentAlignment="Left" Cursor="Hand" Width="150" Padding="5,2"/>
                                             </DataTemplate>
                                         </ListBox.ItemTemplate>
@@ -536,7 +539,7 @@
                 </DataGridTemplateColumn>
 
                 <!-- Time Column -->
-                <DataGridTemplateColumn Header="Time" Width="*" MinWidth="{Binding Data.ColumnMinWidth, Source={StaticResource Proxy}}" CanUserSort="False" Visibility="{Binding Data.ShowTime, Source={StaticResource Proxy}, Converter={StaticResource BoolToVis}}">
+                <DataGridTemplateColumn Header="Time" Width="Auto" MinWidth="{Binding Data.ColumnMinWidth, Source={StaticResource Proxy}}" CanUserSort="False" Visibility="{Binding Data.ShowTime, Source={StaticResource Proxy}, Converter={StaticResource BoolToVis}}">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding Time}" Style="{StaticResource TimeColorStyle}"/>
