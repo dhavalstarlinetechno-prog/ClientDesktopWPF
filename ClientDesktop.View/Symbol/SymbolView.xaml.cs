@@ -321,15 +321,33 @@ namespace ClientDesktop.View.Symbol
 
             return formatted;
         }
+        private void HideDayRows()
+        {    
+            for (int i = 1; i <= 7; i++)
+            {
+                if (SecondGrid.RowDefinitions.Count > i)
+                {                    
+                    SecondGrid.RowDefinitions[i].Height = new GridLength(0);
+                   
+                    foreach (UIElement element in SecondGrid.Children)
+                    {
+                        if (Grid.GetRow(element) == i)
+                        {
+                            element.Visibility = Visibility.Hidden;
+                        }
+                    }
+                }
+            }
+        }
         private void ShowDayRows()
         {
-            for (int i = 16; i <= 22; i++)
+            for (int i = 1; i <= 7; i++)
             {
-                if (Tablespecification.RowDefinitions.Count > i)
+                if (SecondGrid.RowDefinitions.Count > i)
                 {
-                    Tablespecification.RowDefinitions[i].Height = new GridLength(30);
+                    SecondGrid.RowDefinitions[i].Height = new GridLength(25);
 
-                    foreach (UIElement child in Tablespecification.Children)
+                    foreach (UIElement child in SecondGrid.Children)
                     {
                         if (Grid.GetRow(child) == i)
                         {
@@ -368,11 +386,13 @@ namespace ClientDesktop.View.Symbol
             }
             catch (OperationCanceledException) { }
         }
+
         #endregion Methods
 
         #region Events
         private async void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
+            HideDayRows();
             if (_sessionService == null || _viewModel == null) return;
 
             if (!_sessionService.IsLoggedIn || !_sessionService.IsInternetAvailable)
@@ -388,7 +408,7 @@ namespace ClientDesktop.View.Symbol
             var root = Newtonsoft.Json.JsonConvert.DeserializeObject<Symbolmodel>(Mainresponse);
             var subRoot = Newtonsoft.Json.JsonConvert.DeserializeObject<SubSymbolRoot>(subJson);
             PopulateFolderTree(root?.Data?.Where(f => f.ParentId == 1).ToList(), null);
-            PopulateSymbolTree(subRoot?.Data, root?.Data);
+            PopulateSymbolTree(subRoot?.Data, root?.Data);            
             _viewModel.IsBusy = false;
         }
         private async void SymbolTreeview_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
