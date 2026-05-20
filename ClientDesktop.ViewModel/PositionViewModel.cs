@@ -915,8 +915,8 @@ namespace ClientDesktop.ViewModel
                         pnlContribution = finalTotalPnl;
                 }
 
-                double equity = uplineAmount + creditAmount + uplineCommission + finalTotalPnl;
-                double freeMargin = uplineAmount + creditAmount + uplineCommission + pnlContribution - occupiedMarginAmount;
+                double equity = uplineAmount + creditAmount + uplineCommission + finalTotalPnl + balance;
+                double freeMargin = uplineAmount + creditAmount + uplineCommission + pnlContribution - occupiedMarginAmount + balance;             
 
                 tradeSummary =
                     $"Balance: {CommonHelper.FormatAmount(totalBalance)}   " +
