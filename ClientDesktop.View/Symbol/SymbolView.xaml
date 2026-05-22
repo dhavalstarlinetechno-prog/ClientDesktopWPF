@@ -131,6 +131,8 @@
                       CanUserAddRows="False"
                       CanUserDeleteRows="False"
                       CanUserResizeRows="False"
+                      CanUserResizeColumns="False"
+                      CanUserReorderColumns = "False"    
                       RowHeight="24"
                       BorderThickness="0" 
                       SelectionUnit="FullRow" MouseDoubleClick="DgvSymbols_MouseDoubleClick" PreviewMouseLeftButtonDown="DgvSymbols_PreviewMouseLeftButtonDown">

@@ -779,15 +779,20 @@ namespace ClientDesktop.View.Navigation
                         {
                             if (decimal.TryParse(cellText?.Replace(" ", ""), out decimal val))
                             {
-                                bool isTotalRow = (rowType == "SecurityTotal" || symbol == "total" || rowType == "GrandTotal" || symbol == "grand total");
+                                bool isTotalRow = (rowType == "SecurityTotal" || symbol == "total");
                                 bool makeRed = false;
+                                bool isGrandTotal = (rowType == "GrandTotal" || symbol == "grand total");
 
-                                if (isTotalRow)
-                                {                                    
+                                if (colName == "Comm" && isGrandTotal)
+                                {
+                                    makeRed = val < 0;
+                                }
+                                else if (isTotalRow)
+                                {
                                     if (val <= 0) makeRed = true;
                                 }
                                 else
-                                {                                   
+                                {
                                     if (val < 0) makeRed = true;
                                 }
 
