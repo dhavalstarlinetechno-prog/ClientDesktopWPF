@@ -154,6 +154,9 @@
                       SelectionUnit="FullRow"
                       AllowDrop="True"
                       CanUserSortColumns="True"
+                      CanUserResizeColumns="False"
+                      CanUserReorderColumns = "False"
+                      CanUserResizeRows="False"
                       Sorting="GridDealsOrders_Sorting">
 
                 <DataGrid.RowStyle>
@@ -495,6 +498,9 @@
                       SelectionUnit="FullRow"
                       AllowDrop="True"
                       CanUserSortColumns="True"
+                      CanUserResizeColumns="False"
+                      CanUserReorderColumns = "False"
+                      CanUserResizeRows="False"
                       Sorting="GridPosition_Sorting">
 
                 <DataGrid.RowStyle>

@@ -28,6 +28,9 @@
                   AutoGenerateColumns="False"
                   CanUserAddRows="False"
                   CanUserSortColumns="True"
+                  CanUserResizeColumns="False"
+                  CanUserReorderColumns = "False"
+                  CanUserResizeRows="False"
                   Sorting="DataGrid_Sorting"
                   SelectionUnit="FullRow">
 
@@ -169,7 +172,7 @@
 
                 <DataGridTextColumn Header="Order Type" Binding="{Binding OrderType}" Width="1*" SortMemberPath="OrderType" CanUserSort="False"/>
                 <DataGridTextColumn Header="Volume" Binding="{Binding Volume, Converter={StaticResource VolumeFormatConverter}}" ElementStyle="{StaticResource RightAlignCell}" Width="0.8*" SortMemberPath="Volume" CanUserSort="False"/>
-                <DataGridTextColumn Header="Avg Price" Binding="{Binding AveragePriceDisplay}" ElementStyle="{StaticResource RightAlignCell}" Width="1*" SortMemberPath="AveragePrice"/>
+                <DataGridTextColumn Header="Avg Price" Binding="{Binding AveragePriceDisplay}" ElementStyle="{StaticResource RightAlignCell}" Width="1*" SortMemberPath="AveragePrice" CanUserSort="False"/>
                 <DataGridTextColumn Header="Price" Binding="{Binding CurrentPriceDisplay}" Width="1*" CanUserSort="False">
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">

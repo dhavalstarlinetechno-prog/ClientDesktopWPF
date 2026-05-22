@@ -14,6 +14,9 @@
                   HeadersVisibility="Column" 
                   BorderThickness="0"
                   CanUserAddRows="False"
+                  CanUserResizeColumns="False"
+                  CanUserReorderColumns = "False"
+                  CanUserResizeRows="False"
                   IsReadOnly="True">
 
             <DataGrid.Columns>
