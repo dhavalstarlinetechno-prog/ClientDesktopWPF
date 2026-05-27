@@ -58,10 +58,7 @@
                        BorderThickness="0"
                        SelectionUnit="FullRow"
                        CanUserAddRows="False"
-                       CanUserDeleteRows="False"  
-                       CanUserResizeColumns="False"  
-                       CanUserReorderColumns = "False"
-                       CanUserResizeRows="False"
+                       CanUserDeleteRows="False"                   
                        VerticalScrollBarVisibility="Auto">
                     <DataGrid.Columns>
                         <DataGridTextColumn

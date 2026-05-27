@@ -196,9 +196,6 @@
                    SelectionUnit="FullRow"
                    CanUserAddRows="False"
                    CanUserDeleteRows="False"
-                   CanUserResizeColumns="False"  
-                   CanUserReorderColumns = "False" 
-                   CanUserResizeRows="False"
                    VerticalScrollBarVisibility="Auto"                  
                    BorderThickness="0">
                     <DataGrid.Resources>

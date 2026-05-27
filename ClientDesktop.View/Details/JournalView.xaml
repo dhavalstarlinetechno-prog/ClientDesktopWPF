@@ -13,10 +13,7 @@
                   GridLinesVisibility="All" 
                   HeadersVisibility="Column" 
                   BorderThickness="0"
-                  CanUserAddRows="False"
-                  CanUserResizeColumns="False"
-                  CanUserReorderColumns = "False"
-                  CanUserResizeRows="False"
+                  CanUserAddRows="False"             
                   IsReadOnly="True">
 
             <DataGrid.Columns>

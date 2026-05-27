@@ -369,8 +369,6 @@
                   SelectionUnit="FullRow"
                   AllowDrop="True"                  
                   CanUserSortColumns="True"
-                  CanUserResizeColumns="False"  
-                  CanUserReorderColumns = "False"
                   PreviewMouseLeftButtonDown="DataGrid_PreviewMouseLeftButtonDown"
                   Drop="DataGrid_Drop"
                   MouseMove="DataGrid_MouseMove"

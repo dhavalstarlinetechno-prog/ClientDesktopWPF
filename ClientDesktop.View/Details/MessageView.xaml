@@ -29,8 +29,6 @@
         <DataGrid Grid.Row="1" ItemsSource="{Binding Messages}" 
                   AutoGenerateColumns="False" GridLinesVisibility="All" 
                   HeadersVisibility="Column" BorderThickness="0"
-                  CanUserResizeColumns="False" CanUserReorderColumns = "False"
-                  CanUserResizeRows="False"
                   Style="{StaticResource CustomDataGrid}">
             <DataGrid.Columns>
                 <DataGridCheckBoxColumn Header="" Binding="{Binding IsSelected}" Width="30"/>

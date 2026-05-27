@@ -28,9 +28,6 @@
                   AutoGenerateColumns="False"
                   CanUserAddRows="False"
                   CanUserSortColumns="True"
-                  CanUserResizeColumns="False"
-                  CanUserReorderColumns = "False"
-                  CanUserResizeRows="False"
                   Sorting="DataGrid_Sorting"
                   SelectionUnit="FullRow">
 
