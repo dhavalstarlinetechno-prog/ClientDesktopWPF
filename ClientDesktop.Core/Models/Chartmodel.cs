@@ -2,21 +2,25 @@
 {
     public class Chartmodel
     {
-        public string SymbolName { get; set; }
-        public DateTime Time { get; set; }
-        public long UpdateTime { get; set; }
-        public decimal OpenBid { get; set; }
-        public decimal OpenAsk { get; set; }
-        public decimal OpenLtp { get; set; }
-        public decimal HighBid { get; set; }
-        public decimal HighAsk { get; set; }
-        public decimal HighLtp { get; set; }
-        public decimal LowBid { get; set; }
-        public decimal LowAsk { get; set; }
-        public decimal LowLtp { get; set; }
-        public decimal CloseBid { get; set; }
-        public decimal CloseAsk { get; set; }
-        public decimal CloseLtp { get; set; }
-        public decimal Volume { get; set; }
+        public long time { get; set; }
+        public double open { get; set; }
+        public double high { get; set; }
+        public double low { get; set; }
+        public double close { get; set; }
+        public double volume { get; set; }
+    }
+    public class HistoryApiResponse
+    {
+        public bool isSuccess { get; set; }
+        public List<HistoryApiBar> data { get; set; }
+    }
+    public class HistoryApiBar
+    {
+        public long updateTime { get; set; }
+        public double openLtp { get; set; }
+        public double highLtp { get; set; }
+        public double lowLtp { get; set; }
+        public double closeLtp { get; set; }
+        public double volume { get; set; }
     }
 }

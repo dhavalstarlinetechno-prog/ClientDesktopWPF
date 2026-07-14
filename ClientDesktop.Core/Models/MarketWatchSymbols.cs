@@ -21,6 +21,8 @@ namespace ClientDesktop.Core.Models
         private double _dcv;
         private string _time;
         private int _timeDir;
+        private double _buyVolume;
+        private double _sellVolume;
 
         public int SymbolId { get; set; }
         public int SymbolDigit { get; set; }
@@ -62,6 +64,8 @@ namespace ClientDesktop.Core.Models
 
         public string Time { get => _time; set => SetProperty(ref _time, value); }
         public int TimeDir { get => _timeDir; set => SetProperty(ref _timeDir, value); }
+        public double BuyVolume { get => _buyVolume; set => SetProperty(ref _buyVolume, value); }
+        public double SellVolume { get => _sellVolume; set => SetProperty(ref _sellVolume, value); }
     }
 
     public class MarketWatchApiResponse

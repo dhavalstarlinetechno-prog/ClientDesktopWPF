@@ -1,0 +1,267 @@
+﻿<!DOCTYPE html>
+<html style="height: 100%;">
+<head>
+    <meta charset="utf-8" />
+    <title>Chart</title>
+    <style>
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: sans-serif;
+        }
+
+        #tv_chart_container {
+            width: 100%;
+            height: 100%;
+            background: #ffffff;
+        }
+    </style>
+    <script src="charting_library/charting_library.standalone.js"></script>
+</head>
+<body>
+    <div id="tv_chart_container"></div>
+    <script>
+
+        function getParam(name) {
+            return new URLSearchParams(window.location.search).get(name);
+        }
+
+        const displaySymbol = getParam('symbol') || 'UNKNOWN';
+        const masterSymbol = getParam('masterSymbol') || displaySymbol;
+        const digits = parseInt(getParam('digits') || '2');
+        const priceScale = Math.pow(10, digits);
+        const minTick = 1 / priceScale;
+
+        var _pendingCallbacks = {};
+        var _reqCounter = 0;
+
+        var _lastTickTime = 0;
+        var _lastTickClose = 0;
+
+        window.onload = function () {
+
+            if (typeof TradingView === 'undefined') {
+                document.body.innerHTML =
+                    "<div style='color:red;font-size:18px;padding:20px'>" +
+                    "TradingView Library Not Found!<br>" +
+                    "Check: Charts/WebAssets/charting_library/charting_library.standalone.js" +
+                    "</div>";
+                return;
+            }
+
+            var Datafeed = {
+                onReady: function (cb) {
+                    setTimeout(function () {
+                        cb({
+                            supported_resolutions: ['1', '3', '5', '15', '30', '60', '1D'],
+                            supports_marks: false,
+                            supports_timescale_marks: false,
+                            supports_time: false
+                        });
+                    }, 0);
+                },
+
+                resolveSymbol: function (symbolName, onResolved, onError) {
+                    setTimeout(function () {
+                        onResolved({
+                            name: displaySymbol,
+                            description: displaySymbol,
+                            type: 'forex',
+                            session: '24x7',
+                            timezone: 'Asia/Kolkata',
+                            exchange:'Meta',
+                            minmov: 1,
+                            pricescale: priceScale,
+                            has_intraday: true,
+                            has_no_volume: true,
+                            has_weekly_and_monthly: true,
+                            supported_resolutions: ['1', '3', '5', '15', '30', '60', '1D'],
+                            data_status: 'streaming',
+                            ticker: masterSymbol
+                        });
+                    }, 0);
+                },
+
+                getBars: function (symbolInfo, resolution, periodParams, onResult, onError) {
+                    var reqId = 'req_' + (++_reqCounter);
+                    _pendingCallbacks[reqId] = { onResult: onResult, onError: onError };
+
+                    var request = {
+                        type: 'HISTORY_REQ',
+                        reqId: reqId,
+                        symbol: masterSymbol,
+                        resolution: resolution,
+                        from: periodParams.from,
+                        to: periodParams.to
+                    };
+
+                    console.log('[JS] getBars reqId=' + reqId + ' sym=' + masterSymbol + ' res=' + resolution);
+
+                    if (window.chrome && window.chrome.webview) {
+                        window.chrome.webview.postMessage(JSON.stringify(request));
+                    } else {
+                        console.error('[JS] webview bridge missing!');
+                        delete _pendingCallbacks[reqId];
+                        onResult([], { noData: true });
+                    }
+                },
+
+                subscribeBars: function (symbolInfo, resolution, onTick, listenerGuid) {
+                    console.log('[JS] subscribeBars:', listenerGuid);
+                    window._currentSubscription = { onTick: onTick, guid: listenerGuid };
+                },
+
+                unsubscribeBars: function (listenerGuid) {
+                    console.log('[JS] unsubscribeBars:', listenerGuid);
+                    window._currentSubscription = null;
+                }
+            };
+
+            try {
+                window._widget = new TradingView.widget({
+                    symbol: displaySymbol,
+                    interval: '1',
+                    container: 'tv_chart_container',
+                    datafeed: Datafeed,                  
+                    library_path: 'charting_library/',
+                    locale: 'en',
+                    fullscreen: true,
+                    autosize: true,
+                    theme: 'Light',
+                    timezone: 'Asia/Kolkata',
+                    debug: false,
+                    allow_symbol_change: false,
+                    load_last_chart: false,
+                    save_image: false,
+
+                    disabled_features: [
+                        'use_localstorage_for_settings',
+                        'symbol_search_hot_key',
+                        'header_saveload',
+                        'show_exchange_logos',
+                        'chart_template_storage',
+                        'save_shortcut',
+                        'header_symbol_search',
+                        'widget_logo',
+                        'header_screenshot'
+                    ],
+                    enabled_features: [
+                        'header_widget',
+                        'left_toolbar',
+                        'control_bar',
+                        'header_indicators',
+                        'header_settings',
+                        'header_resolutions'
+                    ],
+
+                    overrides: {
+                        "mainSeriesProperties.priceAxisProperties.precision": digits,
+                        "mainSeriesProperties.priceAxisProperties.minMove": minTick,
+                        "scalesProperties.minTick": minTick,
+                        "scalesProperties.showSeriesLastValue": true,
+                        "scalesProperties.showSymbolLabels": false,
+                        "paneProperties.background": "#ffffff",
+                        "paneProperties.vertGridProperties.color": "#f0f3fa",
+                        "paneProperties.horzGridProperties.color": "#f0f3fa",
+                        "mainSeriesProperties.candleStyle.upColor": "#26a69a",
+                        "mainSeriesProperties.candleStyle.downColor": "#ef5350"
+                    }
+                });
+
+                window._widget.onChartReady(function () {
+                    console.log('[JS] Chart Structure Ready Dynamically!');
+
+                    try {
+                        var iframe = document.querySelector('#tv_chart_container iframe');
+                        if (iframe) {
+                            var doc = iframe.contentDocument || iframe.contentWindow.document;
+                            var style = doc.createElement('style');
+                            style.innerHTML =
+                                '.tv-chart-container__left-badge-container { display: none !important; }' +
+                                '.tv-logo { display: none !important; opacity: 0 !important; }' +
+                                '.branding-logo { display: none !important; }' +
+                                'a[href*="tradingview.com"] { display: none !important; pointer-events: none !important; }';
+                            doc.head.appendChild(style);
+                        }
+                    } catch (e) {
+                        console.log('[JS] Logo hide error: ' + e);
+                    }
+                });
+
+            } catch (ex) {
+                console.error('[JS] Widget error:', ex);
+            }
+        };
+
+        window.loadHistory = function (reqId, historyDataJson) {
+            try {
+                var cb = _pendingCallbacks[reqId];
+                if (!cb) return;
+
+                delete _pendingCallbacks[reqId];
+                var bars = JSON.parse(historyDataJson);
+
+                if (bars.length === 0) {
+                    cb.onResult([], { noData: true });
+                    return;
+                }
+
+                var formatted = bars.map(function (b) {
+                    return {
+                        time: b.time * 1000,
+                        open: b.open,
+                        high: b.high,
+                        low: b.low,
+                        close: b.close,
+                        volume: b.volume || 0
+                    };
+                });
+
+                formatted.sort(function (a, b) { return a.time - b.time; });
+                cb.onResult(formatted, { noData: false });
+
+                if (formatted.length > 0) {
+                    var lastBar = formatted[formatted.length - 1];
+                    _lastTickTime = lastBar.time / 1000;
+                    _lastTickClose = lastBar.close;
+                }
+            } catch (ex) {
+                console.error('[JS] loadHistory error:', ex);
+            }
+        };
+
+        window.updateTick = function (tickJson) {
+            try {
+                var data = typeof tickJson === 'string' ? JSON.parse(tickJson) : tickJson;
+                if (!window._currentSubscription || !window._currentSubscription.onTick) return;
+
+                var tickTimeSeconds = data.time;
+
+                if (tickTimeSeconds === _lastTickTime && Math.abs(data.close - _lastTickClose) < 0.000001) {
+                    return;
+                }
+                if (tickTimeSeconds < _lastTickTime) {
+                    return;
+                }
+
+                _lastTickTime = tickTimeSeconds;
+                _lastTickClose = data.close;
+
+                window._currentSubscription.onTick({
+                    time: data.time * 1000,
+                    open: data.open,
+                    high: data.high,
+                    low: data.low,
+                    close: data.close,
+                    volume: data.volume || 0
+                });
+            } catch (ex) {
+                console.error('[JS] updateTick error:', ex);
+            }
+        };
+    </script>
+</body>
+</html>

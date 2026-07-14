@@ -8,13 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Chart\**" />
-    <EmbeddedResource Remove="Chart\**" />
-    <None Remove="Chart\**" />
-    <Page Remove="Chart\**" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3856.49" />
     <PackageReference Include="RtfPipe" Version="2.0.7677.4303" />
   </ItemGroup>

@@ -159,6 +159,7 @@ namespace ClientDesktop.ViewModel
         public ICommand ShowMarketSymbol { get; }
         public ICommand AddSymbolCommand { get; }
         public ICommand ItemDoubleClickCommand { get; }
+        public ICommand OpenChartCommand { get; private set; }
 
         #endregion
 
@@ -197,6 +198,7 @@ namespace ClientDesktop.ViewModel
             ShowMarketSymbol = new RelayCommand(ShowMarketwatchSymbol);
             HideSymbolCommand = new AsyncRelayCommand(async (param) => await HideSymbolAsync(param));
             HideAllCommand = new AsyncRelayCommand(async (_) => await HideAllSymbolsAsync());
+            //OpenChartCommand = new RelayCommand(ExecuteOpenChart);
             ShowAllCommand = new AsyncRelayCommand(async (_) => await ShowAllSymbolsAsync());
             SaveProfileCommand = new AsyncRelayCommand(async (_) => await SaveClientWatchProfileAsync());
             AddSymbolCommand = new AsyncRelayCommand(async (param) => await AddSymbolAsync(param as MarketWatchSymbols));
@@ -216,6 +218,48 @@ namespace ClientDesktop.ViewModel
             RegisterMessenger();
         }
 
+        #endregion
+
+        #region Chart Opener Method
+        private void ExecuteOpenChart(object parameter)
+        {
+            try
+            {
+                if (!_sessionService.IsInternetAvailable)
+                    return;
+
+                var targetSymbol = parameter as MarketWatchSymbols ?? SelectedMarketItem;
+
+                if (targetSymbol == null)
+                {
+                    FileLogger.Log("MarketWatchChart", "No Selected Item found.");
+                    return;
+                }
+
+                // 🔹 Windows instances find dynamically without breaking namespaces
+                foreach (System.Windows.Window window in System.Windows.Application.Current.Windows)
+                {
+                    if (window.GetType().Name == "MainWindow")
+                    {
+                        var method = window.GetType().GetMethod("OpenDynamicChartTab");
+                        if (method != null)
+                        {
+                            method.Invoke(window, new object[] {
+                                targetSymbol.SymbolId,
+                                targetSymbol.SymbolName,
+                                targetSymbol.MasterSymbolName,
+                                targetSymbol.SymbolDigit
+                            });
+                        }
+                        break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(ExecuteOpenChart), ex);
+            }
+        }
         #endregion
 
         #region Public Methods
