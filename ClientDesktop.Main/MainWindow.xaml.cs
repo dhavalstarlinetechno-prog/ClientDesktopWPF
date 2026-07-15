@@ -7,6 +7,7 @@ using ClientDesktop.View.Chart;
 using ClientDesktop.ViewModel;
 using System.IO;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 
@@ -25,11 +26,12 @@ namespace ClientDesktop.Main
         public static readonly RoutedCommand ToggleMarketWatchCommand = new RoutedCommand();
         public static readonly RoutedCommand ToggleNavigatorCommand = new RoutedCommand();
         public static readonly RoutedCommand ToggleToolboxCommand = new RoutedCommand();
+        public static readonly RoutedCommand ToggleChartCommand = new RoutedCommand();
 
         private IApiService _apiService;
         private SessionService _sessionService;
         private LiveTickService _liveTickService;
-
+        private readonly List<LayoutDocument> _hiddenChartDocuments = new List<LayoutDocument>();
         #endregion
 
         #region Constructor
@@ -336,6 +338,18 @@ namespace ClientDesktop.Main
             }
         }
 
+        private void ToggleChart_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            try
+            {
+                ToggleChartDocument();
+            }
+            catch (Exception ex)
+            {
+                FileLogger.ApplicationLog(nameof(ToggleChart_Executed), ex);
+            }
+        }
+
         #endregion
 
         #region UI Event Handlers
@@ -460,6 +474,53 @@ namespace ClientDesktop.Main
             catch (Exception ex)
             {
                 FileLogger.ApplicationLog(nameof(ToggleAnchorable), ex);
+            }
+        }
+
+        /// <summary>
+        /// Toggles the visibility of a chart layout 
+        /// </summary>
+        private void ToggleChartDocument()
+        {
+            if (dockManager.Layout == null) return;
+
+            var documentPane = dockManager.Layout.Descendents().OfType<LayoutDocumentPane>().FirstOrDefault();
+            if (documentPane == null) return;
+           
+            if (_hiddenChartDocuments.Count > 0)
+            {
+                foreach (var doc in _hiddenChartDocuments)
+                {
+                    documentPane.Children.Add(doc);
+                }
+                _hiddenChartDocuments.Last().IsActive = true;
+                _hiddenChartDocuments.Clear();
+                return;
+            }
+            
+            var chartsToHide = documentPane.Children.OfType<LayoutDocument>()
+                .Where(d => d.ContentId == "Chart" ||
+                            (d.ContentId != null && d.ContentId.StartsWith("Chart_", StringComparison.OrdinalIgnoreCase)))
+                .ToList();
+
+            if (chartsToHide.Count == 0)
+            {               
+                var newChartDoc = new LayoutDocument
+                {
+                    Title = "Chart",
+                    ContentId = "Chart",
+                    Content = new Grid { Background = System.Windows.Media.Brushes.White },
+                    CanClose = true
+                };
+                documentPane.Children.Add(newChartDoc);
+                newChartDoc.IsActive = true;
+                return;
+            }
+
+            foreach (var doc in chartsToHide)
+            {
+                _hiddenChartDocuments.Add(doc);
+                documentPane.Children.Remove(doc);
             }
         }
 
