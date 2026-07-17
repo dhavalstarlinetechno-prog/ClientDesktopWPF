@@ -24,7 +24,6 @@
 <body>
     <div id="tv_chart_container"></div>
     <script>
-
         function getParam(name) {
             return new URLSearchParams(window.location.search).get(name);
         }
@@ -41,14 +40,123 @@
         var _lastTickTime = 0;
         var _lastTickClose = 0;
 
-        window.onload = function () {
+        var _savedLayoutCache = null;
+        var _hasSavedLayout = false;
+        var _initialLayoutApplied = false;
+        var _layoutLoadResolvers = [];
 
+        var saveLoadAdapter = {
+            getAllCharts: function () {
+                return new Promise(function (resolve) {
+                    if (_hasSavedLayout && _savedLayoutCache) {
+                        resolve([{
+                            id: masterSymbol,
+                            name: _savedLayoutCache.layoutName || displaySymbol,
+                            image_url: '',
+                            modified_iso: new Date().toISOString(),
+                            symbol: masterSymbol,
+                            resolution: '1'
+                        }]);
+                    } else {
+                        resolve([]);
+                    }
+                });
+            },
+            removeChart: function (id) {
+                return new Promise(function (resolve) {
+                    try {
+                        _hasSavedLayout = false;
+                        _savedLayoutCache = null;
+
+                        if (window._widget && window._widget.activeChart) {
+                            try {
+                                window._widget.activeChart().removeAllStudies();
+                            } catch (e) {
+                                console.error('[JS][LAYOUT] removeAllStudies error:', e);
+                            }
+                        }
+
+                        var delReq = {
+                            type: 'LAYOUT_DELETE',
+                            symbol: masterSymbol,
+                            layoutId: id
+                        };
+                        if (window.chrome && window.chrome.webview) {
+                            window.chrome.webview.postMessage(JSON.stringify(delReq));
+                        }
+
+                        console.log('[JS][LAYOUT] Chart reset to blank (indicators removed) for: ' + id);
+                        resolve();
+                    } catch (ex) {
+                        console.error('[JS][LAYOUT] removeChart error:', ex);
+                        resolve();
+                    }
+                });
+            },
+            saveChart: function (chartData) {
+                return new Promise(function (resolve) {
+                    try {
+                        console.log('[JS][LAYOUT] saveChart triggered via UI Save Button.');
+
+                        var targetId = chartData.id || masterSymbol;
+
+                        var currentLayoutName = chartData.name || displaySymbol;
+
+                        window._widget.save(function (stateObj) {
+                            console.log('[JS][LAYOUT] State captured successfully for: ' + currentLayoutName);
+
+                            var saveReq = {
+                                type: 'LAYOUT_SAVE',
+                                symbol: masterSymbol,
+                                layoutName: currentLayoutName,
+                                data: stateObj
+                            };
+
+                            if (window.chrome && window.chrome.webview) {
+                                window.chrome.webview.postMessage(JSON.stringify(saveReq));
+                            }
+
+                            _savedLayoutCache = saveReq;
+                            _hasSavedLayout = true;
+
+                            resolve(targetId);
+                        });
+                    } catch (ex) {
+                        console.error('[JS][LAYOUT] saveChart execution error:', ex);
+                        resolve(chartData.id || masterSymbol);
+                    }
+                });
+            },
+            getChartContent: function (id) {
+                return new Promise(function (resolve) {
+                    if (_savedLayoutCache && _savedLayoutCache.data) {
+                        resolve(JSON.stringify(_savedLayoutCache.data));
+                        return;
+                    }
+                    _layoutLoadResolvers.push(function (state) {
+                        resolve(state && state.data ? JSON.stringify(state.data) : null);
+                    });
+                    var req = { type: 'LAYOUT_REQ', symbol: masterSymbol };
+                    if (window.chrome && window.chrome.webview) {
+                        window.chrome.webview.postMessage(JSON.stringify(req));
+                    } else {
+                        resolve(null);
+                    }
+                });
+            },
+            getAllStudyTemplates: function () { return Promise.resolve([]); },
+            removeStudyTemplate: function () { return Promise.resolve(); },
+            saveStudyTemplate: function () { return Promise.resolve(); },
+            getStudyTemplateContent: function () { return Promise.resolve(''); },
+            getDrawingTemplates: function () { return Promise.resolve([]); },
+            loadDrawingTemplate: function () { return Promise.resolve(''); },
+            removeDrawingTemplate: function () { return Promise.resolve(); },
+            saveDrawingTemplate: function () { return Promise.resolve(); }
+        };
+
+        window.onload = function () {
             if (typeof TradingView === 'undefined') {
-                document.body.innerHTML =
-                    "<div style='color:red;font-size:18px;padding:20px'>" +
-                    "TradingView Library Not Found!<br>" +
-                    "Check: Charts/WebAssets/charting_library/charting_library.standalone.js" +
-                    "</div>";
+                document.body.innerHTML = "<div style='color:red;font-size:18px;padding:20px'>TradingView Library Not Found!</div>";
                 return;
             }
 
@@ -63,7 +171,6 @@
                         });
                     }, 0);
                 },
-
                 resolveSymbol: function (symbolName, onResolved, onError) {
                     setTimeout(function () {
                         onResolved({
@@ -72,7 +179,6 @@
                             type: 'forex',
                             session: '24x7',
                             timezone: 'Asia/Kolkata',
-                            exchange:'Meta',
                             minmov: 1,
                             pricescale: priceScale,
                             has_intraday: true,
@@ -84,7 +190,6 @@
                         });
                     }, 0);
                 },
-
                 getBars: function (symbolInfo, resolution, periodParams, onResult, onError) {
                     var reqId = 'req_' + (++_reqCounter);
                     _pendingCallbacks[reqId] = { onResult: onResult, onError: onError };
@@ -98,24 +203,17 @@
                         to: periodParams.to
                     };
 
-                    console.log('[JS] getBars reqId=' + reqId + ' sym=' + masterSymbol + ' res=' + resolution);
-
                     if (window.chrome && window.chrome.webview) {
                         window.chrome.webview.postMessage(JSON.stringify(request));
                     } else {
-                        console.error('[JS] webview bridge missing!');
                         delete _pendingCallbacks[reqId];
                         onResult([], { noData: true });
                     }
                 },
-
                 subscribeBars: function (symbolInfo, resolution, onTick, listenerGuid) {
-                    console.log('[JS] subscribeBars:', listenerGuid);
                     window._currentSubscription = { onTick: onTick, guid: listenerGuid };
                 },
-
                 unsubscribeBars: function (listenerGuid) {
-                    console.log('[JS] unsubscribeBars:', listenerGuid);
                     window._currentSubscription = null;
                 }
             };
@@ -125,7 +223,7 @@
                     symbol: displaySymbol,
                     interval: '1',
                     container: 'tv_chart_container',
-                    datafeed: Datafeed,                  
+                    datafeed: Datafeed,
                     library_path: 'charting_library/',
                     locale: 'en',
                     fullscreen: true,
@@ -136,11 +234,10 @@
                     allow_symbol_change: false,
                     load_last_chart: false,
                     save_image: false,
-
+                    save_load_adapter: saveLoadAdapter,
                     disabled_features: [
                         'use_localstorage_for_settings',
                         'symbol_search_hot_key',
-                        'header_saveload',
                         'show_exchange_logos',
                         'chart_template_storage',
                         'save_shortcut',
@@ -156,7 +253,6 @@
                         'header_settings',
                         'header_resolutions'
                     ],
-
                     overrides: {
                         "mainSeriesProperties.priceAxisProperties.precision": digits,
                         "mainSeriesProperties.priceAxisProperties.minMove": minTick,
@@ -165,15 +261,11 @@
                         "scalesProperties.showSymbolLabels": false,
                         "paneProperties.background": "#ffffff",
                         "paneProperties.vertGridProperties.color": "#f0f3fa",
-                        "paneProperties.horzGridProperties.color": "#f0f3fa",
-                        "mainSeriesProperties.candleStyle.upColor": "#26a69a",
-                        "mainSeriesProperties.candleStyle.downColor": "#ef5350"
+                        "paneProperties.horzGridProperties.color": "#f0f3fa"
                     }
                 });
 
                 window._widget.onChartReady(function () {
-                    console.log('[JS] Chart Structure Ready Dynamically!');
-
                     try {
                         var iframe = document.querySelector('#tv_chart_container iframe');
                         if (iframe) {
@@ -181,14 +273,19 @@
                             var style = doc.createElement('style');
                             style.innerHTML =
                                 '.tv-chart-container__left-badge-container { display: none !important; }' +
-                                '.tv-logo { display: none !important; opacity: 0 !important; }' +
+                                '.tv-logo { display: none !important; }' +
                                 '.branding-logo { display: none !important; }' +
-                                'a[href*="tradingview.com"] { display: none !important; pointer-events: none !important; }';
+                                'a[href*="tradingview.com"] { display: none !important; }';
                             doc.head.appendChild(style);
                         }
-                    } catch (e) {
-                        console.log('[JS] Logo hide error: ' + e);
-                    }
+                    } catch (e) { }
+
+                    try {
+                        var loadReq = { type: 'LAYOUT_REQ', symbol: masterSymbol };
+                        if (window.chrome && window.chrome.webview) {
+                            window.chrome.webview.postMessage(JSON.stringify(loadReq));
+                        }
+                    } catch (e) { }
                 });
 
             } catch (ex) {
@@ -200,15 +297,12 @@
             try {
                 var cb = _pendingCallbacks[reqId];
                 if (!cb) return;
-
                 delete _pendingCallbacks[reqId];
                 var bars = JSON.parse(historyDataJson);
-
                 if (bars.length === 0) {
                     cb.onResult([], { noData: true });
                     return;
                 }
-
                 var formatted = bars.map(function (b) {
                     return {
                         time: b.time * 1000,
@@ -219,7 +313,6 @@
                         volume: b.volume || 0
                     };
                 });
-
                 formatted.sort(function (a, b) { return a.time - b.time; });
                 cb.onResult(formatted, { noData: false });
 
@@ -228,26 +321,16 @@
                     _lastTickTime = lastBar.time / 1000;
                     _lastTickClose = lastBar.close;
                 }
-            } catch (ex) {
-                console.error('[JS] loadHistory error:', ex);
-            }
+            } catch (ex) { }
         };
 
         window.updateTick = function (tickJson) {
             try {
                 var data = typeof tickJson === 'string' ? JSON.parse(tickJson) : tickJson;
                 if (!window._currentSubscription || !window._currentSubscription.onTick) return;
+                if (data.time < _lastTickTime) return;
 
-                var tickTimeSeconds = data.time;
-
-                if (tickTimeSeconds === _lastTickTime && Math.abs(data.close - _lastTickClose) < 0.000001) {
-                    return;
-                }
-                if (tickTimeSeconds < _lastTickTime) {
-                    return;
-                }
-
-                _lastTickTime = tickTimeSeconds;
+                _lastTickTime = data.time;
                 _lastTickClose = data.close;
 
                 window._currentSubscription.onTick({
@@ -258,8 +341,43 @@
                     close: data.close,
                     volume: data.volume || 0
                 });
+            } catch (ex) { }
+        };
+
+        window.applyLayout = function (layoutJson) {
+            try {
+                console.log('[JS][LAYOUT] applyLayout called.');
+                var fullObj = null;
+                if (layoutJson && layoutJson !== 'null' && layoutJson !== 'undefined' && layoutJson !== '') {
+                    fullObj = typeof layoutJson === 'string' ? JSON.parse(layoutJson) : layoutJson;
+                }
+
+                if (fullObj && fullObj.data) {
+                    _savedLayoutCache = fullObj;
+                    _hasSavedLayout = true;
+
+                    while (_layoutLoadResolvers.length) {
+                        var resolve = _layoutLoadResolvers.shift();
+                        resolve(fullObj);
+                    }
+
+                    if (window._widget && !_initialLayoutApplied) {
+                        _initialLayoutApplied = true;
+
+                        window._widget.load(fullObj.data, {
+                            id: masterSymbol,
+                            name: fullObj.layoutName || displaySymbol
+                        });
+                        console.log('[JS][LAYOUT] Chart loaded with Header Name: ' + fullObj.layoutName);
+                    }
+                } else {
+                    while (_layoutLoadResolvers.length) {
+                        var resolve = _layoutLoadResolvers.shift();
+                        resolve(null);
+                    }
+                }
             } catch (ex) {
-                console.error('[JS] updateTick error:', ex);
+                console.error('[JS][LAYOUT] applyLayout error:', ex);
             }
         };
     </script>

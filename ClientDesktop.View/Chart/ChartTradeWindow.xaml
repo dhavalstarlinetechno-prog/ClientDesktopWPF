@@ -12,7 +12,7 @@
     <Grid>
         <wv2:WebView2 x:Name="ChartWebView" Visibility="Visible"/>
 
-        <Grid x:Name="LoadingOverlay" Background="#ffffff">
+        <Grid x:Name="LoadingOverlay" Background="#ffffff" Visibility="Collapsed">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                 <TextBlock Text="{Binding ChartTitle}"
                    Foreground="#555577"

@@ -1,4 +1,5 @@
-﻿using ClientDesktop.Core.Interfaces;
+﻿using ClientDesktop.Core.Config;
+using ClientDesktop.Core.Interfaces;
 using ClientDesktop.Infrastructure.Services;
 using ClientDesktop.ViewModel.Chart;
 using Microsoft.Web.WebView2.Core;
@@ -10,9 +11,6 @@ using System.Windows.Controls;
 
 namespace ClientDesktop.View.Chart
 {
-    /// <summary>
-    /// Interaction logic for ChartTradeWindow.xaml
-    /// </summary>
     public partial class ChartTradeWindow : UserControl
     {
         public int SymbolId { get; private set; }
@@ -112,6 +110,102 @@ namespace ClientDesktop.View.Chart
                     var result = await _viewModel.HandleHistoryRequestAsync(jsonMessage);
                     KeepHistoryDispatched(result.ReqId, result.JsonData);
                 }
+
+                else if (jsonMessage.Contains("LAYOUT_SAVE"))
+                {
+                    try
+                    {
+                        string folderPath = Path.Combine(Directory.GetParent(AppConfig.ChartLayoutPath).FullName, "ChartLayouts");
+                        if (!Directory.Exists(folderPath))
+                        {
+                            Directory.CreateDirectory(folderPath);
+                        }
+
+                        var incomingObj = Newtonsoft.Json.JsonConvert.DeserializeObject<Newtonsoft.Json.Linq.JObject>(jsonMessage);
+
+                        string customLayoutName = incomingObj["layoutName"]?.ToString();
+
+                        if (string.IsNullOrEmpty(customLayoutName))
+                        {
+                            Console.WriteLine("[CHART] Layout name is empty. Skipping save.");
+                            return;
+                        }
+
+                        string filePath = Path.Combine(folderPath, $"{customLayoutName}_layout.json");
+                        await File.WriteAllTextAsync(filePath, jsonMessage);
+                        Console.WriteLine($"[CHART] Layout successfully saved to file: {filePath}");
+
+                        string pointerPath = Path.Combine(folderPath, $"{_viewModel.MasterSymbolName}_pointer.txt");
+                        await File.WriteAllTextAsync(pointerPath, customLayoutName);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[CHART] Error in C# LAYOUT_SAVE: {ex.Message}");
+                    }
+                }
+
+                else if (jsonMessage.Contains("LAYOUT_REQ"))
+                {
+                    try
+                    {
+                        string folderPath = Path.Combine(Directory.GetParent(AppConfig.ChartLayoutPath).FullName, "ChartLayouts");
+                        string pointerPath = Path.Combine(folderPath, $"{_viewModel.MasterSymbolName}_pointer.txt");
+
+                        string targetLayoutName = null;
+
+                        if (File.Exists(pointerPath))
+                        {
+                            targetLayoutName = await File.ReadAllTextAsync(pointerPath);
+                        }
+
+                        if (!string.IsNullOrEmpty(targetLayoutName))
+                        {
+                            string filePath = Path.Combine(folderPath, $"{targetLayoutName}_layout.json");
+
+                            if (File.Exists(filePath))
+                            {
+                                string savedLayout = await File.ReadAllTextAsync(filePath);
+                                string safeJson = savedLayout.Replace("\\", "\\\\").Replace("'", "\\'");
+
+                                await ChartWebView.ExecuteScriptAsync($"window.applyLayout('{safeJson}')");
+                                Console.WriteLine($"[CHART] Custom Layout [{targetLayoutName}] loaded for {SymbolName}");
+                                return;
+                            }
+                        }
+
+                        await ChartWebView.ExecuteScriptAsync("window.applyLayout('')");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[CHART] Error loading layout file: {ex.Message}");
+                        await ChartWebView.ExecuteScriptAsync("window.applyLayout('')");
+                    }
+                }
+
+                else if (jsonMessage.Contains("LAYOUT_DELETE"))
+                {
+                    try
+                    {
+                        string folderPath = Path.Combine(Directory.GetParent(AppConfig.ChartLayoutPath).FullName, "ChartLayouts");
+                        string pointerPath = Path.Combine(folderPath, $"{_viewModel.MasterSymbolName}_pointer.txt");
+
+                        if (File.Exists(pointerPath))
+                        {
+                            string existingLayoutName = await File.ReadAllTextAsync(pointerPath);
+                            string filePath = Path.Combine(folderPath, $"{existingLayoutName}_layout.json");
+
+                            if (File.Exists(filePath))
+                                File.Delete(filePath);
+
+                            File.Delete(pointerPath);
+                            Console.WriteLine($"[CHART] Layout permanently deleted for {_viewModel.MasterSymbolName}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[CHART] Error deleting layout file: {ex.Message}");
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -137,11 +231,11 @@ namespace ClientDesktop.View.Chart
         private void UpdateLoadingText(string message)
         {
             Dispatcher.Invoke(() =>
-            {
-                LoadingOverlay.Visibility = Visibility.Visible;
+            {               
                 if (LoadingText != null)
                     LoadingText.Text = message;
             });
+            Console.WriteLine($"[CHART] {message}");
         }
         private void ChartTradeWindow_Unloaded(object sender, RoutedEventArgs e)
         {

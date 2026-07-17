@@ -128,12 +128,13 @@ namespace ClientDesktop.Main
 
                 string contentIdStr = $"Chart_{symbolName.Trim().ToUpper()}";
 
-                //var existingDoc = documentPane.Children.FirstOrDefault(d => d.ContentId == contentIdStr);
-                //if (existingDoc != null)
-                //{
-                //    existingDoc.IsActive = true;
-                //    return;
-                //}
+                var existingDoc = documentPane.Children.FirstOrDefault(d => d.ContentId == contentIdStr);
+                if (existingDoc != null)
+                {
+                    FileLogger.Log("Chart", $"Chart already open for symbol: {symbolName.Trim()}");
+                    existingDoc.IsActive = true;
+                    return;
+                }
 
                 // Create chart window safely
                 var chartControl = new ChartTradeWindow(symbolId, symbolName, masterSymbolName, symbolDigits, _apiService, _sessionService, _liveTickService);

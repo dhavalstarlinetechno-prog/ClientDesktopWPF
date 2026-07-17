@@ -69,6 +69,12 @@ namespace ClientDesktop.Core.Config
             "Data"
         );
 
+        public static string ChartLayoutPath => Path.Combine(
+           Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+           "ClientDesktop",
+           "ChartLayouts"
+       );
+
         // 🔹 Encryption Keys (AESHelper)
         public const string EncryptionKey = "Client__Desktop!Secret__Key-2025";
         public const string EncryptionIV = "ClientDesktop_16";
