@@ -44,6 +44,8 @@
         var _hasSavedLayout = false;
         var _initialLayoutApplied = false;
         var _layoutLoadResolvers = [];
+        var _initialLayoutResolve = null;
+        var _initialLayoutPromise = null;
 
         var saveLoadAdapter = {
             getAllCharts: function () {
@@ -154,12 +156,30 @@
             saveDrawingTemplate: function () { return Promise.resolve(); }
         };
 
-        window.onload = function () {
-            if (typeof TradingView === 'undefined') {
-                document.body.innerHTML = "<div style='color:red;font-size:18px;padding:20px'>TradingView Library Not Found!</div>";
-                return;
-            }
+        function requestInitialLayout() {
+            return new Promise(function (resolve) {
+                _initialLayoutResolve = resolve;
 
+                var loadReq = { type: 'LAYOUT_REQ', symbol: masterSymbol };
+                if (window.chrome && window.chrome.webview) {
+                    window.chrome.webview.postMessage(JSON.stringify(loadReq));
+                } else {
+                    _initialLayoutResolve = null;
+                    resolve(null);
+                }
+
+                setTimeout(function () {
+                    if (_initialLayoutResolve) {
+                        var pending = _initialLayoutResolve;
+                        _initialLayoutResolve = null;
+                        console.warn('[JS][LAYOUT] Initial layout request timed out, loading blank chart.');
+                        pending(null);
+                    }
+                }, 4000);
+            });
+        }
+
+        function createWidget() {
             var Datafeed = {
                 onReady: function (cb) {
                     setTimeout(function () {
@@ -219,7 +239,7 @@
             };
 
             try {
-                window._widget = new TradingView.widget({
+                var widgetOptions = {
                     symbol: displaySymbol,
                     interval: '1',
                     container: 'tv_chart_container',
@@ -263,7 +283,9 @@
                         "paneProperties.vertGridProperties.color": "#f0f3fa",
                         "paneProperties.horzGridProperties.color": "#f0f3fa"
                     }
-                });
+                };
+
+                window._widget = new TradingView.widget(widgetOptions);
 
                 window._widget.onChartReady(function () {
                     try {
@@ -279,18 +301,39 @@
                             doc.head.appendChild(style);
                         }
                     } catch (e) { }
+                   
+                    _initialLayoutPromise.then(function (savedState) {
+                        try {
+                            if (savedState && savedState.data && !_initialLayoutApplied) {
+                                _initialLayoutApplied = true;
+                                _savedLayoutCache = savedState;
+                                _hasSavedLayout = true;
 
-                    try {
-                        var loadReq = { type: 'LAYOUT_REQ', symbol: masterSymbol };
-                        if (window.chrome && window.chrome.webview) {
-                            window.chrome.webview.postMessage(JSON.stringify(loadReq));
+                                window._widget.load(savedState.data, {
+                                    id: masterSymbol,
+                                    name: savedState.layoutName || displaySymbol
+                                });
+                                console.log('[JS][LAYOUT] Chart loaded with Header Name: ' + savedState.layoutName);
+                            }
+                        } catch (ex) {
+                            console.error('[JS][LAYOUT] Error applying prefetched layout:', ex);
                         }
-                    } catch (e) { }
+                    });
                 });
 
             } catch (ex) {
                 console.error('[JS] Widget error:', ex);
             }
+        }
+
+        window.onload = function () {
+            if (typeof TradingView === 'undefined') {
+                document.body.innerHTML = "<div style='color:red;font-size:18px;padding:20px'>TradingView Library Not Found!</div>";
+                return;
+            }
+          
+            _initialLayoutPromise = requestInitialLayout();
+            createWidget();
         };
 
         window.loadHistory = function (reqId, historyDataJson) {
@@ -351,7 +394,14 @@
                 if (layoutJson && layoutJson !== 'null' && layoutJson !== 'undefined' && layoutJson !== '') {
                     fullObj = typeof layoutJson === 'string' ? JSON.parse(layoutJson) : layoutJson;
                 }
-
+              
+                if (_initialLayoutResolve) {
+                    var earlyResolve = _initialLayoutResolve;
+                    _initialLayoutResolve = null;
+                    earlyResolve(fullObj);
+                    return;
+                }
+               
                 if (fullObj && fullObj.data) {
                     _savedLayoutCache = fullObj;
                     _hasSavedLayout = true;
